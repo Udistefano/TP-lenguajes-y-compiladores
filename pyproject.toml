@@ -1,0 +1,15 @@
+[project]
+name = "mylox"
+version = "0.1.0"
+description = "Un intérprete de Lox hecho en Python (TP Lenguajes y Compiladores I, FIUBA)"
+requires-python = ">=3.12"
+
+[project.scripts]
+mylox = "mylox.cli:main"
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
