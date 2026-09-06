@@ -34,6 +34,17 @@ class Lexer:
         ";": TokenKind.SEMICOLON,
     }
 
+    # para tokens que finalizan con '='
+    OPTIONAL_EQUAL_TOKENS: dict[
+        str,
+        tuple[TokenKind, TokenKind],
+    ] = {
+        "!": (TokenKind.BANG, TokenKind.BANG_EQUAL),
+        "=": (TokenKind.EQUAL, TokenKind.EQUAL_EQUAL),
+        "<": (TokenKind.LESS, TokenKind.LESS_EQUAL),
+        ">": (TokenKind.GREATER, TokenKind.GREATER_EQUAL),
+    }
+
     def __init__(self, source: str) -> None:
         """Inicializa el recorrido al comienzo del código fuente recibido."""
 
@@ -51,7 +62,7 @@ class Lexer:
     def _scan_token(self) -> None:
         """Reconoce el token que comienza en la posición actual."""
 
-        character = self._advance()  # consumo token. mueve puntero.
+        character = self._advance()  # consumo caracter. mueve puntero.
 
         if character in {" ", "\r", "\t", "\n"}:  # no son tokens; sino que separan.
             return
@@ -65,8 +76,18 @@ class Lexer:
 
             return
 
-        kind = self.SINGLE_CHARACTER_TOKENS.get(character)
+        operator_kinds = self.OPTIONAL_EQUAL_TOKENS.get(character)
+        if operator_kinds is not None:
+            single_kind, combined_kind = operator_kinds
 
+            if self._match("="):
+                self._add(combined_kind)
+            else:
+                self._add(single_kind)
+
+            return
+
+        kind = self.SINGLE_CHARACTER_TOKENS.get(character)
         if kind is not None:
             self._add(kind)
             return
