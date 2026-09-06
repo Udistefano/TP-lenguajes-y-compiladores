@@ -52,6 +52,19 @@ class Lexer:
         """Reconoce el token que comienza en la posición actual."""
 
         character = self._advance()  # consumo token. mueve puntero.
+
+        if character in {" ", "\r", "\t", "\n"}:  # no son tokens; sino que separan.
+            return
+
+        if character == "/":
+            # caso para comentarios.
+            if self._match("/"):
+                self._discard_comment()
+            else:
+                self._add(TokenKind.SLASH)
+
+            return
+
         kind = self.SINGLE_CHARACTER_TOKENS.get(character)
 
         if kind is not None:
@@ -63,6 +76,13 @@ class Lexer:
             f"en la línea {self.token_line}, "
             f"columna {self.token_column}"
         )
+
+    def _discard_comment(self) -> None:
+        """Consume un comentario de línea sin incluir el salto final."""
+
+        while self._peek() not in {"\n", "\0"}:
+            self._advance()
+
 
     def run(self) -> list[Token]:
         """Escanea toda la fuente y devuelve los tokens, incluido EOF."""
