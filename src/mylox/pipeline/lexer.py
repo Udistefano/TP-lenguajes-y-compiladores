@@ -1,7 +1,5 @@
-from ..errors import ScanError
-from ..tokens import KEYWORDS, Token, TokenKind
+"""Conversión del código fuente de Lox en una secuencia de tokens.
 
-"""
 Cada token es una pieza con forma (kind) y texto crudo (lexeme):
 
 1 → Token(TokenKind.NUMBER, "1", 1.0)
@@ -10,40 +8,123 @@ Cada token es una pieza con forma (kind) y texto crudo (lexeme):
 fin → Token(TokenKind.EOF, "", None)
 """
 
+
+from ..errors import ScanError
+from ..tokens import KEYWORDS, LiteralValue, Token, TokenKind
+
+
 class Lexer:
-    """
-    Toma el texto crudo que escribe el usuario y lo convierte en una lista de tokens (palabras con significado).
-    No entiende el sentido de la frase, solo separa las piezas.
+    """Separa el código fuente en las unidades léxicas definidas por Lox.
+
+    El lexer reconoce las palabras y símbolos válidos, pero no determina si
+    estos forman expresiones o sentencias sintácticamente correctas.
     """
 
-    def __init__(self, source: str):
+    def __init__(self, source: str) -> None:
+        """Inicializa el recorrido al comienzo del código fuente recibido."""
+
         self.source = source
-        self.tokens = []
+        self.tokens: list[Token] = []
         self.start = 0
-        self.current = 0                  # posición del próximo caracter
+        self.current = 0
         self.line = 1
         self.column = 1
 
-        # posición donde comenzó el token para no perderlo
+        # Posición inicial del token que se está reconociendo.
         self.token_line = 1
         self.token_column = 1
 
+    def _scan_token(self) -> None:
+        """Reconoce el token que comienza en la posición actual."""
+
+        raise NotImplementedError(
+            "Reconocimiento de tokens todavía no implementado"
+        )
+
     def run(self) -> list[Token]:
-        raise NotImplementedError("Escaneo todavía no implementado")
+        """Escanea toda la fuente y devuelve los tokens, incluido EOF."""
+
+        while not self._is_at_end():
+            self.start = self.current
+            self.token_line = self.line
+            self.token_column = self.column
+
+            self._scan_token()
+
+        eof = Token(
+            kind=TokenKind.EOF,
+            lexeme="",
+            line=self.line,
+            column=self.column,
+        )
+
+        self.tokens.append(eof)
+        return self.tokens
 
     def _is_at_end(self) -> bool:
+        """Indica si el cursor alcanzó o superó el final de la fuente."""
+
         return self.current >= len(self.source)
 
-    def _peek(self):
-        raise NotImplementedError("_peek todavía no implementado")
+    def _peek(self) -> str:
+        """Devuelve el carácter actual sin consumirlo, o ``\0`` al final."""
 
-    def _advance(self):
-        raise NotImplementedError("_advance todavía no implementado")
+        if self._is_at_end():
+            return "\0"
+
+        return self.source[self.current]
+
+    def _peek_next(self) -> str:
+        """Mira un carácter por delante sin modificar el cursor."""
+
+        next_position = self.current + 1
+
+        if next_position >= len(self.source):
+            return "\0"
+
+        return self.source[next_position]
+
+    def _advance(self) -> str:
+        """Consume el carácter actual y actualiza el cursor y su posición."""
+
+        character = self.source[self.current]
+        self.current += 1
+
+        if character == "\n":
+            self.line += 1
+            self.column = 1
+        else:
+            self.column += 1
+
+        return character
 
     def _match(self, expected: str) -> bool:
-        raise NotImplementedError("_match todavía no implementado")
+        """Consume el carácter actual solo cuando coincide con ``expected``."""
 
-    def _add(self, kind, literal=None):
-        raise NotImplementedError("_add todavía no implementado")
+        if self._is_at_end():
+            return False
 
-# FALTA LOGICA DEL LEXER, SOLO SE DECLARAN LOS METODOS Y ATRIBUTOS.
+        if self.source[self.current] != expected:
+            return False
+
+        self._advance()
+        return True
+
+    def _add(
+        self,
+        kind: TokenKind,
+        literal: LiteralValue = None,
+    ) -> None:
+        """Agrega un token usando el segmento actual y su posición inicial."""
+
+        lexeme = self.source[self.start:self.current]
+
+        token = Token(
+            kind=kind,
+            lexeme=lexeme,
+            literal=literal,
+            line=self.token_line,
+            column=self.token_column,
+        )
+
+        self.tokens.append(token)
