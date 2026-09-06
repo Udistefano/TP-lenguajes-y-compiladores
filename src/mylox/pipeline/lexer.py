@@ -20,6 +20,20 @@ class Lexer:
     estos forman expresiones o sentencias sintácticamente correctas.
     """
 
+    SINGLE_CHARACTER_TOKENS: dict[str, TokenKind] = {
+        "(": TokenKind.LEFT_PAREN,
+        ")": TokenKind.RIGHT_PAREN,
+        "{": TokenKind.LEFT_BRACE,
+        "}": TokenKind.RIGHT_BRACE,
+        ",": TokenKind.COMMA,
+        ".": TokenKind.DOT,
+        "+": TokenKind.PLUS,
+        "-": TokenKind.MINUS,
+        "*": TokenKind.STAR,
+        "%": TokenKind.PERCENT,
+        ";": TokenKind.SEMICOLON,
+    }
+
     def __init__(self, source: str) -> None:
         """Inicializa el recorrido al comienzo del código fuente recibido."""
 
@@ -37,8 +51,17 @@ class Lexer:
     def _scan_token(self) -> None:
         """Reconoce el token que comienza en la posición actual."""
 
-        raise NotImplementedError(
-            "Reconocimiento de tokens todavía no implementado"
+        character = self._advance()  # consumo token. mueve puntero.
+        kind = self.SINGLE_CHARACTER_TOKENS.get(character)
+
+        if kind is not None:
+            self._add(kind)
+            return
+
+        raise ScanError(
+            f"Carácter inesperado {character!r} "
+            f"en la línea {self.token_line}, "
+            f"columna {self.token_column}"
         )
 
     def run(self) -> list[Token]:
