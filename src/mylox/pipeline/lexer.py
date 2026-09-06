@@ -10,6 +10,7 @@ Cada token es una pieza con forma (kind) y texto crudo (lexeme):
 2 → Token(TokenKind.NUMBER, "2", 2.0)
 fin → Token(TokenKind.EOF, "", None)
 """
+# FALTA LOGICA DEL LEXER, SOLO SE DECLARAN LOS METODOS Y ATRIBUTOS.
 class Lexer:
     def __init__(self, source: str):
         self.source = source

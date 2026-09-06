@@ -1,0 +1,15 @@
+pegar esto en consola para probar como actua:
+
+uv run python -c "
+from mylox.tokens import Token, TokenKind
+from mylox.nodes import Literal, Binary, Unary, Visitor
+
+class Printer(Visitor):
+    def visit_literal(self, e): return repr(e.value)
+    def visit_unary(self, e):   return '(-' + e.operand.accept(self) + ')'
+    def visit_binary(self, e):  return '(' + e.left.accept(self) + ' ' + e.operator.lexeme + ' ' + e.right.accept(self) + ')'
+
+plus = Token(TokenKind.PLUS, '+')
+ast = Binary(Literal(1.0), plus, Unary(Token(TokenKind.MINUS, '-'), Literal(2.0)))
+print(ast.accept(Printer()))    # → (1.0 + (-2.0))
+"
