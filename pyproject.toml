@@ -1,7 +1,7 @@
 [project]
 name = "mylox"
 version = "0.1.0"
-description = "Un intérprete de Lox hecho en Python (TP Lenguajes y Compiladores I, FIUBA)"
+description = "intérprete de lox TP Lenguajes y Compiladores"
 requires-python = ">=3.12"
 
 [project.scripts]
