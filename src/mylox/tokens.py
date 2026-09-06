@@ -1,9 +1,17 @@
+from dataclasses import dataclass
 from enum import Enum, auto
+from typing import TypeAlias
 
-#clase que representa los diferentes tipos de tokens que pueden aparecer en el código
-# se usa auto() para asignar automáticamente valores únicos a cada miembro del enumerado.
+
+LiteralValue: TypeAlias = str | float | bool | None
+
 class TokenKind(Enum):
-    # Símbolos de un solo carácter
+    """
+    Clase que representa los diferentes tipos de tokens que pueden aparecer en el código
+    se usa auto() para asignar automáticamente valores únicos a cada miembro del enumerado.
+    """
+
+    # Tokens de un solo carácter
     LEFT_PAREN = auto()
     RIGHT_PAREN = auto()
     LEFT_BRACE = auto()
@@ -17,7 +25,7 @@ class TokenKind(Enum):
     PERCENT = auto()
     SEMICOLON = auto()
 
-    # Símbolos 
+    # Símbolos
     BANG = auto()
     BANG_EQUAL = auto()
     EQUAL = auto()
@@ -26,6 +34,7 @@ class TokenKind(Enum):
     GREATER_EQUAL = auto()
     LESS = auto()
     LESS_EQUAL = auto()
+
     # Literales
     IDENTIFIER = auto()
     STRING = auto()
@@ -49,25 +58,35 @@ class TokenKind(Enum):
     VAR = auto()
     WHILE = auto()
 
-    # Fin de la entrada
     EOF = auto()
 
 
-#clase que representa un token, que es una unidad léxica del código fuente. 
-# Cada token tiene un tipo kind, un lexeme y un valor Literal opcional.
+@dataclass(frozen=True, slots=True)
 class Token:
-    def __init__(self, kind, lexeme, literal=None):
-        self.kind = kind
-        self.lexeme = lexeme
-        self.literal = literal
+    """
+    Clase que representa un token; una unidad léxica del código fuente.
+    La línea y la columna son posiciones basadas en 1 dentro del código fuente.
 
-    def __str__(self):
+    Posiciones inician en 1 y se validan. Para errores más claros.
+    """
+
+    kind: TokenKind
+    lexeme: str
+    literal: LiteralValue = None
+    line: int = 1
+    column: int = 1
+
+    def __post_init__(self) -> None:
+        if self.line < 1 or self.column < 1:
+            raise ValueError("La línea y la columna deben comenzar en 1")
+
+    def __str__(self) -> str:
         if self.literal is not None:
             return f"{self.kind.name}<{self.literal}>"
         return self.kind.name
 
 
-KEYWORDS = {
+KEYWORDS: dict[str, TokenKind] = {
     "and": TokenKind.AND,
     "class": TokenKind.CLASS,
     "else": TokenKind.ELSE,
