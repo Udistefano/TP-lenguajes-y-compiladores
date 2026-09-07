@@ -83,6 +83,26 @@ class Lexer:
 
         self._add(kind)
 
+    def _scan_string(self) -> None:
+        """Consume un string entre comillas dobles y agrega su token."""
+
+        while self._peek() != '"' and not self._is_at_end():     # caso comilla final.
+            self._advance()
+
+        if self._is_at_end():
+            raise ScanError(
+                "String sin cerrar "
+                f"en la línea {self.token_line}, "
+                f"columna {self.token_column}"
+            )
+
+        # consumo la comilla final.
+        self._advance()
+
+        # ignorar las comillas iniciales y finales.
+        value = self.source[self.start + 1:self.current - 1]
+        self._add(TokenKind.STRING, value)
+
     def _scan_token(self) -> None:
         """Reconoce el token que comienza en la posición actual."""
 
@@ -114,6 +134,10 @@ class Lexer:
         kind = self.SINGLE_CHARACTER_TOKENS.get(character)
         if kind is not None:
             self._add(kind)
+            return
+
+        if character == '"':
+            self._scan_string()    # primera comilla ya consumida por advance.
             return
 
         if character.isdigit():
