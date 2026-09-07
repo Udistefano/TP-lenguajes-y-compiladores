@@ -45,6 +45,19 @@ class Lexer:
         ">": (TokenKind.GREATER, TokenKind.GREATER_EQUAL),
     }
 
+    @staticmethod
+    def _is_identifier_start(character: str) -> bool:
+        """Indica si un carácter puede comenzar un identificador."""
+
+        return character.isalpha() or character == "_"
+
+    @staticmethod
+    def _is_identifier_part(character: str) -> bool:
+        """Indica si un carácter puede continuar un identificador."""
+
+        return character.isalnum() or character == "_"
+
+
     def __init__(self, source: str) -> None:
         """Inicializa el recorrido al comienzo del código fuente recibido."""
 
@@ -58,6 +71,17 @@ class Lexer:
         # Posición inicial del token que se está reconociendo.
         self.token_line = 1
         self.token_column = 1
+
+    def _scan_identifier(self) -> None:
+        """Consume un identificador o una palabra reservada y agrega su token."""
+
+        while self._is_identifier_part(self._peek()):
+            self._advance()
+
+        text = self.source[self.start:self.current]
+        kind = KEYWORDS.get(text, TokenKind.IDENTIFIER)
+
+        self._add(kind)
 
     def _scan_token(self) -> None:
         """Reconoce el token que comienza en la posición actual."""
@@ -92,6 +116,14 @@ class Lexer:
             self._add(kind)
             return
 
+        if character.isdigit():
+            self._scan_number()
+            return
+
+        if self._is_identifier_start(character):
+            self._scan_identifier()
+            return
+
         raise ScanError(
             f"Carácter inesperado {character!r} "
             f"en la línea {self.token_line}, "
@@ -103,6 +135,22 @@ class Lexer:
 
         while self._peek() not in {"\n", "\0"}:
             self._advance()
+
+    def _scan_number(self) -> None:
+        """Consume un número entero o decimal y agrega su token."""
+
+        while self._peek().isdigit():
+            self._advance()
+
+        if self._peek() == "." and self._peek_next().isdigit():  # '.' para decimal.
+            self._advance()
+
+            while self._peek().isdigit():
+                self._advance()
+
+        # conversión del literal. lexema "12.5" -> literal 12.5
+        text = self.source[self.start:self.current]
+        self._add(TokenKind.NUMBER, float(text))
 
 
     def run(self) -> list[Token]:
