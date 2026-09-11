@@ -1,56 +1,78 @@
+from __future__ import annotations
+from dataclasses import dataclass
+from .tokens import Token
 
 
-#clase base para todos los nodos del árbol. Cada nodo debe implementar el método accept() para permitir que un visitante recorra el árbol y realice operaciones sobre los nodos.
 class Node:
-    def accept(self, visitor):
+    """
+    Clase base para todos los nodos del árbol. Cada nodo debe implementar el
+    método accept() para permitir que un visitante recorra el árbol y realice
+    operaciones sobre los nodos.
+    """
+
+    def accept(self, visitor: Visitor) -> object:
         raise NotImplementedError(
             f"{type(self).__name__} no implementa accept()"
         )
 
-# clase Visitor define la interfaz para los visitantes que pueden recorrer el árbol de nodos y realizar operaciones sobre ellos.
+
 class Visitor:
-    def visit_literal(self, expression):
+    """
+    interfaz para los visitantes que pueden recorrer el árbol de
+    nodos y realizar operaciones sobre ellos.
+    """
+
+    def visit_literal(self, expression: Literal) -> object:
         raise NotImplementedError()
 
-    def visit_unary(self, expression):
+    def visit_unary(self, expression: Unary) -> object:
         raise NotImplementedError()
 
-    def visit_binary(self, expression):
+    def visit_binary(self, expression: Binary) -> object:
         raise NotImplementedError()
 
-    def visit_grouping(self, expression):
+    def visit_grouping(self, expression: Grouping) -> object:
         raise NotImplementedError()
 
-#clase representa un literal, que puede ser un número, una cadena o un valor booleano.
+
+@dataclass(frozen=True, slots=True)
 class Literal(Node):
-    def __init__(self, value):
-        self.value = value
+    """puede ser un número, una cadena o un booleano."""
 
-    def accept(self, visitor):
+    value: float | str | bool | None
+
+    def accept(self, visitor: Visitor) -> object:
         return visitor.visit_literal(self)
 
-#clase representa una expresión unaria, que consiste en un operador y un operando.
-class Unary(Node):
-    def __init__(self, operator, operand):
-        self.operator = operator
-        self.operand = operand
 
-    def accept(self, visitor):
+@dataclass(frozen=True, slots=True)
+class Unary(Node):
+    """consiste en un operador y un operando."""
+
+    operator: Token
+    operand: Node
+
+    def accept(self, visitor: Visitor) -> object:
         return visitor.visit_unary(self)
 
-# clase representa una expresión binaria, que consiste en un operador y dos operandos.
+
+@dataclass(frozen=True, slots=True)
 class Binary(Node):
-    def __init__(self, left, operator, right):
-        self.left = left
-        self.operator = operator
-        self.right = right
-    def accept(self, visitor):
+    """consiste en un operador y dos operandos."""
+
+    left: Node
+    operator: Token
+    right: Node
+
+    def accept(self, visitor: Visitor) -> object:
         return visitor.visit_binary(self)
 
-# clase representa una expresión entre paréntesis. 
-class Grouping(Node):
-    def __init__(self, expression):
-        self.expression = expression
 
-    def accept(self, visitor):
+@dataclass(frozen=True, slots=True)
+class Grouping(Node):
+    """expresión entre paréntesis."""
+
+    expression: Node
+
+    def accept(self, visitor: Visitor) -> object:
         return visitor.visit_grouping(self)
