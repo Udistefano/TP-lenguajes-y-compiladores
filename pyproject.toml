@@ -7,6 +7,14 @@ requires-python = ">=3.12"
 [project.scripts]
 mylox = "mylox.cli:main"
 
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
 [build-system]
 requires = ["setuptools>=69"]
 build-backend = "setuptools.build_meta"
