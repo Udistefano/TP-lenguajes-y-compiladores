@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from ..errors import ParseError
-from ..nodes import Binary, Grouping, Literal, Node, Unary
+from ..nodes import Binary, Call, Grouping, Literal, Node, Unary
 from ..tokens import Token, TokenKind
 
 class Parser:
@@ -80,14 +80,36 @@ class Parser:
         return expression
 
     def _unary(self) -> Node:
-        """unary → ( "!" | "-" ) unary | primary"""
+        """unary → ( "!" | "-" ) unary | call"""
 
         if self._match(TokenKind.BANG, TokenKind.MINUS):
             operator = self._previous()
             right = self._unary()
             return Unary(operator, right)
 
-        return self._primary()
+        return self._call()
+
+    def _call(self) -> Node:
+        """call → primary ( "(" arguments? ")" )*"""
+
+        expression = self._primary()
+
+        while self._match(TokenKind.LEFT_PAREN):
+            paren = self._previous()
+            arguments: list[Node] = []
+
+            if not self._check(TokenKind.RIGHT_PAREN):
+                arguments.append(self._expression())
+                while self._match(TokenKind.COMMA):
+                    arguments.append(self._expression())
+
+            self._consume(
+                TokenKind.RIGHT_PAREN,
+                "Se esperaba ')' tras los argumentos",
+            )
+            expression = Call(expression, paren, arguments)
+
+        return expression
 
     def _primary(self) -> Node:
         """primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" """
@@ -160,3 +182,20 @@ class Parser:
         """Devuelve si el token actual es de tipo ``kind`` sin consumirlo."""
 
         return self._peek().kind is kind
+
+    def _consume(self, kind: TokenKind, message: str) -> Token:
+        """Consume y devuelve el token actual si es de tipo ``kind``.
+
+        Si no lo es, reporta un error de parseo con el mensaje recibido y la
+        posición del token encontrado.
+        """
+
+        if self._check(kind):
+            return self._advance()
+
+        token = self._peek()
+        raise ParseError(
+            f"{message}, "
+            f"se encontró {token.lexeme!r} "
+            f"en la línea {token.line}, columna {token.column}"
+        )

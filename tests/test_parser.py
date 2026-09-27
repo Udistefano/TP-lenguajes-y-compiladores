@@ -1,7 +1,7 @@
 import pytest
 
 from mylox.errors import ParseError
-from mylox.nodes import Binary, Grouping, Literal, Unary
+from mylox.nodes import Binary, Call, Grouping, Literal, Unary
 from mylox.pipeline.lexer import Lexer
 from mylox.pipeline.parser import Parser
 
@@ -91,3 +91,60 @@ def test_error_sin_expresion():
         parse(")")
     with pytest.raises(ParseError):
         parse("")
+
+
+def test_call_sin_argumentos():
+    ast = parse("1()")
+    assert ast == Call(
+        Literal(1.0),
+        next(tok for tok in Lexer("1()").run() if tok.lexeme == "("),
+        [],
+    )
+
+
+def test_call_con_argumentos():
+    ast = parse("1(2, 3)")
+    assert ast == Call(
+        Literal(1.0),
+        next(tok for tok in Lexer("1(2, 3)").run() if tok.lexeme == "("),
+        [Literal(2.0), Literal(3.0)],
+    )
+
+
+def test_call_anidado():
+    tokens = Lexer("1(2)(3)").run()
+    parens = [tok for tok in tokens if tok.lexeme == "("]
+    ast = parse("1(2)(3)")
+    inner = Call(Literal(1.0), parens[0], [Literal(2.0)])
+    assert ast == Call(inner, parens[1], [Literal(3.0)])
+
+
+def test_call_con_expresiones_como_argumentos():
+    tokens = Lexer("(1)(2, 3 + 4)").run()
+    ast = parse("(1)(2, 3 + 4)")
+    parens = [tok for tok in tokens if tok.lexeme == "("]
+    assert ast == Call(
+        Grouping(Literal(1.0)),
+        parens[1],
+        [
+            Literal(2.0),
+            Binary(Literal(3.0), next(tok for tok in tokens if tok.lexeme == "+"), Literal(4.0)),
+        ],
+    )
+
+
+def test_llamada_binde_mas_fuerte_que_unario():
+    ast = parse("-1(2)")
+    assert ast == Unary(
+        next(tok for tok in Lexer("-1(2)").run() if tok.lexeme == "-"),
+        Call(
+            Literal(1.0),
+            next(tok for tok in Lexer("-1(2)").run() if tok.lexeme == "("),
+            [Literal(2.0)],
+        ),
+    )
+
+
+def test_error_llamada_sin_parentesis_cerrado():
+    with pytest.raises(ParseError, match="Se esperaba '\\)' tras los argumentos"):
+        parse("1(2, 3")
