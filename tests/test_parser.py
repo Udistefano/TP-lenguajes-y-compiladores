@@ -1,7 +1,7 @@
 import pytest
 
 from mylox.errors import ParseError
-from mylox.nodes import Binary, Call, Grouping, Literal, Unary
+from mylox.nodes import Binary, Call, Grouping, Literal, Logical, Unary
 from mylox.pipeline.lexer import Lexer
 from mylox.pipeline.parser import Parser
 
@@ -55,6 +55,31 @@ def test_modulo_antes_que_suma():
     assert ast.operator.lexeme == "+"
     assert isinstance(ast.right, Binary)
     assert ast.right.operator.lexeme == "%"
+
+
+def test_or_simple():
+    ast = parse("true or false")
+    assert ast == Logical(
+        Literal(True),
+        next(tok for tok in Lexer("true or false").run() if tok.lexeme == "or"),
+        Literal(False),
+    )
+
+
+def test_and_binde_fuerte_que_or():
+    ast = parse("true or false and true")
+    assert isinstance(ast, Logical)
+    assert ast.operator.lexeme == "or"
+    assert isinstance(ast.right, Logical)
+    assert ast.right.operator.lexeme == "and"
+
+
+def test_and_or_encadenados():
+    ast = parse("1 or 2 or 3")
+    assert isinstance(ast, Logical)
+    assert ast.operator.lexeme == "or"
+    assert isinstance(ast.left, Logical)
+    assert ast.left.operator.lexeme == "or"
 
 
 def test_asociatividad_izquierda_a_derecha():

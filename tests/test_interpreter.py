@@ -49,6 +49,27 @@ def test_modulo_de_no_numeros_falla():
         eval_expr("true % 2")
 
 
+def test_or_devuelve_primer_truthy():
+    assert eval_expr("true or false") is True
+    assert eval_expr("false or 1") == 1.0
+    assert eval_expr("nil or 2") == 2.0
+    assert eval_expr("false or nil") is None
+
+
+def test_and_devuelve_primer_falsy():
+    assert eval_expr("true and nil") is None
+    assert eval_expr("1 and 2") == 2.0
+    assert eval_expr("false and 2") is False
+
+
+def test_or_corto_circuito_no_evalua_derecha():
+    assert eval_expr('true or "a" + 5') is True
+
+
+def test_and_corto_circuito_no_evalua_derecha():
+    assert eval_expr("false and 5 % 0") is False
+
+
 def test_agrupacion():
     assert eval_expr("(1 + 2) * 3") == 9.0
 

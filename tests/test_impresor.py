@@ -1,4 +1,4 @@
-from mylox.nodes import Binary, Call, Grouping, Literal, Unary
+from mylox.nodes import Binary, Call, Grouping, Literal, Logical, Unary
 from mylox.printing import imprimir
 from mylox.tokens import Token, TokenKind
 
@@ -46,3 +46,12 @@ def test_call():
 def test_call_sin_argumentos():
     expr = Call(Literal(1.0), _token(TokenKind.LEFT_PAREN, "("), [])
     assert imprimir(expr) == "Call(Literal(1.0), args=[])"
+
+
+def test_logical():
+    expr = Logical(
+        Literal(True),
+        _token(TokenKind.OR, "or"),
+        Literal(False),
+    )
+    assert imprimir(expr) == "Logical(Literal(True), 'or', Literal(False))"
