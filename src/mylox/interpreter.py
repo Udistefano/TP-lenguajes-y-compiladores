@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from .errors import LoxRuntimeError
-from .nodes import Binary, Grouping, Literal, Node, Unary, Visitor
+from .nodes import Binary, Call, Grouping, Literal, Node, Unary, Visitor
 from .tokens import Token, TokenKind
 
 
@@ -25,6 +25,10 @@ class Interpreter(Visitor):
     def is_truthy(self, value: object) -> bool:
         """En Lox, `nil` y `false` son falsy; el resto (incluido 0) es truthy."""
         return not (value is None or value is False)
+
+    def is_callable(self, value: object) -> bool:
+        """Devuelve si el valor es invocable como una función o clase."""
+        return hasattr(value, "arity") and hasattr(value, "call")
 
     def check_number_operands(self, operator: Token, left: object, right: object) -> None:
         if not (self.is_number(left) and self.is_number(right)):
@@ -62,8 +66,28 @@ class Interpreter(Visitor):
                 return not self.is_truthy(right)
 
         raise LoxRuntimeError(
-            expression.operator,"Unknown unary operator " + expression.operator.lexeme,
+            expression.operator, "Unknown unary operator " + expression.operator.lexeme,
         )
+
+    def visit_call(self, expression: Call) -> object:
+        """Evalúa el callable y sus argumentos, valida la aridad e invoca."""
+
+        callee = self.evaluate(expression.callee)
+
+        if not self.is_callable(callee):
+            raise LoxRuntimeError(
+                expression.paren, "Can only call functions and classes."
+            )
+
+        arguments = [self.evaluate(argument) for argument in expression.arguments]
+
+        if len(arguments) != callee.arity:
+            raise LoxRuntimeError(
+                expression.paren,
+                "Expected " + str(callee.arity) + " arguments but got " + str(len(arguments)) + ".",
+            )
+
+        return callee.call(self, arguments)
 
     def visit_binary(self, expression: Binary) -> object:
         left = self.evaluate(expression.left)

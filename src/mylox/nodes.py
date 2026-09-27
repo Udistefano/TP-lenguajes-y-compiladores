@@ -34,6 +34,9 @@ class Visitor:
     def visit_grouping(self, expression: Grouping) -> object:
         raise NotImplementedError()
 
+    def visit_call(self, expression: Call) -> object:
+        raise NotImplementedError()
+
 
 @dataclass(frozen=True, slots=True)
 class Literal(Node):
@@ -76,3 +79,14 @@ class Grouping(Node):
 
     def accept(self, visitor: Visitor) -> object:
         return visitor.visit_grouping(self)
+
+@dataclass(frozen=True, slots=True)
+class Call(Node):
+    """llamada a una función o a una clase callable"""
+
+    callee: Node
+    paren: Token
+    arguments: list[Node]
+
+    def accept(self, visitor: Visitor) -> object:
+        return visitor.visit_call(self)
