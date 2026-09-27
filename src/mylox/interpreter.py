@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from .errors import LoxRuntimeError
-from .nodes import Binary, Call, Grouping, Literal, Node, Unary, Visitor
+from .nodes import Binary, Call, Grouping, Literal, Logical, Node, Unary, Visitor
 from .tokens import Token, TokenKind
 
 
@@ -88,6 +88,19 @@ class Interpreter(Visitor):
             )
 
         return callee.call(self, arguments)
+
+    def visit_logical(self, expression: Logical) -> object:
+        """Evalúa `and`/`or` con corto circuito, devolviendo operandos, no bools."""
+
+        left = self.evaluate(expression.left)
+
+        if expression.operator.kind == TokenKind.OR and self.is_truthy(left):
+            return left
+
+        if expression.operator.kind == TokenKind.AND and not self.is_truthy(left):
+            return left
+
+        return self.evaluate(expression.right)
 
     def visit_binary(self, expression: Binary) -> object:
         left = self.evaluate(expression.left)

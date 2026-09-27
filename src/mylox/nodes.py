@@ -37,6 +37,9 @@ class Visitor:
     def visit_call(self, expression: Call) -> object:
         raise NotImplementedError()
 
+    def visit_logical(self, expression: Logical) -> object:
+        raise NotImplementedError()
+
 
 @dataclass(frozen=True, slots=True)
 class Literal(Node):
@@ -90,3 +93,15 @@ class Call(Node):
 
     def accept(self, visitor: Visitor) -> object:
         return visitor.visit_call(self)
+
+
+@dataclass(frozen=True, slots=True)
+class Logical(Node):
+    """expresión lógica `and` / `or` con corto circuito."""
+
+    left: Node
+    operator: Token
+    right: Node
+
+    def accept(self, visitor: Visitor) -> object:
+        return visitor.visit_logical(self)

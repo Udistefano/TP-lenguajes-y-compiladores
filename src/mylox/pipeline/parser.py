@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from ..errors import ParseError
-from ..nodes import Binary, Call, Grouping, Literal, Node, Unary
+from ..nodes import Binary, Call, Grouping, Literal, Logical, Node, Unary
 from ..tokens import Token, TokenKind
 
 class Parser:
@@ -22,9 +22,33 @@ class Parser:
     # Reglas de producción 
 
     def _expression(self) -> Node:
-        """expression → equality"""
+        """expression → or"""
 
-        return self._equality()
+        return self._or()
+
+    def _or(self) -> Node:
+        """or → and ( "or" and )*"""
+
+        expression = self._and()
+
+        while self._match(TokenKind.OR):
+            operator = self._previous()
+            right = self._and()
+            expression = Logical(expression, operator, right)
+
+        return expression
+
+    def _and(self) -> Node:
+        """and → equality ( "and" equality )*"""
+
+        expression = self._equality()
+
+        while self._match(TokenKind.AND):
+            operator = self._previous()
+            right = self._equality()
+            expression = Logical(expression, operator, right)
+
+        return expression
 
     def _equality(self) -> Node:
         """equality → comparison ( ( "!=" | "==" ) comparison )*"""

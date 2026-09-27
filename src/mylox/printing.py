@@ -1,5 +1,5 @@
 from __future__ import annotations
-from .nodes import Binary, Call, Grouping, Literal, Node, Unary, Visitor
+from .nodes import Binary, Call, Grouping, Literal, Logical, Node, Unary, Visitor
 
 class Impresor(Visitor):
     """Convierte un árbol de nodos en una representación textual verbosa."""
@@ -23,6 +23,9 @@ class Impresor(Visitor):
     def visit_call(self, expression: Call) -> str:
         args = ", ".join(arg.accept(self) for arg in expression.arguments)
         return f"Call({expression.callee.accept(self)}, args=[{args}])"
+
+    def visit_logical(self, expression: Logical) -> str:
+        return f"Logical({expression.left.accept(self)}, {expression.operator.lexeme!r}, {expression.right.accept(self)})"
 
 
 def imprimir(nodo: Node) -> str:
