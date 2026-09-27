@@ -40,6 +40,23 @@ def test_division_antes_que_resta():
     assert ast.left.operator.lexeme == "/"
 
 
+def test_modulo_precedencia_multiplicativa():
+    ast = parse("7 % 3")
+    assert ast == Binary(
+        Literal(7.0),
+        next(tok for tok in Lexer("7 % 3").run() if tok.lexeme == "%"),
+        Literal(3.0),
+    )
+
+
+def test_modulo_antes_que_suma():
+    ast = parse("5 + 8 % 3")
+    assert isinstance(ast, Binary)
+    assert ast.operator.lexeme == "+"
+    assert isinstance(ast.right, Binary)
+    assert ast.right.operator.lexeme == "%"
+
+
 def test_asociatividad_izquierda_a_derecha():
     ast = parse("5 - 3 - 1")
     assert isinstance(ast, Binary)

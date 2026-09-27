@@ -107,6 +107,9 @@ class Interpreter(Visitor):
             case TokenKind.SLASH:
                 self.check_number_operands(expression.operator, left, right)
                 return left / right
+            case TokenKind.PERCENT:
+                self.check_number_operands(expression.operator, left, right)
+                return left % right
             case TokenKind.GREATER:
                 self.check_number_operands(expression.operator, left, right)
                 return left > right

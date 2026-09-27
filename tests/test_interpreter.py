@@ -36,6 +36,19 @@ def test_precedencia():
     assert eval_expr("6 / 3 - 1") == 1.0
 
 
+def test_modulo():
+    assert eval_expr("7 % 4") == 3.0
+    assert eval_expr("5.5 % 2") == 1.5
+    assert eval_expr("10 % 3 * 2") == 2.0
+
+
+def test_modulo_de_no_numeros_falla():
+    with pytest.raises(LoxRuntimeError):
+        eval_expr('"a" % 2')
+    with pytest.raises(LoxRuntimeError):
+        eval_expr("true % 2")
+
+
 def test_agrupacion():
     assert eval_expr("(1 + 2) * 3") == 9.0
 

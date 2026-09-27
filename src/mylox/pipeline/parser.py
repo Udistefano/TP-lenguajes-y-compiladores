@@ -68,11 +68,11 @@ class Parser:
         return expression
 
     def _factor(self) -> Node:
-        """factor → unary ( ( "/" | "*" ) unary )*"""
+        """factor → unary ( ( "/" | "*" | "%" ) unary )*"""
 
         expression = self._unary()
 
-        while self._match(TokenKind.SLASH, TokenKind.STAR):
+        while self._match(TokenKind.SLASH, TokenKind.STAR, TokenKind.PERCENT):
             operator = self._previous()
             right = self._unary()
             expression = Binary(expression, operator, right)
