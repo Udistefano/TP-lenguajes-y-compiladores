@@ -91,6 +91,14 @@ class Visitor:
     def visit_logical(self, expression: Logical) -> object:
         raise NotImplementedError()
 
+    def visit_function_decl(self, statement: FunctionDecl) -> object:
+        """Define la operación sobre el nombre, parámetros y cuerpo de fun."""
+        raise NotImplementedError()
+
+    def visit_return_stmt(self, statement: ReturnStmt) -> object:
+        """Define la operación sobre return y su expresión opcional."""
+        raise NotImplementedError()
+
 
 
 
@@ -303,3 +311,37 @@ class Logical(Node):
 
     def accept(self, visitor: Visitor) -> object:
         return visitor.visit_logical(self)
+
+
+@dataclass(frozen=True, slots=True)
+class FunctionDecl(Node):
+    """Declaración fun con la interfaz que consume Function.call.
+
+    ``name`` y ``parameters`` conservan los tokens de los identificadores.
+    ``body`` es una lista de sentencias: al invocar se ejecuta directamente
+    en el ámbito de los parámetros, sin agregar un bloque intermedio.
+    """
+
+    name: Token
+    parameters: list[Token]
+    body: list[Node]
+
+    def accept(self, visitor: Visitor) -> object:
+        """Selecciona visit_function_decl sin ejecutar todavía el cuerpo."""
+        return visitor.visit_function_decl(self)
+
+
+@dataclass(frozen=True, slots=True)
+class ReturnStmt(Node):
+    """Salida anticipada de una función con un valor opcional.
+
+    ``keyword`` conserva la posición de return para informar errores.
+    ``value = None`` representa return sin expresión, que devuelve nil.
+    """
+
+    keyword: Token
+    value: Node | None
+
+    def accept(self, visitor: Visitor) -> object:
+        """Selecciona visit_return_stmt para visitar la salida de la función."""
+        return visitor.visit_return_stmt(self)

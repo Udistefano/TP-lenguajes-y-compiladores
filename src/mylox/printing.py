@@ -7,8 +7,8 @@ ni producir los efectos de sus sentencias.
 from __future__ import annotations
 
 from .nodes import (
-    Assign, Binary, BlockStmt, Call, ExprStmt, Grouping, IfStmt,
-    Literal, Logical, Node, PrintStmt, Unary, VarDecl, Variable,
+    Assign, Binary, BlockStmt, Call, ExprStmt, FunctionDecl, Grouping, IfStmt,
+    Literal, Logical, Node, PrintStmt, ReturnStmt, Unary, VarDecl, Variable,
     Visitor, WhileStmt,
 )
 
@@ -104,6 +104,17 @@ class Impresor(Visitor):
     def visit_while_stmt(self, statement: WhileStmt) -> str:
         """Describe una vez la condición y el cuerpo de WhileStmt, sin iterar."""
         return f"WhileStmt({statement.condition.accept(self)}, {statement.body.accept(self)})"
+
+    def visit_function_decl(self, statement: FunctionDecl) -> str:
+        """Describe nombre, parámetros y cuerpo de fun sin crear una función."""
+        parameters = ", ".join(repr(parameter.lexeme) for parameter in statement.parameters)
+        body = ", ".join(item.accept(self) for item in statement.body)
+        return f"FunctionDecl({statement.name.lexeme!r}, [{parameters}], [{body}])"
+
+    def visit_return_stmt(self, statement: ReturnStmt) -> str:
+        """Describe return y su posible expresión sin abandonar ningún cuerpo."""
+        value = statement.value.accept(self) if statement.value is not None else "nil"
+        return f"ReturnStmt({value})"
 
 
 
