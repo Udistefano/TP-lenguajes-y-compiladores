@@ -280,16 +280,21 @@ class Interpreter(Visitor):
         )
 
     def visit_call(self, expression: Call) -> object:
-        """Evalúa el callable y sus argumentos, valida la aridad e invoca."""
+        """Evalúa el callee y los argumentos en orden, y luego invoca.
+
+        Los argumentos se evalúan de izquierda a derecha antes de validar
+        que el callee sea invocable y tenga la aridad correcta. Un error de
+        invocación usa el token de los paréntesis; una función válida recibe
+        esta instancia de Interpreter y los valores ya calculados.
+        """
 
         callee = self.evaluate(expression.callee)
+        arguments = [self.evaluate(argument) for argument in expression.arguments]
 
         if not self.is_callable(callee):
             raise LoxRuntimeError(
                 expression.paren, "Can only call functions and classes."
             )
-
-        arguments = [self.evaluate(argument) for argument in expression.arguments]
 
         if len(arguments) != callee.arity:
             raise LoxRuntimeError(

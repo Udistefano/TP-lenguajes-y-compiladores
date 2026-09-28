@@ -91,6 +91,21 @@ def test_aridad_y_valores_no_invocables_producen_error_runtime(source, capsys):
     assert captured.err.startswith("[error]")
 
 
+def test_argumentos_en_orden_incluso_antes_de_error_de_invocacion(capsys):
+    interpreter = Interpreter()
+    source = """
+        var contador = 0;
+        fun siguiente() { contador = contador + 1; return contador; }
+        fun mostrar(a, b) { print a; print b; }
+        mostrar(siguiente(), siguiente());
+        1(siguiente());
+    """
+    with pytest.raises(LoxRuntimeError, match="Can only call"):
+        interpreter.interpret(program(source))
+    assert capsys.readouterr().out == "1\n2\n"
+    assert interpreter.globals.get(Token(TokenKind.IDENTIFIER, "contador")) == 3.0
+
+
 def test_error_en_funcion_restaura_ambito_del_llamador():
     interpreter = Interpreter()
     with pytest.raises(LoxRuntimeError):
