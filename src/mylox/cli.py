@@ -45,14 +45,13 @@ def run_tree(source: str) -> int:
 def run_actions(source: str) -> int:
     """Modo ejecución (default): escanea, parsea y evalúa la fuente."""
     try:
-        tree = Parser(Lexer(source).run()).parse()
-        value = Interpreter().evaluate(tree)
+        program = Parser(Lexer(source).run()).parse()
+        Interpreter().interpret(program)
     except (ScanError, ParseError) as error:
         return report_error(error)
     except LoxRuntimeError as error:
         return report_error(error)
 
-    print(value)
     return EXIT_OK
 
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from .errors import LoxRuntimeError
-from .nodes import Binary, Grouping, Literal, Node, Unary, Visitor
+from .nodes import Binary, ExprStmt, Grouping, Literal, Node, PrintStmt, Unary, Visitor
 from .tokens import Token, TokenKind
 
 
@@ -13,6 +13,51 @@ class Interpreter(Visitor):
     def evaluate(self, expression: Node) -> object:
         """Evalúa una expresión y devuelve el valor resultante."""
         return expression.accept(self)
+
+    def interpret(self, statements: list[Node]) -> None:
+        """Ejecuta las sentencias del programa en orden mediante accept(self).
+
+        Descarta el resultado de cada sentencia y devuelve None al terminar.
+        Una lista vacía no realiza acciones. Si una sentencia lanza una
+        excepción, la propaga y no ejecuta las sentencias siguientes.
+        """
+        for statement in statements:
+            statement.accept(self)
+
+    def visit_expr_stmt(self, statement: ExprStmt) -> None:
+        """Evalúa una expresión usada como sentencia y descarta su valor.
+
+        Por ejemplo, 2 + 3; calcula 5 sin imprimirlo. Los errores de la
+        expresión se propagan y la sentencia devuelve None.
+        """
+        self.evaluate(statement.expression)
+
+    def visit_print_stmt(self, statement: PrintStmt) -> None:
+        """Evalúa la expresión de ``print`` y escribe su valor en stdout.
+
+        ``stringify()`` aplica el formato de Lox, como ``nil`` y ``true``,
+        y ``print()`` agrega el salto de línea. La expresión se evalúa una
+        sola vez; la sentencia produce ese efecto y devuelve None.
+        """
+        print(self.stringify(self.evaluate(statement.expression)))
+
+    def stringify(self, value: object) -> str:
+        """Convierte un valor ya evaluado a su representación textual en Lox.
+
+        None se escribe ``nil`` y los booleanos se escriben en minúscula.
+        Los números enteros almacenados como float se muestran sin ``.0``;
+        las cadenas se muestran sin comillas. Devuelve texto sin imprimirlo
+        ni agregar un salto de línea.
+        """
+        if value is None:
+            return "nil"
+        if value is True:
+            return "true"
+        if value is False:
+            return "false"
+        if isinstance(value, float) and value.is_integer():
+            return str(int(value))
+        return str(value)
 
     # helpers
 

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from .nodes import Binary, Grouping, Literal, Node, Unary, Visitor
+from .nodes import Binary, ExprStmt, Grouping, Literal, Node, PrintStmt, Unary, Visitor
 
 class Impresor(Visitor):
     """Convierte un árbol de nodos en una representación textual verbosa."""
@@ -20,8 +20,23 @@ class Impresor(Visitor):
     def visit_grouping(self, expression: Grouping) -> str:
         return f"Grouping({expression.expression.accept(self)})"
 
+    def visit_expr_stmt(self, statement: ExprStmt) -> str:
+        """Envuelve la descripción de la expresión en ExprStmt, sin evaluarla."""
+        return f"ExprStmt({statement.expression.accept(self)})"
 
-def imprimir(nodo: Node) -> str:
-    """Devuelve la representación verbosa del árbol de expresiones recibido."""
+    def visit_print_stmt(self, statement: PrintStmt) -> str:
+        """Describe PrintStmt y su expresión sin ejecutar el print de Lox."""
+        return f"PrintStmt({statement.expression.accept(self)})"
 
-    return nodo.accept(Impresor())
+
+def imprimir(nodo: Node | list[Node]) -> str:
+    """Devuelve la descripción de un nodo o de una lista que forma un programa.
+
+    Crea un Impresor y despacha mediante accept. Para un programa une el texto
+    de cada sentencia con saltos de línea; una lista vacía produce una cadena
+    vacía. El llamador decide dónde mostrar el texto devuelto.
+    """
+    visitor = Impresor()
+    if isinstance(nodo, list):
+        return "\n".join(statement.accept(visitor) for statement in nodo)
+    return nodo.accept(visitor)

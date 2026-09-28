@@ -34,6 +34,14 @@ class Visitor:
     def visit_grouping(self, expression: Grouping) -> object:
         raise NotImplementedError()
 
+    def visit_expr_stmt(self, statement: ExprStmt) -> object:
+        """Define la operación sobre una expresión usada como sentencia."""
+        raise NotImplementedError()
+
+    def visit_print_stmt(self, statement: PrintStmt) -> object:
+        """Define la operación sobre una sentencia print y su expresión."""
+        raise NotImplementedError()
+
 
 @dataclass(frozen=True, slots=True)
 class Literal(Node):
@@ -76,3 +84,32 @@ class Grouping(Node):
 
     def accept(self, visitor: Visitor) -> object:
         return visitor.visit_grouping(self)
+
+
+@dataclass(frozen=True, slots=True)
+class ExprStmt(Node):
+    """Representa una expresión terminada por punto y coma, como ``2 + 3;``.
+
+    ``expression`` guarda el cálculo. Al ejecutar esta sentencia,
+    Interpreter conserva sus efectos y descarta el valor devuelto.
+    """
+
+    expression: Node
+
+    def accept(self, visitor: Visitor) -> object:
+        """Selecciona ``visit_expr_stmt`` para visitar la sentencia completa."""
+        return visitor.visit_expr_stmt(self)
+
+
+@dataclass(frozen=True, slots=True)
+class PrintStmt(Node):
+    """Representa ``print expresión;`` y conserva la expresión a mostrar.
+
+    El nodo contiene la estructura; el visitante decide cómo ejecutarla
+    o describirla. Interpreter evalúa su expresión y escribe el valor.
+    """
+    expression: Node
+
+    def accept(self, visitor: Visitor) -> object:
+        """Selecciona ``visit_print_stmt`` para visitar la sentencia completa."""
+        return visitor.visit_print_stmt(self)

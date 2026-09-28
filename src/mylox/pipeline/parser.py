@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from ..errors import ParseError
-from ..nodes import Binary, Grouping, Literal, Node, Unary
+from ..nodes import Binary, ExprStmt, Grouping, Literal, Node, PrintStmt, Unary
 from ..tokens import Token, TokenKind
 
 class Parser:
@@ -15,9 +15,32 @@ class Parser:
         self.tokens = tokens
         self.current = 0
 
-    def parse(self) -> Node:
-        """Construye el árbol de la expresión completa."""
-        return self._expression()
+    def parse(self) -> list[Node]:
+        """Construye todas las sentencias del programa hasta encontrar EOF.
+
+        Cada vuelta agrega un nodo producido por _statement(). Un programa
+        vacío devuelve una lista vacía. Los errores de sintaxis se propagan
+        también después de una sentencia válida; no se devuelve un AST parcial.
+        """
+        statements: list[Node] = []
+        while not self._check(TokenKind.EOF):
+            statements.append(self._statement())
+        return statements
+
+    def _statement(self) -> Node:
+        """Construye una sentencia print o una sentencia de expresión.
+
+        Si encuentra PRINT, consume la palabra y construye su expresión.
+        En otro caso lee una expresión ordinaria. Ambas formas exigen un
+        punto y coma final y devuelven su nodo sin ejecutar la sentencia.
+        """
+        if self._match(TokenKind.PRINT):
+            expression = self._expression()
+            self._consume(TokenKind.SEMICOLON, "Se esperaba ';' después de print")
+            return PrintStmt(expression)
+        expression = self._expression()
+        self._consume(TokenKind.SEMICOLON, "Se esperaba ';' después de la expresión")
+        return ExprStmt(expression)
 
     # Reglas de producción 
 
@@ -160,3 +183,18 @@ class Parser:
         """Devuelve si el token actual es de tipo ``kind`` sin consumirlo."""
 
         return self._peek().kind is kind
+
+    def _consume(self, kind: TokenKind, message: str) -> Token:
+        """Exige un tipo de token y lo consume, o informa un error de sintaxis.
+
+        Si coincide, devuelve el Token y avanza. Si no coincide, lanza
+        ParseError con ``message``, el lexema encontrado y su línea y columna.
+        El llamador usa este método para nombres y delimitadores obligatorios.
+        """
+        if self._check(kind):
+            return self._advance()
+        token = self._peek()
+        raise ParseError(
+            f"{message}, se encontró {token.lexeme!r} "
+            f"en la línea {token.line}, columna {token.column}"
+        )
