@@ -19,7 +19,7 @@ def ejecutar(source: str) -> None:
     """Escanea, parsea y evalúa un programa completo sin imprimir su resultado."""
 
     tree = Parser(Lexer(source).run()).parse()
-    Interpreter().evaluate(tree)
+    Interpreter().interpret(tree)
 
 
 def medir(source: str, repeticiones: int) -> list[float]:
