@@ -55,9 +55,10 @@ uv run python tests/strict_real_tests.py
 El verificador busca `plox/real-tests/` como repositorio hermano; se puede
 indicar otra ubicación con `--test-dir`.
 
-Estado de esta rama: `1-flow.lox` pasa la verificación estricta. Los otros cuatro
-programas requieren completar e integrar funciones y closures. Que el script
-de la cátedra muestre «Todo OK» no confirma salida ni código de salida correctos.
+La integración de statements, variables, flujo, funciones y closures pasa los
+cinco programas con stdout exacto, stderr vacío y código de salida 0. El script
+de la cátedra también pasa; por sí solo sólo comprueba que stdout no tenga
+la palabra `ERROR`.
 
 ## Guías del código
 
@@ -65,17 +66,26 @@ de la cátedra muestre «Todo OK» no confirma salida ni código de salida corre
 - [Statements y print](docs/statements.md).
 - [Variables y ámbitos](docs/variables.md).
 - [Control de flujo](docs/control-de-flujo.md).
+- [Funciones, retornos y closures](docs/funciones-y-closures.md).
 
 ## Integración con funciones
 
-La rama `statements-flow` implementa sentencias, variables y control de flujo.
-Para ejecutar una función, la rama de funciones puede guardar
-`interpreter.environment` al declararla y llamar a
-`interpreter.execute_block(body, Env(enclosing=closure))` al invocarla.
+La rama `functions-and-closures` incorpora el trabajo de `statements-flow`.
+`visit_function_decl()` guarda `interpreter.environment` en una `Function`.
+`Function.call()` ejecuta el cuerpo mediante
+`interpreter.execute_block(body, Env(enclosing=closure))`.
 `Env.define(name: str, value)`, `Env.get(name: Token)` y
 `Env.assign(name: Token, value)` son las operaciones de ámbito disponibles.
-La declaración de función debe exponer `name: Token`, `parameters: list[Token]`
-y `body: list[Node]`, que son los campos consumidos por `Function.call` en la
-rama `origin/functions-and-closures` examinada. La resolución léxica de
-referencias dentro de closures deberá conservar el vínculo con el ámbito
-visible en el punto de declaración.
+`FunctionDecl` expone `name: Token`, `parameters: list[Token]` y `body: list[Node]`,
+que son los campos consumidos por `Function.call`. `BindingResolver` conserva
+los vínculos léxicos de las referencias; el intérprete usa `get_local()` y
+`assign_local()` para acceder al ámbito elegido.
+
+## Benchmark
+
+```sh
+uv run python benchmarks/bench.py benchmarks/programas/suma.lox -n 20
+```
+
+El benchmark usa el mismo parseo, resolución y ejecución de programas que
+la CLI. Los programas medidos deben incluir los puntos y coma de Lox.
