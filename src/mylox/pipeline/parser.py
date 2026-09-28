@@ -8,8 +8,8 @@ from __future__ import annotations
 
 from ..errors import ParseError
 from ..nodes import (
-    Assign, Binary, BlockStmt, Call, ExprStmt, Grouping, IfStmt,
-    Literal, Logical, Node, PrintStmt, Unary, VarDecl, Variable, WhileStmt,
+    Assign, Binary, BlockStmt, Call, ExprStmt, FunctionDecl, Grouping, IfStmt,
+    Literal, Logical, Node, PrintStmt, ReturnStmt, Unary, VarDecl, Variable, WhileStmt,
 )
 from ..tokens import Token, TokenKind
 
@@ -45,13 +45,15 @@ class Parser:
         return statements
 
     def _declaration(self) -> Node:
-        """Lee una declaración ``var`` o delega en una sentencia ordinaria.
+        """Lee una declaración var o fun, o delega en una sentencia ordinaria.
 
         La declaración tiene forma ``var nombre (= expresión)? ;``. Guarda
         un inicializador opcional en VarDecl; su ausencia se representa con
         None en el AST. Aquí se reconoce la sintaxis: el nombre y su valor
         se incorporan al ambiente recién al ejecutar el nodo.
         """
+        if self._match(TokenKind.FUN):
+            return self._function_declaration()
         if self._match(TokenKind.VAR):
             name = self._consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de variable")
             initializer = self._expression() if self._match(TokenKind.EQUAL) else None
@@ -63,7 +65,7 @@ class Parser:
     def _statement(self) -> Node:
         """Selecciona la forma de sentencia a partir del próximo token.
 
-        Reconoce if, while, for, print y bloques. Si ninguna palabra o llave
+        Reconoce if, while, for, print, return y bloques. Si ninguna palabra o llave
         inicia esas formas, construye una ExprStmt. PrintStmt y ExprStmt
         necesitan un ``;`` final. Los cuerpos de control también llaman
         a este método, lo que permite anidar sentencias recursivamente.
@@ -74,6 +76,8 @@ class Parser:
             return self._while_statement()
         if self._match(TokenKind.FOR):
             return self._for_statement()
+        if self._match(TokenKind.RETURN):
+            return self._return_statement()
         if self._match(TokenKind.PRINT):
             expression = self._expression()
             self._consume(TokenKind.SEMICOLON, "Se esperaba ';' después de print")
@@ -442,3 +446,34 @@ class Parser:
             f"{message}, se encontró {token.lexeme!r} "
             f"en la línea {token.line}, columna {token.column}"
         )
+
+    def _function_declaration(self) -> FunctionDecl:
+        """Lee ``fun nombre (parámetros?) { cuerpo }`` tras consumir fun.
+
+        Los parámetros son identificadores separados por comas. El cuerpo
+        usa _block para admitir declaraciones y funciones anidadas. Devuelve
+        FunctionDecl con los campos compartidos con Function.call; los tokens
+        obligatorios faltantes producen ParseError con su posición.
+        """
+        name = self._consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de función")
+        self._consume(TokenKind.LEFT_PAREN, "Se esperaba '(' después del nombre")
+        parameters: list[Token] = []
+        if not self._check(TokenKind.RIGHT_PAREN):
+            parameters.append(self._consume(TokenKind.IDENTIFIER, "Se esperaba un parámetro"))
+            while self._match(TokenKind.COMMA):
+                parameters.append(self._consume(TokenKind.IDENTIFIER, "Se esperaba un parámetro"))
+        self._consume(TokenKind.RIGHT_PAREN, "Se esperaba ')' después de los parámetros")
+        self._consume(TokenKind.LEFT_BRACE, "Se esperaba '{' antes del cuerpo de la función")
+        return FunctionDecl(name, parameters, self._block())
+
+    def _return_statement(self) -> ReturnStmt:
+        """Lee una expresión opcional y el punto y coma después de return.
+
+        Tanto ``return;`` como ``return expresión;`` producen ReturnStmt.
+        Este método reconoce su forma; la resolución posterior verifica
+        que aparezca dentro de una función, incluso si la rama no se ejecuta.
+        """
+        keyword = self._previous()
+        value = None if self._check(TokenKind.SEMICOLON) else self._expression()
+        self._consume(TokenKind.SEMICOLON, "Se esperaba ';' después de return")
+        return ReturnStmt(keyword, value)
