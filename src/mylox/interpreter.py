@@ -3,8 +3,8 @@ from __future__ import annotations
 from .env import Env
 from .errors import LoxRuntimeError
 from .nodes import (
-    Assign, Binary, BlockStmt, ExprStmt, Grouping, Literal, Node,
-    PrintStmt, Unary, VarDecl, Variable, Visitor,
+    Assign, Binary, BlockStmt, ExprStmt, Grouping, IfStmt, Literal, Node,
+    PrintStmt, Unary, VarDecl, Variable, Visitor, WhileStmt,
 )
 from .tokens import Token, TokenKind
 
@@ -120,6 +120,30 @@ class Interpreter(Visitor):
         """
         self.execute_block(statement.statements, Env(enclosing=self.environment))
 
+    def visit_if_stmt(self, statement: IfStmt) -> None:
+        """Evalúa la condición de ``if`` y ejecuta solamente la rama elegida.
+
+        Si ``is_truthy()`` considera verdadero el valor, ejecuta ``then_branch``.
+        En caso contrario ejecuta ``else_branch`` si está presente. La condición
+        se evalúa una sola vez; los errores de la rama elegida se propagan y
+        la sentencia devuelve None.
+        """
+        if self.is_truthy(self.evaluate(statement.condition)):
+            statement.then_branch.accept(self)
+        elif statement.else_branch is not None:
+            statement.else_branch.accept(self)
+
+    def visit_while_stmt(self, statement: WhileStmt) -> None:
+        """Repite el cuerpo de ``while`` mientras la condición sea verdadera.
+
+        Reevalúa el AST de la condición antes de cada vuelta para observar los
+        valores actualizados por el cuerpo. Si empieza siendo falsa, el cuerpo
+        no se ejecuta. También ejecuta los ``for`` que el parser transformó
+        en WhileStmt. Devuelve None al terminar y propaga errores del cuerpo.
+        """
+        while self.is_truthy(self.evaluate(statement.condition)):
+            statement.body.accept(self)
+
     def stringify(self, value: object) -> str:
         """Convierte un valor ya evaluado a su representación textual en Lox.
 
@@ -147,7 +171,12 @@ class Interpreter(Visitor):
         return isinstance(value, str)
 
     def is_truthy(self, value: object) -> bool:
-        """En Lox, `nil` y `false` son falsy; el resto (incluido 0) es truthy."""
+        """Devuelve la interpretación de un valor como condición de Lox.
+
+        Solamente None (``nil``) y False se consideran falsos. El cero y la
+        cadena vacía son verdaderos. Usar esta regla evita las diferencias
+        con ``bool()`` de Python al ejecutar ``if``, ``while`` o ``!``.
+        """
         return not (value is None or value is False)
 
     def check_number_operands(self, operator: Token, left: object, right: object) -> None:

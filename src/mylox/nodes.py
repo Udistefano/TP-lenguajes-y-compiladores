@@ -58,6 +58,14 @@ class Visitor:
         """Define la operación sobre una lista de nodos encerrada entre llaves."""
         raise NotImplementedError()
 
+    def visit_if_stmt(self, statement: IfStmt) -> object:
+        """Define la operación sobre una condición y las ramas de un if."""
+        raise NotImplementedError()
+
+    def visit_while_stmt(self, statement: WhileStmt) -> object:
+        """Define la operación sobre una condición y el cuerpo de un bucle."""
+        raise NotImplementedError()
+
 
 @dataclass(frozen=True, slots=True)
 class Literal(Node):
@@ -182,11 +190,44 @@ class BlockStmt(Node):
     """Lista de declaraciones y sentencias agrupadas entre llaves.
 
     ``statements`` conserva el orden del cuerpo y puede estar vacía.
-    Interpreter ejecuta esta lista en un ámbito propio y restaura el
-    ambiente exterior al terminar o al propagarse un error.
+    Interpreter ejecuta esta lista en un ámbito propio; el parser también
+    usa bloques al transformar un for en un while con inicio e incremento.
     """
     statements: list[Node]
 
     def accept(self, visitor: Visitor) -> object:
         """Selecciona ``visit_block_stmt`` para visitar el cuerpo del bloque."""
         return visitor.visit_block_stmt(self)
+
+
+@dataclass(frozen=True, slots=True)
+class IfStmt(Node):
+    """Selección entre una rama verdadera y una rama else opcional.
+
+    ``condition`` es una expresión. Cada rama es una sentencia, que puede
+    ser un bloque o un if anidado. ``else_branch = None`` indica que la
+    fuente no incluyó else; ambas ramas se conservan sin evaluarlas aquí.
+    """
+    condition: Node
+    then_branch: Node
+    else_branch: Node | None
+
+    def accept(self, visitor: Visitor) -> object:
+        """Selecciona ``visit_if_stmt`` para visitar la condición y sus ramas."""
+        return visitor.visit_if_stmt(self)
+
+
+@dataclass(frozen=True, slots=True)
+class WhileStmt(Node):
+    """Bucle con una condición que precede a cada ejecución de su cuerpo.
+
+    ``condition`` guarda el AST que el intérprete reevalúa en cada vuelta;
+    ``body`` es una sentencia o bloque. También representa el bucle generado
+    por el parser al transformar una sentencia for.
+    """
+    condition: Node
+    body: Node
+
+    def accept(self, visitor: Visitor) -> object:
+        """Selecciona ``visit_while_stmt`` para visitar la estructura del bucle."""
+        return visitor.visit_while_stmt(self)

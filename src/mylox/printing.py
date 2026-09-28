@@ -1,7 +1,7 @@
 from __future__ import annotations
 from .nodes import (
-    Assign, Binary, BlockStmt, ExprStmt, Grouping, Literal, Node,
-    PrintStmt, Unary, VarDecl, Variable, Visitor,
+    Assign, Binary, BlockStmt, ExprStmt, Grouping, IfStmt, Literal, Node,
+    PrintStmt, Unary, VarDecl, Variable, Visitor, WhileStmt,
 )
 
 class Impresor(Visitor):
@@ -56,6 +56,22 @@ class Impresor(Visitor):
         """
         statements = ", ".join(item.accept(self) for item in statement.statements)
         return f"BlockStmt([{statements}])"
+
+    def visit_if_stmt(self, statement: IfStmt) -> str:
+        """Describe la condición y las dos ramas de if presentes en el AST.
+
+        Usa el texto ``None`` cuando no hay else. Describe ambas ramas
+        disponibles sin evaluar la condición ni seleccionar una para ejecutar.
+        """
+        other = statement.else_branch.accept(self) if statement.else_branch else "None"
+        return (
+            f"IfStmt({statement.condition.accept(self)}, "
+            f"{statement.then_branch.accept(self)}, {other})"
+        )
+
+    def visit_while_stmt(self, statement: WhileStmt) -> str:
+        """Describe una vez la condición y el cuerpo de WhileStmt, sin iterar."""
+        return f"WhileStmt({statement.condition.accept(self)}, {statement.body.accept(self)})"
 
 
 def imprimir(nodo: Node | list[Node]) -> str:

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from ..errors import ParseError
 from ..nodes import (
-    Assign, Binary, BlockStmt, ExprStmt, Grouping, Literal, Node,
-    PrintStmt, Unary, VarDecl, Variable,
+    Assign, Binary, BlockStmt, ExprStmt, Grouping, IfStmt, Literal, Node,
+    PrintStmt, Unary, VarDecl, Variable, WhileStmt,
 )
 from ..tokens import Token, TokenKind
 
@@ -47,12 +47,19 @@ class Parser:
         return self._statement()
 
     def _statement(self) -> Node:
-        """Construye una sentencia print, un bloque o una sentencia de expresión.
+        """Selecciona la forma de sentencia a partir del próximo token.
 
-        PRINT inicia una expresión a mostrar y LEFT_BRACE inicia una lista
-        con ámbito propio. En otro caso lee una expresión ordinaria. Print
-        y las sentencias de expresión necesitan un punto y coma final.
+        Reconoce if, while, for, print y bloques. Si ninguna palabra o llave
+        inicia esas formas, construye una ExprStmt. PrintStmt y ExprStmt
+        necesitan un ``;`` final. Los cuerpos de control también llaman
+        a este método, lo que permite anidar sentencias recursivamente.
         """
+        if self._match(TokenKind.IF):
+            return self._if_statement()
+        if self._match(TokenKind.WHILE):
+            return self._while_statement()
+        if self._match(TokenKind.FOR):
+            return self._for_statement()
         if self._match(TokenKind.PRINT):
             expression = self._expression()
             self._consume(TokenKind.SEMICOLON, "Se esperaba ';' después de print")
@@ -76,6 +83,69 @@ class Parser:
             statements.append(self._declaration())
         self._consume(TokenKind.RIGHT_BRACE, "Se esperaba '}' después del bloque")
         return statements
+
+    def _if_statement(self) -> Node:
+        """Construye IfStmt después de haber consumido la palabra ``if``.
+
+        Exige una expresión entre paréntesis, lee una sentencia para la rama
+        verdadera y una rama opcional después de ``else``. La llamada recursiva
+        a ``_statement()`` hace que un else pertenezca al if pendiente más
+        cercano. Ambas ramas quedan en el AST sin ejecutarse durante el parseo.
+        """
+        self._consume(TokenKind.LEFT_PAREN, "Se esperaba '(' después de if")
+        condition = self._expression()
+        self._consume(TokenKind.RIGHT_PAREN, "Se esperaba ')' después de if")
+        then_branch = self._statement()
+        else_branch = self._statement() if self._match(TokenKind.ELSE) else None
+        return IfStmt(condition, then_branch, else_branch)
+
+    def _while_statement(self) -> Node:
+        """Construye WhileStmt a partir de una condición y una sentencia cuerpo.
+
+        La palabra ``while`` ya fue consumida. Exige paréntesis alrededor
+        de la condición y conserva el nodo de esa expresión para que el
+        intérprete pueda reevaluarlo antes de cada vuelta del bucle.
+        """
+        self._consume(TokenKind.LEFT_PAREN, "Se esperaba '(' después de while")
+        condition = self._expression()
+        self._consume(TokenKind.RIGHT_PAREN, "Se esperaba ')' después de while")
+        return WhileStmt(condition, self._statement())
+
+    def _for_statement(self) -> Node:
+        """Lee el encabezado y cuerpo de for y los transforma en bloque y while.
+
+        El inicializador opcional puede ser una declaración var o una sentencia
+        de expresión. La condición ausente se convierte en Literal(True).
+        Si hay incremento, lo agrega como ExprStmt después del cuerpo en un
+        BlockStmt. Finalmente envuelve el WhileStmt con el inicializador,
+        si existe, en otro bloque para limitar el ámbito de sus variables.
+        Devuelve esos nodos comunes; el AST no necesita una clase ForStmt.
+        """
+        self._consume(TokenKind.LEFT_PAREN, "Se esperaba '(' después de for")
+        if self._match(TokenKind.SEMICOLON):
+            initializer = None
+        elif self._match(TokenKind.VAR):
+            name = self._consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de variable")
+            value = self._expression() if self._match(TokenKind.EQUAL) else None
+            self._consume(TokenKind.SEMICOLON, "Se esperaba ';' después de var")
+            initializer = VarDecl(name, value)
+        else:
+            value = self._expression()
+            self._consume(TokenKind.SEMICOLON, "Se esperaba ';' después del inicio de for")
+            initializer = ExprStmt(value)
+
+        condition = Literal(True) if self._check(TokenKind.SEMICOLON) else self._expression()
+        self._consume(TokenKind.SEMICOLON, "Se esperaba ';' después de la condición")
+        increment = None if self._check(TokenKind.RIGHT_PAREN) else self._expression()
+        self._consume(TokenKind.RIGHT_PAREN, "Se esperaba ')' después de for")
+
+        body = self._statement()
+        if increment is not None:
+            body = BlockStmt([body, ExprStmt(increment)])
+        loop: Node = WhileStmt(condition, body)
+        if initializer is not None:
+            loop = BlockStmt([initializer, loop])
+        return loop
 
     # Reglas de producción 
 

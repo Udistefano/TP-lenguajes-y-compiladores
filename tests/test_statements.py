@@ -4,7 +4,7 @@ from mylox.cli import EXIT_OK, EXIT_RUNTIME, run_actions
 from mylox.env import Env
 from mylox.errors import LoxRuntimeError, ParseError
 from mylox.interpreter import Interpreter
-from mylox.nodes import Assign, BlockStmt, ExprStmt, Literal, PrintStmt, VarDecl
+from mylox.nodes import Assign, BlockStmt, ExprStmt, IfStmt, Literal, PrintStmt, VarDecl, WhileStmt
 from mylox.tokens import Token, TokenKind
 from mylox.pipeline.lexer import Lexer
 from mylox.pipeline.parser import Parser
@@ -75,3 +75,42 @@ def test_destino_de_asignacion_invalido_y_bloque_sin_cerrar():
         parse_program("(1 + 2) = 3;")
     with pytest.raises(ParseError):
         parse_program("{ print 1;")
+
+
+def test_if_else_y_else_del_if_mas_cercano(capsys):
+    source = 'if (false) print "error"; else print "bien"; if (true) if (false) print "error"; else print "cerca";'
+    assert isinstance(parse_program(source)[0], IfStmt)
+    assert run_actions(source) == EXIT_OK
+    assert capsys.readouterr().out == "bien\ncerca\n"
+
+
+def test_while_revalua_condicion_y_muta_variable_exterior(capsys):
+    source = "var i = 0; while (i < 3) { print i; i = i + 1; } print i;"
+    assert isinstance(parse_program(source)[1], WhileStmt)
+    assert run_actions(source) == EXIT_OK
+    assert capsys.readouterr().out == "0\n1\n2\n3\n"
+
+
+def test_for_ejecuta_incremento_y_limita_ambito_del_inicializador(capsys):
+    source = "var total = 0; for (var i = 1; i <= 3; i = i + 1) total = total + i; print total;"
+    assert run_actions(source) == EXIT_OK
+    assert capsys.readouterr().out == "6\n"
+    assert run_actions("for (var i = 0; i < 1; i = i + 1) print i; print i;") == EXIT_RUNTIME
+    captured = capsys.readouterr()
+    assert captured.out == "0\n"
+    assert "i" in captured.err
+
+
+def test_for_permite_componentes_opcionales(capsys):
+    source = "var i = 0; for (; i < 2;) { print i; i = i + 1; }"
+    assert run_actions(source) == EXIT_OK
+    assert capsys.readouterr().out == "0\n1\n"
+
+
+def test_falta_parentesis_de_control_es_error_sintactico():
+    with pytest.raises(ParseError):
+        parse_program("if true) print 1;")
+    with pytest.raises(ParseError):
+        parse_program("while (true print 1;")
+    with pytest.raises(ParseError):
+        parse_program("for (var i = 0; i < 2; i = i + 1 print i;")
