@@ -1,3 +1,10 @@
+"""Ejecución del AST de Lox mediante Visitor con double dispatch.
+
+El parser ya decidió la estructura del programa. Este módulo recorre esos
+nodos, calcula valores, modifica ambientes y realiza los efectos de las
+sentencias. Una expresión devuelve un valor; una sentencia devuelve None.
+"""
+
 from __future__ import annotations
 
 from .env import Env
@@ -28,7 +35,12 @@ class Interpreter(Visitor):
         self.environment = self.globals
 
     def evaluate(self, expression: Node) -> object:
-        """Evalúa una expresión y devuelve el valor resultante."""
+        """Obtiene el valor de una expresión delegando en su ``accept()``.
+
+        El nodo llama al ``visit_*`` correspondiente y ese método puede
+        evaluar otros nodos recursivamente. El resultado es un valor de Lox
+        representado en Python; los errores de evaluación se propagan.
+        """
         return expression.accept(self)
 
     def interpret(self, statements: list[Node]) -> None:
@@ -165,9 +177,19 @@ class Interpreter(Visitor):
     # helpers
 
     def is_number(self, value: object) -> bool:
+        """Indica si el valor usa la representación numérica float de Lox.
+
+        El lexer convierte todos los literales numéricos a float. Comprobar
+        ese tipo evita tratar los booleanos de Python como números.
+        """
         return isinstance(value, float)
 
     def is_string(self, value: object) -> bool:
+        """Indica si el valor es una cadena de Lox, representada por str.
+
+        Se usa al validar la concatenación con ``+`` y no convierte valores
+        de otros tipos a texto automáticamente.
+        """
         return isinstance(value, str)
 
     def is_truthy(self, value: object) -> bool:
@@ -180,12 +202,24 @@ class Interpreter(Visitor):
         return not (value is None or value is False)
 
     def check_number_operands(self, operator: Token, left: object, right: object) -> None:
+        """Exige que los dos operandos ya evaluados sean números de Lox.
+
+        Se usa en operaciones aritméticas y comparaciones de orden. Si ambos
+        son válidos devuelve None; en otro caso lanza LoxRuntimeError usando
+        el token del operador para conservar la ubicación del error.
+        """
         if not (self.is_number(left) and self.is_number(right)):
             raise LoxRuntimeError(
                 operator, "Operands of " + operator.lexeme + " must be numbers"
             )
 
     def check_plus_operands(self, operator: Token, left: object, right: object) -> None:
+        """Valida que ``+`` reciba dos números o dos cadenas.
+
+        La operación suma números o concatena cadenas; mezclar los tipos
+        requiere un error y no una conversión implícita. Devuelve None si
+        el par es válido y lanza LoxRuntimeError con el operador si no lo es.
+        """
         if not (
             (self.is_number(left) and self.is_number(right)) or (self.is_string(left) and self.is_string(right))
         ):
@@ -195,12 +229,31 @@ class Interpreter(Visitor):
             )
 
     def visit_literal(self, expression: Literal) -> object:
+        """Devuelve el valor que el nodo Literal ya almacena en Python.
+
+        Los números y las cadenas fueron convertidos por el lexer, y el parser
+        construyó los valores de ``true``, ``false`` y ``nil``. Un literal no
+        necesita evaluar otros nodos ni consultar el ambiente.
+        """
         return expression.value
 
     def visit_grouping(self, expression: Grouping) -> object:
+        """Evalúa la expresión entre paréntesis y devuelve su mismo valor.
+
+        El parser ya usó los paréntesis para fijar la agrupación del AST.
+        Durante la ejecución basta con delegar en el nodo interior; agrupar
+        una expresión no crea un ámbito nuevo.
+        """
         return self.evaluate(expression.expression)
 
     def visit_unary(self, expression: Unary) -> object:
+        """Evalúa el operando una vez y aplica ``-`` o ``!``.
+
+        ``-`` exige un número y devuelve su negación. ``!`` acepta cualquier
+        valor y devuelve el booleano contrario a ``is_truthy()``. Un tipo
+        incompatible con ``-`` o un operador desconocido produce
+        LoxRuntimeError asociado al token del operador.
+        """
         right = self.evaluate(expression.operand)
 
         #Se utiliza match case como en el libro de lox para manejar los diferentes operadores unarios
@@ -219,6 +272,15 @@ class Interpreter(Visitor):
         )
 
     def visit_binary(self, expression: Binary) -> object:
+        """Evalúa izquierda y derecha, en ese orden, y aplica el operador.
+
+        ``+`` suma números o concatena cadenas. Los demás operadores
+        aritméticos y las comparaciones de orden exigen números. ``==`` y
+        ``!=`` comparan los valores evaluados y devuelven un booleano.
+        Los validadores rechazan tipos incompatibles con LoxRuntimeError;
+        un operador no reconocido también produce ese error. El resultado
+        se devuelve a la expresión o sentencia que contiene este nodo.
+        """
         left = self.evaluate(expression.left)
         right = self.evaluate(expression.right)
 

@@ -1,3 +1,9 @@
+"""Construcción del AST de un programa de Lox por descenso recursivo.
+
+Las reglas consumen tokens y devuelven nodos; todavía no calculan valores
+ni ejecutan sentencias. Los errores de estructura se informan con ParseError.
+"""
+
 from __future__ import annotations
 
 from ..errors import ParseError
@@ -7,14 +13,21 @@ from ..nodes import (
 )
 from ..tokens import Token, TokenKind
 
-class Parser:
-    """
-    Convierte secuencia de tokens en un árbol de expresiones AST
 
-    El parser recorre las reglas de menor a mayor prioridad, construyendo el árbol de manera descendente y recursiva.
+class Parser:
+    """Convierte una lista de tokens terminada en EOF en un programa AST.
+
+    ``current`` señala el próximo token por consumir. Cada método de una
+    regla llama a otras reglas para construir sus componentes, respetando
+    la precedencia de expresiones y la estructura de declaraciones y cuerpos.
     """
 
     def __init__(self, tokens: list[Token]):
+        """Conserva la secuencia producida por el lexer e inicia su cursor.
+
+        ``tokens`` debe incluir EOF como último token. El parser recorre
+        la lista mediante ``current`` sin modificar los objetos Token.
+        """
         self.tokens = tokens
         self.current = 0
 
@@ -179,7 +192,12 @@ class Parser:
         return expression
 
     def _equality(self) -> Node:
-        """equality → comparison ( ( "!=" | "==" ) comparison )*"""
+        """Lee ``comparison ((!= | ==) comparison)*`` y devuelve su AST.
+
+        Cada operando se construye con la regla de comparación, que tiene
+        mayor precedencia. El ciclo incorpora las igualdades de izquierda
+        a derecha en nodos Binary, sin comparar todavía sus valores.
+        """
 
         expression = self._comparison()
 
@@ -191,7 +209,12 @@ class Parser:
         return expression
 
     def _comparison(self) -> Node:
-        """comparison → term ( ( ">" | ">=" | "<" | "<=" ) term )*"""
+        """Lee ``term ((> | >= | < | <=) term)*`` y construye nodos Binary.
+
+        ``_term()`` arma completamente las sumas y restas de cada operando
+        antes de incorporarlas a una comparación. Las comparaciones sucesivas
+        se agrupan de izquierda a derecha por el ciclo.
+        """
 
         expression = self._term()
 
@@ -208,7 +231,12 @@ class Parser:
         return expression
 
     def _term(self) -> Node:
-        """term → factor ( ( "-" | "+" ) factor )*"""
+        """Lee ``factor ((- | +) factor)*`` para construir sumas y restas.
+
+        Obtener cada operando con ``_factor()`` da mayor precedencia a
+        multiplicaciones y divisiones. El árbol acumulado queda a la izquierda,
+        por lo que ``5 - 3 - 1`` representa ``(5 - 3) - 1``.
+        """
 
         expression = self._factor()
 
@@ -220,7 +248,12 @@ class Parser:
         return expression
 
     def _factor(self) -> Node:
-        """factor → unary ( ( "/" | "*" ) unary )*"""
+        """Lee ``unary ((/ | *) unary)*`` para construir productos y divisiones.
+
+        La regla unaria produce cada operando antes de agregarlo al Binary.
+        El ciclo agrupa operadores de este nivel de izquierda a derecha
+        y devuelve el árbol completo a la regla de suma o resta.
+        """
 
         expression = self._unary()
 
@@ -232,7 +265,12 @@ class Parser:
         return expression
 
     def _unary(self) -> Node:
-        """unary → ( "!" | "-" ) unary | primary"""
+        """Lee un prefijo ``!`` o ``-``, o delega en una expresión primaria.
+
+        La llamada recursiva permite prefijos encadenados: ``!-1`` se
+        representa como Unary(!, Unary(-, Literal(1))). Estos nodos quedan
+        dentro de los operandos de las reglas de mayor extensión.
+        """
 
         if self._match(TokenKind.BANG, TokenKind.MINUS):
             operator = self._previous()
@@ -288,17 +326,29 @@ class Parser:
     # Helpers 
 
     def _peek(self) -> Token:
-        """Devuelve el token actual sin consumirlo."""
+        """Devuelve el token señalado por el cursor sin avanzar.
+
+        Permite mirar la próxima pieza para elegir una regla o exigir un
+        delimitador. También puede devolver el token EOF de la lista.
+        """
 
         return self.tokens[self.current]
 
     def _previous(self) -> Token:
-        """Devuelve el último token consumido."""
+        """Devuelve el token ubicado inmediatamente antes del cursor.
+
+        Se llama después de consumir un token, por ejemplo para conservar
+        el operador de un nodo o el nombre de una variable.
+        """
 
         return self.tokens[self.current - 1]
 
     def _advance(self) -> Token:
-        """Consume y devuelve el token actual."""
+        """Devuelve el token actual y avanza el cursor si no es EOF.
+
+        Mantener el cursor en EOF permite que las comprobaciones posteriores
+        sigan observando el fin de la fuente sin salir de la lista de tokens.
+        """
 
         token = self._peek()
 
@@ -308,7 +358,11 @@ class Parser:
         return token
 
     def _match(self, *kinds: TokenKind) -> bool:
-        """Consume el token actual si su tipo es alguno de ``kinds``."""
+        """Consume el token si su tipo coincide con alguno de los recibidos.
+
+        Devuelve True al encontrar una coincidencia. Si no coincide con
+        ninguno, devuelve False y conserva el cursor en su posición.
+        """
 
         for kind in kinds:
             if self._check(kind):
@@ -318,7 +372,11 @@ class Parser:
         return False
 
     def _check(self, kind: TokenKind) -> bool:
-        """Devuelve si el token actual es de tipo ``kind`` sin consumirlo."""
+        """Indica si el próximo token tiene el tipo solicitado, sin consumirlo.
+
+        A diferencia de ``_match()``, esta mirada anticipada nunca avanza
+        el cursor; se usa también para detectar cierres de bloque y EOF.
+        """
 
         return self._peek().kind is kind
 

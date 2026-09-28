@@ -1,19 +1,42 @@
+"""Representación textual del AST para inspección mediante el modo --tree.
+
+El visitante describe los nodos sin ejecutar el programa, leer variables
+ni producir los efectos de sus sentencias.
+"""
+
 from __future__ import annotations
+
 from .nodes import (
     Assign, Binary, BlockStmt, ExprStmt, Grouping, IfStmt, Literal, Node,
     PrintStmt, Unary, VarDecl, Variable, Visitor, WhileStmt,
 )
 
+
 class Impresor(Visitor):
-    """Convierte un árbol de nodos en una representación textual verbosa."""
+    """Visitante que devuelve texto con el tipo y contenido de cada nodo.
+
+    Los hijos se describen recursivamente mediante ``accept(self)``. Los
+    valores literales usan la representación de Python para depurar el AST;
+    este texto no pretende ser la salida del programa ni código fuente Lox.
+    """
 
     def visit_literal(self, expression: Literal) -> str:
+        """Describe el valor almacenado usando repr, por ejemplo Literal(1.0)."""
         return f"Literal({expression.value!r})"
 
     def visit_unary(self, expression: Unary) -> str:
+        """Describe el lexema del prefijo y visita su único operando.
+
+        Devuelve la estructura Unary sin aplicar la negación o el not.
+        """
         return f"Unary({expression.operator.lexeme!r}, {expression.operand.accept(self)})"
 
     def visit_binary(self, expression: Binary) -> str:
+        """Describe izquierda, operador y derecha conservando el orden del AST.
+
+        Visita recursivamente ambos operandos y devuelve su estructura Binary
+        sin calcular el resultado de la operación.
+        """
         return (
             f"Binary({expression.left.accept(self)}, "
             f"{expression.operator.lexeme!r}, "
@@ -21,6 +44,7 @@ class Impresor(Visitor):
         )
 
     def visit_grouping(self, expression: Grouping) -> str:
+        """Describe Grouping con el texto obtenido al visitar su expresión interior."""
         return f"Grouping({expression.expression.accept(self)})"
 
     def visit_expr_stmt(self, statement: ExprStmt) -> str:
