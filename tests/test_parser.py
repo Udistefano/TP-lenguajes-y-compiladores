@@ -7,7 +7,7 @@ from mylox.pipeline.parser import Parser
 
 
 def parse(source: str):
-    return Parser(Lexer(source).run()).parse()
+    return Parser(Lexer(source + ";").run()).parse()[0].expression
 
 
 def test_literal_numero():

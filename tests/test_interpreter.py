@@ -7,7 +7,8 @@ from mylox.pipeline.parser import Parser
 
 
 def eval_expr(source: str):
-    return Interpreter().evaluate(Parser(Lexer(source).run()).parse())
+    expression = Parser(Lexer(source + ";").run()).parse()[0].expression
+    return Interpreter().evaluate(expression)
 
 
 def test_literal_numero():
