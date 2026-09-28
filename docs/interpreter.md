@@ -101,18 +101,22 @@ Se llama árbol de sintaxis *abstracta* porque conserva lo necesario para entend
 
 El parser también tiene un cursor, pero avanza por **tokens**, no por caracteres. `_peek()` mira el token actual, `_advance()` lo consume y `_match()` comprueba si pertenece a los tipos esperados.
 
-Las funciones `_equality()`, `_comparison()`, `_term()`, `_factor()`, `_unary()` y `_primary()` representan niveles de precedencia. Sus nombres se leen aproximadamente así:
+Las reglas de expresiones representan niveles de precedencia. Sus nombres se leen aproximadamente así:
 
 ```text
-igualdad
-  comparación
-    suma/resta
-      multiplicación/división
-        unario
-          literal o paréntesis
+asignación
+  or
+    and
+      igualdad
+        comparación
+          suma/resta
+            multiplicación/división/módulo
+              unario
+                llamada
+                  literal, variable o paréntesis
 ```
 
-Dentro del recorrido de una expresión, `_assignment()` llama a `_equality()`, que tiene prioridad baja. La clave es que cada nivel llama al siguiente para construir sus operandos completos. Actualmente `parse()` empieza por las declaraciones y sentencias del programa completo.
+Dentro del recorrido de una expresión, `_assignment()` llama a `_or()`, `_or()` a `_and()` y `_and()` a `_equality()`. Cada nivel llama al siguiente para construir sus operandos completos. `parse()` empieza por las declaraciones y sentencias del programa completo.
 
 Sigamos `1 + 2 * 3`:
 
@@ -184,6 +188,6 @@ Binary(1, +, Binary(2, *, 3))
 
 El [intérprete](../src/mylox/interpreter.py) recorre el árbol de forma recursiva. Para el `Binary` exterior evalúa la izquierda (`1`), luego la derecha. Evaluar la derecha requiere evaluar su propio `Binary` (`2 * 3`), que devuelve `6`. Recién entonces el exterior suma `1 + 6`.
 
-Este recorrido explica la evaluación de una expresión dentro de una sentencia. Actualmente `Parser.parse()` devuelve una lista de sentencias y procesa el programa hasta `EOF`. Para imprimir el resultado del ejemplo, el programa completo es `print 1 + 2 * 3;` y su salida es `7`. La explicación continúa en [statements.md](statements.md), [variables.md](variables.md) y [control-de-flujo.md](control-de-flujo.md).
+Este recorrido explica la evaluación de una expresión dentro de una sentencia. `Parser.parse()` devuelve una lista de sentencias y procesa el programa hasta `EOF`. Antes de ejecutar, `Interpreter.interpret()` recorre el AST con `BindingResolver` para vincular las variables locales. Para imprimir el resultado del ejemplo, el programa completo es `print 1 + 2 * 3;` y su salida es `7`. La explicación continúa en [statements.md](statements.md), [variables.md](variables.md), [control-de-flujo.md](control-de-flujo.md) y [funciones-y-closures.md](funciones-y-closures.md).
 
 La separación sigue siendo la misma: **el lexer reconoce piezas, el parser decide cómo se agrupan y el visitante decide qué hacer con el árbol resultante**.

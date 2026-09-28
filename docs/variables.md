@@ -122,6 +122,8 @@ Sus operaciones son:
 | `define(name: str, value)` | Guarda el nombre en este ambiente |
 | `get(name: Token)` | Busca el nombre aquí y luego en los ambientes exteriores |
 | `assign(name: Token, value)` | Actualiza el primer ambiente de la cadena que contiene el nombre |
+| `get_local(name: Token, levels)` | Lee en el ambiente fijado por el resolvedor |
+| `assign_local(name: Token, value, levels)` | Modifica ese mismo ambiente |
 
 `get()` y `assign()` usan `name.lexeme` como clave del diccionario.
 Si llegan al final de la cadena sin encontrar el nombre, lanzan `LoxRuntimeError`.
@@ -129,6 +131,8 @@ Si llegan al final de la cadena sin encontrar el nombre, lanzan `LoxRuntimeError
 La búsqueda comprueba si la clave existe. Una variable que contiene `nil`, `false` o `0` sigue siendo una variable definida.
 
 En nuestra implementación, declarar otra vez un nombre en el mismo ambiente reemplaza su entrada. Declararlo dentro de un bloque crea una entrada en otro ambiente.
+
+Con funciones integradas, [BindingResolver](../src/mylox/resolver.py) fija el ámbito de cada referencia antes de ejecutar. El intérprete usa `get_local()` y `assign_local()` para los locales, y `globals.get()` o `globals.assign()` para los globales. Esto conserva el vínculo de un closure aunque después se declare otro nombre igual. Ver [funciones-y-closures.md](funciones-y-closures.md).
 
 ## 5. ¿Cómo se ejecuta el ejemplo inicial?
 
@@ -143,7 +147,7 @@ self.environment = self.globals
 
 1. `visit_var_decl()` evalúa `Literal(10)` y llama a `environment.define("puntos", 10.0)`.
 2. `visit_assign()` evalúa primero su expresión derecha. `visit_variable()` obtiene `10`, y la suma produce `15`.
-3. `visit_assign()` llama a `environment.assign(...)`, guarda `15` y devuelve ese valor. La sentencia de expresión descarta ese resultado.
+3. Como `puntos` es global, `visit_assign()` llama a `globals.assign(...)`, guarda `15` y devuelve ese valor. La sentencia de expresión descarta ese resultado.
 4. `visit_print_stmt()` lee `puntos` nuevamente y escribe `15`.
 
 Cada llamada se selecciona mediante el `accept()` del nodo correspondiente, conservando el Visitor con double dispatch.
@@ -182,8 +186,8 @@ values: {x: 2}  ── enclosing ──→ values: {x: 1, y: 0}
 
 Dentro del bloque:
 
-- `var x = 2;` define un `x` local. Al leer `x`, la búsqueda lo encuentra antes de llegar al global. Esto se llama **sombrear** un nombre.
-- `y = x;` lee el `x` local, pero no encuentra un `y` local. `assign()` continúa hacia el ambiente global y modifica su `y`.
+- `var x = 2;` define un `x` local. El resolvedor vincula la lectura con ese ámbito, y `get_local(..., 0)` obtiene su valor. Esto se llama **sombrear** un nombre.
+- `y = x;` lee el `x` local y modifica el `y` global, porque la asignación no tiene un vínculo local para `y`.
 
 Al salir del bloque, el ambiente activo vuelve a ser el global. Su `x` sigue valiendo `1`, y su `y` ahora vale `2`.
 Una variable declarada solamente dentro del bloque deja de estar disponible desde afuera.
@@ -198,6 +202,6 @@ Una variable declarada solamente dentro del bloque deja de estar disponible desd
 
 `finally` se ejecuta también si una sentencia lanza una excepción.
 Así, un error dentro del bloque no deja al intérprete usando por accidente el ambiente interno.
-Esta misma operación queda disponible para que las funciones ejecuten sus cuerpos al integrarse.
+Las funciones también ejecutan sus cuerpos con esta operación. Un return atraviesa los bloques y sus finally restauran los ambientes hasta llegar a Function.call.
 
-**Idea para recordar:** declarar agrega un nombre al ámbito actual; leer busca hacia afuera; asignar modifica el primer nombre existente que encuentra; un bloque agrega un ambiente a esa cadena.
+**Idea para recordar:** declarar agrega un nombre al ámbito actual; la resolución elige qué ámbito leer o modificar; un bloque agrega un ambiente a esa cadena.
