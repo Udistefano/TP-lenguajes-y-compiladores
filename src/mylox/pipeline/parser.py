@@ -61,6 +61,24 @@ class Parser:
             return VarDecl(name, initializer)
         return self._statement()
 
+    def _function_declaration(self) -> FunctionDecl:
+        """Lee ``fun nombre (parámetros?) { cuerpo }`` tras consumir fun.
+
+        Los parámetros son identificadores separados por comas. El cuerpo
+        usa _block para admitir declaraciones y funciones anidadas. Devuelve
+        FunctionDecl con los campos compartidos con Function.call; los tokens
+        obligatorios faltantes producen ParseError con su posición.
+        """
+        name = self._consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de función")
+        self._consume(TokenKind.LEFT_PAREN, "Se esperaba '(' después del nombre")
+        parameters: list[Token] = []
+        if not self._check(TokenKind.RIGHT_PAREN):
+            parameters.append(self._consume(TokenKind.IDENTIFIER, "Se esperaba un parámetro"))
+            while self._match(TokenKind.COMMA):
+                parameters.append(self._consume(TokenKind.IDENTIFIER, "Se esperaba un parámetro"))
+        self._consume(TokenKind.RIGHT_PAREN, "Se esperaba ')' después de los parámetros")
+        self._consume(TokenKind.LEFT_BRACE, "Se esperaba '{' antes del cuerpo de la función")
+        return FunctionDecl(name, parameters, self._block())
 
     def _statement(self) -> Node:
         """Selecciona la forma de sentencia a partir del próximo token.
@@ -88,6 +106,17 @@ class Parser:
         self._consume(TokenKind.SEMICOLON, "Se esperaba ';' después de la expresión")
         return ExprStmt(expression)
 
+    def _return_statement(self) -> ReturnStmt:
+        """Lee una expresión opcional y el punto y coma después de return.
+
+        Tanto ``return;`` como ``return expresión;`` producen ReturnStmt.
+        Este método reconoce su forma; la resolución posterior verifica
+        que aparezca dentro de una función, incluso si la rama no se ejecuta.
+        """
+        keyword = self._previous()
+        value = None if self._check(TokenKind.SEMICOLON) else self._expression()
+        self._consume(TokenKind.SEMICOLON, "Se esperaba ';' después de return")
+        return ReturnStmt(keyword, value)
 
     def _block(self) -> list[Node]:
         """Lee el contenido de un bloque cuya llave de apertura ya se consumió.
@@ -198,7 +227,11 @@ class Parser:
         return expression
 
     def _or(self) -> Node:
-        """or → and ( "or" and )*"""
+        """Construye ``and (or and)*`` con menor precedencia que and.
+
+        Cada operador produce Logical; el intérprete decidirá si evalúa
+        su operando derecho. El parser conserva ambos lados en el árbol.
+        """
 
         expression = self._and()
 
@@ -210,7 +243,11 @@ class Parser:
         return expression
 
     def _and(self) -> Node:
-        """and → equality ( "and" equality )*"""
+        """Construye ``equality (and equality)*`` de izquierda a derecha.
+
+        Las comparaciones e igualdades tienen mayor precedencia que and.
+        Usa Logical para representar el corto circuito durante la ejecución.
+        """
 
         expression = self._equality()
 
@@ -310,7 +347,12 @@ class Parser:
         return self._call()
 
     def _call(self) -> Node:
-        """call → primary ( "(" arguments? ")" )*"""
+        """Lee ``primary (( argumentos? ))*`` y construye llamadas encadenadas.
+
+        Los argumentos son expresiones completas separadas por comas.
+        Cada paréntesis posterior envuelve el nodo anterior en Call, por
+        lo que ``crear()(1)`` representa dos invocaciones sucesivas.
+        """
 
         expression = self._primary()
 
@@ -446,34 +488,3 @@ class Parser:
             f"{message}, se encontró {token.lexeme!r} "
             f"en la línea {token.line}, columna {token.column}"
         )
-
-    def _function_declaration(self) -> FunctionDecl:
-        """Lee ``fun nombre (parámetros?) { cuerpo }`` tras consumir fun.
-
-        Los parámetros son identificadores separados por comas. El cuerpo
-        usa _block para admitir declaraciones y funciones anidadas. Devuelve
-        FunctionDecl con los campos compartidos con Function.call; los tokens
-        obligatorios faltantes producen ParseError con su posición.
-        """
-        name = self._consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de función")
-        self._consume(TokenKind.LEFT_PAREN, "Se esperaba '(' después del nombre")
-        parameters: list[Token] = []
-        if not self._check(TokenKind.RIGHT_PAREN):
-            parameters.append(self._consume(TokenKind.IDENTIFIER, "Se esperaba un parámetro"))
-            while self._match(TokenKind.COMMA):
-                parameters.append(self._consume(TokenKind.IDENTIFIER, "Se esperaba un parámetro"))
-        self._consume(TokenKind.RIGHT_PAREN, "Se esperaba ')' después de los parámetros")
-        self._consume(TokenKind.LEFT_BRACE, "Se esperaba '{' antes del cuerpo de la función")
-        return FunctionDecl(name, parameters, self._block())
-
-    def _return_statement(self) -> ReturnStmt:
-        """Lee una expresión opcional y el punto y coma después de return.
-
-        Tanto ``return;`` como ``return expresión;`` producen ReturnStmt.
-        Este método reconoce su forma; la resolución posterior verifica
-        que aparezca dentro de una función, incluso si la rama no se ejecuta.
-        """
-        keyword = self._previous()
-        value = None if self._check(TokenKind.SEMICOLON) else self._expression()
-        self._consume(TokenKind.SEMICOLON, "Se esperaba ';' después de return")
-        return ReturnStmt(keyword, value)

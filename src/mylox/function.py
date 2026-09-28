@@ -1,6 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .env import Env
+    from .interpreter import Interpreter
+    from .nodes import FunctionDecl
 
 
 class ReturnValue(Exception):
@@ -9,6 +15,7 @@ class ReturnValue(Exception):
     """
 
     def __init__(self, value: object) -> None:
+        """Conserva el valor que Function.call recuperará al capturar el retorno."""
         self.value = value
         super().__init__("función devolvió un valor")
 
@@ -31,7 +38,12 @@ class Function:
         return len(self.declaration.parameters)
 
     def call(self, interpreter: Interpreter, arguments: list[object]) -> object:
-        """Ejecuta el cuerpo de la función por invocación."""
+        """Ejecuta el cuerpo en un ámbito nuevo encadenado al closure.
+
+        Cada llamada tiene sus propios parámetros y variables locales.
+        execute_block restaura el ámbito del llamador al salir; ReturnValue
+        transporta una salida anticipada. Llegar al final devuelve nil.
+        """
         from .env import Env
 
         environment = Env(enclosing=self.closure)
@@ -46,4 +58,5 @@ class Function:
         return None
 
     def __str__(self) -> str:
+        """Muestra el nombre de Lox cuando print recibe esta función como valor."""
         return f"<fn {self.declaration.name.lexeme}>"

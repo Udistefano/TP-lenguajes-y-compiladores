@@ -149,7 +149,25 @@ class Interpreter(Visitor):
         """
         self.execute_block(statement.statements, Env(enclosing=self.environment))
 
+    def visit_function_decl(self, statement: FunctionDecl) -> None:
+        """Define una función y captura el ámbito activo en su closure.
 
+        El cuerpo queda sin ejecutar hasta una llamada. Guardar la misma
+        instancia Env permite compartir las variables capturadas entre
+        invocaciones; definir el nombre aquí también permite la recursión.
+        """
+        function = Function(statement, self.environment)
+        self.environment.define(statement.name.lexeme, function)
+
+    def visit_return_stmt(self, statement: ReturnStmt) -> None:
+        """Evalúa el retorno y abandona el cuerpo mediante ReturnValue.
+
+        Sin expresión usa nil. La excepción atraviesa if, bucles y bloques,
+        cuyos finally restauran sus ámbitos. Function.call la captura en
+        la invocación correspondiente y entrega su valor al llamador.
+        """
+        value = self.evaluate(statement.value) if statement.value is not None else None
+        raise ReturnValue(value)
 
     def visit_if_stmt(self, statement: IfStmt) -> None:
         """Evalúa la condición de ``if`` y ejecuta solamente la rama elegida.
@@ -221,7 +239,11 @@ class Interpreter(Visitor):
         return not (value is None or value is False)
 
     def is_callable(self, value: object) -> bool:
-        """Devuelve si el valor es invocable como una función o clase."""
+        """Comprueba el contrato de invocación con las operaciones arity y call.
+
+        Function expone ambas. La validación ocurre después de evaluar los
+        argumentos para conservar sus efectos aunque la invocación falle.
+        """
         return hasattr(value, "arity") and hasattr(value, "call")
 
     def check_number_operands(self, operator: Token, left: object, right: object) -> None:
@@ -320,7 +342,12 @@ class Interpreter(Visitor):
         return callee.call(self, arguments)
 
     def visit_logical(self, expression: Logical) -> object:
-        """Evalúa `and`/`or` con corto circuito, devolviendo operandos, no bools."""
+        """Evalúa and/or con corto circuito y devuelve el operando elegido.
+
+        or conserva una izquierda verdadera; and conserva una izquierda
+        falsa. En los demás casos evalúa la derecha. Usa la verdad de Lox,
+        por lo que cero y la cadena vacía también cuentan como verdaderos.
+        """
 
         left = self.evaluate(expression.left)
 
@@ -382,23 +409,3 @@ class Interpreter(Visitor):
         raise LoxRuntimeError(
             expression.operator, "Unknown binary operator " + expression.operator.lexeme,
         )
-
-    def visit_function_decl(self, statement: FunctionDecl) -> None:
-        """Define una función y captura el ámbito activo en su closure.
-
-        El cuerpo queda sin ejecutar hasta una llamada. Guardar la misma
-        instancia Env permite compartir las variables capturadas entre
-        invocaciones; definir el nombre aquí también permite la recursión.
-        """
-        function = Function(statement, self.environment)
-        self.environment.define(statement.name.lexeme, function)
-
-    def visit_return_stmt(self, statement: ReturnStmt) -> None:
-        """Evalúa el retorno y abandona el cuerpo mediante ReturnValue.
-
-        Sin expresión usa nil. La excepción atraviesa if, bucles y bloques,
-        cuyos finally restauran sus ámbitos. Function.call la captura en
-        la invocación correspondiente y entrega su valor al llamador.
-        """
-        value = self.evaluate(statement.value) if statement.value is not None else None
-        raise ReturnValue(value)

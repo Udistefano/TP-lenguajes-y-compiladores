@@ -86,9 +86,11 @@ class Visitor:
         raise NotImplementedError()
 
     def visit_call(self, expression: Call) -> object:
+        """Define la operación sobre una función y sus argumentos de llamada."""
         raise NotImplementedError()
 
     def visit_logical(self, expression: Logical) -> object:
+        """Define la operación sobre los operandos de and u or."""
         raise NotImplementedError()
 
     def visit_function_decl(self, statement: FunctionDecl) -> object:
@@ -98,8 +100,6 @@ class Visitor:
     def visit_return_stmt(self, statement: ReturnStmt) -> object:
         """Define la operación sobre return y su expresión opcional."""
         raise NotImplementedError()
-
-
 
 
 @dataclass(frozen=True, slots=True)
@@ -291,25 +291,35 @@ class WhileStmt(Node):
 
 @dataclass(frozen=True, slots=True)
 class Call(Node):
-    """llamada a una función o a una clase callable"""
+    """Llamada cuyo callee puede ser un nombre u otra expresión.
+
+    ``arguments`` conserva el orden de evaluación y ``paren`` ubica los
+    errores de invocación. El nodo no ejecuta ni valida la función.
+    """
 
     callee: Node
     paren: Token
     arguments: list[Node]
 
     def accept(self, visitor: Visitor) -> object:
+        """Selecciona visit_call para visitar la invocación completa."""
         return visitor.visit_call(self)
 
 
 @dataclass(frozen=True, slots=True)
 class Logical(Node):
-    """expresión lógica `and` / `or` con corto circuito."""
+    """Expresión and/or que puede omitir la evaluación del operando derecho.
+
+    Conserva ambos operandos en el AST; el visitante de ejecución decide
+    si hace falta visitar el segundo según el valor del primero.
+    """
 
     left: Node
     operator: Token
     right: Node
 
     def accept(self, visitor: Visitor) -> object:
+        """Selecciona visit_logical para visitar el operador y sus operandos."""
         return visitor.visit_logical(self)
 
 

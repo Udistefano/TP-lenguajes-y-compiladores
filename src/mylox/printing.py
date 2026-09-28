@@ -49,10 +49,12 @@ class Impresor(Visitor):
         return f"Grouping({expression.expression.accept(self)})"
 
     def visit_call(self, expression: Call) -> str:
+        """Describe el callee y los argumentos sin efectuar la invocación."""
         args = ", ".join(arg.accept(self) for arg in expression.arguments)
         return f"Call({expression.callee.accept(self)}, args=[{args}])"
 
     def visit_logical(self, expression: Logical) -> str:
+        """Describe ambos operandos del AST sin aplicar corto circuito."""
         return f"Logical({expression.left.accept(self)}, {expression.operator.lexeme!r}, {expression.right.accept(self)})"
 
     def visit_expr_stmt(self, statement: ExprStmt) -> str:
@@ -115,8 +117,6 @@ class Impresor(Visitor):
         """Describe return y su posible expresión sin abandonar ningún cuerpo."""
         value = statement.value.accept(self) if statement.value is not None else "nil"
         return f"ReturnStmt({value})"
-
-
 
 
 def imprimir(nodo: Node | list[Node]) -> str:
