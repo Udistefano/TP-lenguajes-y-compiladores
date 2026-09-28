@@ -4,6 +4,11 @@ Intérprete de Lox en Python — Trabajo Práctico de Lenguajes y Compiladores I
 
 Aún en construcción. Estructura e implementación propias (independiente del código de la cátedra).
 
+## Integrantes
+
+Camilo Sassone Irrazabal - 111135
+Ulises Distefano - 111883
+
 ## Requisitos
 
 - Python 3.12 o superior.
