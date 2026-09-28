@@ -15,6 +15,7 @@ from .nodes import (
     Literal, Logical, Node, PrintStmt, ReturnStmt, Unary, VarDecl, Variable,
     Visitor, WhileStmt,
 )
+from .resolver import BindingResolver
 from .tokens import Token, TokenKind
 
 
@@ -35,6 +36,7 @@ class Interpreter(Visitor):
         """
         self.globals = Env()
         self.environment = self.globals
+        self.local_bindings: dict[int, tuple[Node, int]] = {}
 
     def evaluate(self, expression: Node) -> object:
         """Obtiene el valor de una expresión delegando en su ``accept()``.
@@ -46,12 +48,15 @@ class Interpreter(Visitor):
         return expression.accept(self)
 
     def interpret(self, statements: list[Node]) -> None:
-        """Ejecuta la lista del programa en orden usando el ambiente activo.
+        """Resuelve los ámbitos del programa y después lo ejecuta en orden.
 
-        Cada sentencia se despacha con ``accept(self)`` y su resultado se
+        Conserva los vínculos de programas anteriores para las funciones
+        que sigan disponibles entre llamadas a interpret. Cada sentencia
+        se despacha con ``accept(self)`` y su resultado se
         descarta. Una lista vacía no realiza acciones. Si una sentencia lanza
         una excepción, se propaga y las sentencias siguientes no se ejecutan.
         """
+        self.local_bindings.update(BindingResolver().resolve_program(statements))
         for statement in statements:
             statement.accept(self)
 
@@ -61,13 +66,15 @@ class Interpreter(Visitor):
         Guarda el ámbito activo, cambia a ``environment`` y ejecuta el cuerpo.
         El ``finally`` restaura el ámbito anterior tanto al terminar normalmente
         como al propagarse una excepción. El llamador crea el ambiente: un
-        bloque lo encadena al actual y una función podrá encadenarlo a su closure.
-        Este método devuelve None y permite que las excepciones salgan del cuerpo.
+        bloque lo encadena al actual y una función lo encadena a su closure.
+        El cuerpo ya fue resuelto por interpret: no se resuelve de nuevo al
+        invocarlo desde otro ámbito. Devuelve None y propaga las excepciones.
         """
         previous = self.environment
         self.environment = environment
         try:
-            self.interpret(statements)
+            for statement in statements:
+                statement.accept(self)
         finally:
             self.environment = previous
 
@@ -106,22 +113,30 @@ class Interpreter(Visitor):
     def visit_variable(self, expression: Variable) -> object:
         """Devuelve el valor asociado al nombre de una expresión Variable.
 
-        ``Env.get()`` busca primero en el ámbito activo y después en sus padres.
-        Si el nombre no existe en toda la cadena, propaga LoxRuntimeError con
-        el token de la referencia para señalar su posición en el programa.
+        Una referencia local usa la distancia fijada por BindingResolver.
+        Si no tiene vínculo local, consulta globals. Así una declaración
+        posterior no cambia el ámbito que lee una función ya declarada.
+        Un nombre ausente produce LoxRuntimeError con el token de la referencia.
         """
-        return self.environment.get(expression.name)
+        binding = self.local_bindings.get(id(expression))
+        if binding is not None:
+            return self.environment.get_local(expression.name, binding[1])
+        return self.globals.get(expression.name)
 
     def visit_assign(self, expression: Assign) -> object:
         """Evalúa el nuevo valor, actualiza una variable existente y lo devuelve.
 
-        ``Env.assign()`` modifica el primer ámbito de la cadena que contiene
-        el nombre; no crea una variable nueva. Devolver el valor permite
+        El vínculo léxico selecciona un ámbito local; en su ausencia modifica
+        globals. No crea una variable nueva. Devolver el valor permite
         asignaciones encadenadas como ``a = b = 3``. Un nombre indefinido
         produce LoxRuntimeError después de evaluar la expresión derecha.
         """
         value = self.evaluate(expression.value)
-        self.environment.assign(expression.name, value)
+        binding = self.local_bindings.get(id(expression))
+        if binding is not None:
+            self.environment.assign_local(expression.name, value, binding[1])
+        else:
+            self.globals.assign(expression.name, value)
         return value
 
     def visit_block_stmt(self, statement: BlockStmt) -> None:

@@ -61,3 +61,41 @@ class Env:
             self.enclosing.assign(name, value)
             return
         raise LoxRuntimeError(name, f"Variable indefinida {name.lexeme!r}")
+
+    def _scope_at(self, levels: int) -> Env:
+        """Sube la cantidad de padres fijada por el resolvedor del AST.
+
+        Cero devuelve este ámbito. Una distancia negativa o que exceda la
+        cadena indica una inconsistencia interna y produce ValueError.
+        """
+        if levels < 0:
+            raise ValueError("La distancia de ámbito no puede ser negativa")
+        scope = self
+        for _ in range(levels):
+            if scope.enclosing is None:
+                raise ValueError("La distancia de ámbito excede la cadena de ambientes")
+            scope = scope.enclosing
+        return scope
+
+    def get_local(self, name: Token, levels: int) -> object:
+        """Lee el nombre en el ámbito elegido por su vínculo léxico.
+
+        No vuelve a buscar el nombre en los padres: una nueva declaración
+        cercana no debe cambiar lo que una referencia de un closure lee.
+        Si falta la entrada esperada, informa LoxRuntimeError con el token.
+        """
+        scope = self._scope_at(levels)
+        if name.lexeme not in scope.values:
+            raise LoxRuntimeError(name, f"Variable indefinida {name.lexeme!r}")
+        return scope.values[name.lexeme]
+
+    def assign_local(self, name: Token, value: object, levels: int) -> None:
+        """Modifica el nombre en el ámbito fijado al resolver la asignación.
+
+        Comparte la misma entrada mutable con las demás funciones que la
+        capturaron. No declara un nombre ni altera otro ámbito de la cadena.
+        """
+        scope = self._scope_at(levels)
+        if name.lexeme not in scope.values:
+            raise LoxRuntimeError(name, f"Variable indefinida {name.lexeme!r}")
+        scope.values[name.lexeme] = value
