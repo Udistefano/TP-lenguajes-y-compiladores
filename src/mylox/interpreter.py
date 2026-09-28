@@ -1,34 +1,68 @@
 from __future__ import annotations
 
+from .env import Env
 from .errors import LoxRuntimeError
-from .nodes import Binary, ExprStmt, Grouping, Literal, Node, PrintStmt, Unary, Visitor
+from .nodes import (
+    Assign, Binary, BlockStmt, ExprStmt, Grouping, Literal, Node,
+    PrintStmt, Unary, VarDecl, Variable, Visitor,
+)
 from .tokens import Token, TokenKind
 
 
 class Interpreter(Visitor):
+    """Visitante que evalúa expresiones y ejecuta sentencias en orden.
+
+    ``globals`` conserva las variables del nivel superior y ``environment``
+    apunta al ámbito activo. Cada nodo selecciona su método ``visit_*`` en
+    ``accept()``; este visitante determina qué significa ejecutar ese nodo.
+    La misma instancia puede ejecutar varios programas conservando sus globals.
     """
-    Convierte nodos del arbol en valores de Lox recorriendo el tree-walk interpreter
-    """
+
+    def __init__(self) -> None:
+        """Crea el ambiente global vacío y lo establece como ámbito activo.
+
+        Al entrar en un bloque cambiará ``environment``, mientras que
+        ``globals`` seguirá apuntando al ambiente del nivel superior.
+        """
+        self.globals = Env()
+        self.environment = self.globals
 
     def evaluate(self, expression: Node) -> object:
         """Evalúa una expresión y devuelve el valor resultante."""
         return expression.accept(self)
 
     def interpret(self, statements: list[Node]) -> None:
-        """Ejecuta las sentencias del programa en orden mediante accept(self).
+        """Ejecuta la lista del programa en orden usando el ambiente activo.
 
-        Descarta el resultado de cada sentencia y devuelve None al terminar.
-        Una lista vacía no realiza acciones. Si una sentencia lanza una
-        excepción, la propaga y no ejecuta las sentencias siguientes.
+        Cada sentencia se despacha con ``accept(self)`` y su resultado se
+        descarta. Una lista vacía no realiza acciones. Si una sentencia lanza
+        una excepción, se propaga y las sentencias siguientes no se ejecutan.
         """
         for statement in statements:
             statement.accept(self)
 
-    def visit_expr_stmt(self, statement: ExprStmt) -> None:
-        """Evalúa una expresión usada como sentencia y descarta su valor.
+    def execute_block(self, statements: list[Node], environment: Env) -> None:
+        """Ejecuta una lista de sentencias dentro del ambiente recibido.
 
-        Por ejemplo, 2 + 3; calcula 5 sin imprimirlo. Los errores de la
-        expresión se propagan y la sentencia devuelve None.
+        Guarda el ámbito activo, cambia a ``environment`` y ejecuta el cuerpo.
+        El ``finally`` restaura el ámbito anterior tanto al terminar normalmente
+        como al propagarse una excepción. El llamador crea el ambiente: un
+        bloque lo encadena al actual y una función podrá encadenarlo a su closure.
+        Este método devuelve None y permite que las excepciones salgan del cuerpo.
+        """
+        previous = self.environment
+        self.environment = environment
+        try:
+            self.interpret(statements)
+        finally:
+            self.environment = previous
+
+    def visit_expr_stmt(self, statement: ExprStmt) -> None:
+        """Evalúa la expresión de una sentencia y descarta su valor.
+
+        Por ejemplo, ``x = x + 1;`` conserva el efecto de la asignación, pero
+        no imprime el valor devuelto por ella. Los errores de la expresión
+        se propagan; la sentencia devuelve None.
         """
         self.evaluate(statement.expression)
 
@@ -40,6 +74,51 @@ class Interpreter(Visitor):
         sola vez; la sentencia produce ese efecto y devuelve None.
         """
         print(self.stringify(self.evaluate(statement.expression)))
+
+    def visit_var_decl(self, statement: VarDecl) -> None:
+        """Declara el nombre de ``var`` en el ámbito activo y devuelve None.
+
+        Primero evalúa el inicializador, si existe; en su ausencia usa None,
+        que representa ``nil``. Luego define el nombre en el ambiente actual.
+        Esto puede sombrear una variable exterior o reemplazar una declaración
+        del mismo ámbito. Si el inicializador falla, no se define el nombre.
+        """
+        value = (
+            self.evaluate(statement.initializer)
+            if statement.initializer is not None else None
+        )
+        self.environment.define(statement.name.lexeme, value)
+
+    def visit_variable(self, expression: Variable) -> object:
+        """Devuelve el valor asociado al nombre de una expresión Variable.
+
+        ``Env.get()`` busca primero en el ámbito activo y después en sus padres.
+        Si el nombre no existe en toda la cadena, propaga LoxRuntimeError con
+        el token de la referencia para señalar su posición en el programa.
+        """
+        return self.environment.get(expression.name)
+
+    def visit_assign(self, expression: Assign) -> object:
+        """Evalúa el nuevo valor, actualiza una variable existente y lo devuelve.
+
+        ``Env.assign()`` modifica el primer ámbito de la cadena que contiene
+        el nombre; no crea una variable nueva. Devolver el valor permite
+        asignaciones encadenadas como ``a = b = 3``. Un nombre indefinido
+        produce LoxRuntimeError después de evaluar la expresión derecha.
+        """
+        value = self.evaluate(expression.value)
+        self.environment.assign(expression.name, value)
+        return value
+
+    def visit_block_stmt(self, statement: BlockStmt) -> None:
+        """Ejecuta las sentencias entre llaves en un ámbito nuevo y devuelve None.
+
+        El padre del ambiente nuevo es el ámbito activo, de modo que el cuerpo
+        puede leer o modificar nombres exteriores. Sus declaraciones quedan
+        en el ambiente local. ``execute_block()`` restaura el ámbito anterior
+        incluso si una sentencia del cuerpo falla.
+        """
+        self.execute_block(statement.statements, Env(enclosing=self.environment))
 
     def stringify(self, value: object) -> str:
         """Convierte un valor ya evaluado a su representación textual en Lox.

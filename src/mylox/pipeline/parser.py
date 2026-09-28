@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from ..errors import ParseError
-from ..nodes import Binary, ExprStmt, Grouping, Literal, Node, PrintStmt, Unary
+from ..nodes import (
+    Assign, Binary, BlockStmt, ExprStmt, Grouping, Literal, Node,
+    PrintStmt, Unary, VarDecl, Variable,
+)
 from ..tokens import Token, TokenKind
 
 class Parser:
@@ -16,38 +19,94 @@ class Parser:
         self.current = 0
 
     def parse(self) -> list[Node]:
-        """Construye todas las sentencias del programa hasta encontrar EOF.
+        """Construye la lista completa de declaraciones y sentencias hasta EOF.
 
-        Cada vuelta agrega un nodo producido por _statement(). Un programa
-        vacío devuelve una lista vacía. Los errores de sintaxis se propagan
-        también después de una sentencia válida; no se devuelve un AST parcial.
+        Cada vuelta agrega un nodo producido por ``_declaration()``. Un
+        programa vacío devuelve una lista vacía. Cualquier error de sintaxis
+        se propaga como ParseError, incluso después de una sentencia válida;
+        el parser no ejecuta el programa ni devuelve una lista parcial.
         """
         statements: list[Node] = []
         while not self._check(TokenKind.EOF):
-            statements.append(self._statement())
+            statements.append(self._declaration())
         return statements
 
-    def _statement(self) -> Node:
-        """Construye una sentencia print o una sentencia de expresión.
+    def _declaration(self) -> Node:
+        """Lee una declaración ``var`` o delega en una sentencia ordinaria.
 
-        Si encuentra PRINT, consume la palabra y construye su expresión.
-        En otro caso lee una expresión ordinaria. Ambas formas exigen un
-        punto y coma final y devuelven su nodo sin ejecutar la sentencia.
+        La declaración tiene forma ``var nombre (= expresión)? ;``. Guarda
+        un inicializador opcional en VarDecl; su ausencia se representa con
+        None en el AST. Aquí se reconoce la sintaxis: el nombre y su valor
+        se incorporan al ambiente recién al ejecutar el nodo.
+        """
+        if self._match(TokenKind.VAR):
+            name = self._consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de variable")
+            initializer = self._expression() if self._match(TokenKind.EQUAL) else None
+            self._consume(TokenKind.SEMICOLON, "Se esperaba ';' después de var")
+            return VarDecl(name, initializer)
+        return self._statement()
+
+    def _statement(self) -> Node:
+        """Construye una sentencia print, un bloque o una sentencia de expresión.
+
+        PRINT inicia una expresión a mostrar y LEFT_BRACE inicia una lista
+        con ámbito propio. En otro caso lee una expresión ordinaria. Print
+        y las sentencias de expresión necesitan un punto y coma final.
         """
         if self._match(TokenKind.PRINT):
             expression = self._expression()
             self._consume(TokenKind.SEMICOLON, "Se esperaba ';' después de print")
             return PrintStmt(expression)
+        if self._match(TokenKind.LEFT_BRACE):
+            return BlockStmt(self._block())
         expression = self._expression()
         self._consume(TokenKind.SEMICOLON, "Se esperaba ';' después de la expresión")
         return ExprStmt(expression)
 
+    def _block(self) -> list[Node]:
+        """Lee el contenido de un bloque cuya llave de apertura ya se consumió.
+
+        Reúne declaraciones y sentencias hasta ``}``, consume esa llave y
+        devuelve la lista del cuerpo. Si llega a EOF antes del cierre,
+        ``_consume()`` informa ParseError. No crea un ambiente: ese efecto
+        corresponde a la ejecución de BlockStmt en el intérprete.
+        """
+        statements: list[Node] = []
+        while not self._check(TokenKind.RIGHT_BRACE) and not self._check(TokenKind.EOF):
+            statements.append(self._declaration())
+        self._consume(TokenKind.RIGHT_BRACE, "Se esperaba '}' después del bloque")
+        return statements
+
     # Reglas de producción 
 
     def _expression(self) -> Node:
-        """expression → equality"""
+        """Inicia una expresión por la regla de menor precedencia: assignment.
 
-        return self._equality()
+        Devuelve el nodo de la expresión sin consumir su terminador externo,
+        como ``;``, ``)`` o ``,``. La regla que la contiene exige ese token.
+        """
+
+        return self._assignment()
+
+    def _assignment(self) -> Node:
+        """Construye una asignación o devuelve la expresión sin asignación.
+
+        Primero lee igualdad; si aparece ``=``, lee recursivamente la derecha.
+        Así ``a = b = 3`` se agrupa como ``a = (b = 3)``. El destino debe ser
+        un nodo Variable: cualquier otra forma produce ParseError en el ``=``.
+        Devuelve Assign sin consultar ni modificar los ambientes de ejecución.
+        """
+        expression = self._equality()
+        if self._match(TokenKind.EQUAL):
+            equals = self._previous()
+            value = self._assignment()
+            if isinstance(expression, Variable):
+                return Assign(expression.name, value)
+            raise ParseError(
+                f"Destino inválido de asignación en la línea {equals.line}, "
+                f"columna {equals.column}"
+            )
+        return expression
 
     def _equality(self) -> Node:
         """equality → comparison ( ( "!=" | "==" ) comparison )*"""
@@ -113,7 +172,13 @@ class Parser:
         return self._primary()
 
     def _primary(self) -> Node:
-        """primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" """
+        """Construye un literal, una referencia a variable o una agrupación.
+
+        NUMBER y STRING usan el valor del token; true, false y nil se convierten
+        en Literal con True, False y None. IDENTIFIER se convierte en Variable.
+        Con ``(`` lee una expresión completa y exige ``)`` para crear Grouping.
+        Si el token no puede iniciar ninguna de estas formas, lanza ParseError.
+        """
 
         if self._match(TokenKind.FALSE):
             return Literal(False)
@@ -126,6 +191,9 @@ class Parser:
 
         if self._match(TokenKind.NUMBER, TokenKind.STRING):
             return Literal(self._previous().literal)
+
+        if self._match(TokenKind.IDENTIFIER):
+            return Variable(self._previous())
 
         if self._match(TokenKind.LEFT_PAREN):
             expression = self._expression()
