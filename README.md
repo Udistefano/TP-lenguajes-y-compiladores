@@ -7,6 +7,7 @@ Aún en construcción. Estructura e implementación propias (independiente del c
 ## Integrantes
 
 Camilo Sassone Irrazabal - 111135
+
 Ulises Distefano - 111883
 
 ## Requisitos
