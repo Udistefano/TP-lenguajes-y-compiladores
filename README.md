@@ -60,6 +60,22 @@ cinco programas con stdout exacto, stderr vacío y código de salida 0. El scrip
 de la cátedra también pasa; por sí solo sólo comprueba que stdout no tenga
 la palabra `ERROR`.
 
+## Decisiones de diseño
+
+- **Hecho desde cero**. Mismo lenguaje, otra estructura, basandonos en el libro de Lox.
+- Arquitectura por responsabilidad (`lexer`, `parser`, `interpreter`, `resolver`, `env`) y usamos un Visitor con `accept()` para recorrer el AST, en vez del `@singledispatchmethod` que usa el plox.
+- Nodos con `@dataclass(frozen=True, slots=True)`: el AST solo guarda estructura, no datos ni ambientes.
+- `nil` = `None`, `true`/`false` = `True`/`False`. Solo `nil` y `false` son falsos.
+- Números siempre `float`, pero imprimen sin `.0` (`7`, no `7.0`).
+- `and`/`or` que devuelven los operandos, como el libro: `true and nil` es `nil`.
+- Se agregó `%` porque el fizzbuzz de la cátedra lo necesita.
+- `for` se transforma en `while` + bloque: nada de nodo extra.
+- Las llamadas evalúan los argumentos antes de validar la aridad, para no perder efectos.
+- Los closures guardan el entorno real de la definición; un resolver (`BindingResolver`) ata cada variable a su ámbito antes de ejecutar (un `return` fuera de función falla en parseo, no en runtime).
+- Errores como jerarquía propia (`ScanError`, `ParseError`, `LoxRuntimeError`); el `return` es una excepción interna, NO un error.
+- CLI con códigos de salida estándar (0, 65, 70), errores en `stderr` con línea/columna, y modos `--tokens` y `--tree` para debug.
+- Tests propios que comparan stdout, stderr vacío y exit 0.
+
 ## Guías del código
 
 - [Recorrido del intérprete y Visitor](docs/interpreter.md).
