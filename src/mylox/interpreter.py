@@ -9,9 +9,10 @@ from __future__ import annotations
 
 from .env import Env
 from .errors import LoxRuntimeError
+from .function import Function, ReturnValue
 from .nodes import (
-    Assign, Binary, BlockStmt, Call, ExprStmt, Grouping, IfStmt,
-    Literal, Logical, Node, PrintStmt, Unary, VarDecl, Variable,
+    Assign, Binary, BlockStmt, Call, ExprStmt, FunctionDecl, Grouping, IfStmt,
+    Literal, Logical, Node, PrintStmt, ReturnStmt, Unary, VarDecl, Variable,
     Visitor, WhileStmt,
 )
 from .tokens import Token, TokenKind
@@ -361,3 +362,23 @@ class Interpreter(Visitor):
         raise LoxRuntimeError(
             expression.operator, "Unknown binary operator " + expression.operator.lexeme,
         )
+
+    def visit_function_decl(self, statement: FunctionDecl) -> None:
+        """Define una función y captura el ámbito activo en su closure.
+
+        El cuerpo queda sin ejecutar hasta una llamada. Guardar la misma
+        instancia Env permite compartir las variables capturadas entre
+        invocaciones; definir el nombre aquí también permite la recursión.
+        """
+        function = Function(statement, self.environment)
+        self.environment.define(statement.name.lexeme, function)
+
+    def visit_return_stmt(self, statement: ReturnStmt) -> None:
+        """Evalúa el retorno y abandona el cuerpo mediante ReturnValue.
+
+        Sin expresión usa nil. La excepción atraviesa if, bucles y bloques,
+        cuyos finally restauran sus ámbitos. Function.call la captura en
+        la invocación correspondiente y entrega su valor al llamador.
+        """
+        value = self.evaluate(statement.value) if statement.value is not None else None
+        raise ReturnValue(value)
