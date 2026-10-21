@@ -51,6 +51,10 @@ def run_actions(source: str) -> int:
         return report_error(error)
     except LoxRuntimeError as error:
         return report_error(error)
+    except RecursionError:
+        # Una recursión que agota la pila de Python y se informa como error de ejecución.
+        print("[error] profundidad de recursión excedida", file=sys.stderr)
+        return EXIT_RUNTIME
 
     return EXIT_OK
 
