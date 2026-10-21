@@ -1,0 +1,36 @@
+// closures.lox — creación de closures y captura de entorno.
+// Ejercita la fabricación de funciones de orden superior, la captura de
+// variables del entorno circundante y las llamadas indirectas. Portable:
+// no usa %, clases.
+
+fun make_adder(n) {
+  fun add(x) {
+    return x + n;
+  }
+  return add;
+}
+
+fun make_counter() {
+  var count = 0;
+  fun tick() {
+    count = count + 1;
+    return count;
+  }
+  return tick;
+}
+
+var total = 0;
+var i = 0;
+while (i < 30000) {
+  var add5 = make_adder(5);
+  total = total + add5(i);
+  i = i + 1;
+}
+
+var tick = make_counter();
+var j = 0;
+while (j < 30000) {
+  tick();
+  j = j + 1;
+}
+print total;

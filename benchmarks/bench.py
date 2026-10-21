@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import statistics
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -16,14 +17,14 @@ EXIT_ERROR = 65
 
 
 def ejecutar(source: str) -> None:
-    """Escanea, parsea y evalúa un programa completo sin imprimir su resultado."""
+    """Escanea, parsea y evalúa un programa completo sin imprimir su resultado"""
 
     tree = Parser(Lexer(source).run()).parse()
-    Interpreter().interpret(tree)
+    Interpreter().evaluate(tree)
 
 
 def medir(source: str, repeticiones: int) -> list[float]:
-    """Ejecuta ``ejecutar`` ``repeticiones`` veces y devuelve los tiempos en segundos."""
+    """Ejecuta "ejecutar" "repeticiones" tantas veces y devuelve los tiempos en segundos"""
 
     tiempos: list[float] = []
 
@@ -33,6 +34,24 @@ def medir(source: str, repeticiones: int) -> list[float]:
         tiempos.append(time.perf_counter() - inicio)
 
     return tiempos
+
+
+def medir_plox(archivo: Path, repeticiones: int) -> float | None:
+    """Mide el tiempo de "plox" (intérprete de la cátedra) por subprocess.
+    """
+
+    comando = ["plox", str(archivo)]
+    tiempos: list[float] = []
+
+    for _ in range(repeticiones):
+        inicio = time.perf_counter()
+        resultado = subprocess.run(comando, capture_output=True, text=True)
+        tiempos.append(time.perf_counter() - inicio)
+
+        if resultado.returncode != 0:
+            return None
+
+    return statistics.median(tiempos)
 
 
 def percentil(ordenados: list[float], p: float) -> float:
@@ -46,7 +65,7 @@ def ms(segundos: float) -> float:
     return segundos * 1000
 
 
-def informar(archivo: Path, tiempos: list[float]) -> None:
+def informar(archivo: Path, tiempos: list[float], tiempo_plox: float | None) -> None:
     """Imprime la tabla de resultados del benchmark."""
 
     ordenados = sorted(tiempos)
@@ -56,11 +75,18 @@ def informar(archivo: Path, tiempos: list[float]) -> None:
     mediana = percentil(ordenados, 0.50)
     p95 = percentil(ordenados, 0.95)
 
+    nombre = archivo.name
     print(f"archivo: {archivo}")
     print(f"muestras: {len(tiempos)}")
     print()
-    print(f"{'mylox':<8} {'prom':>10} {'min':>10} {'max':>10} {'p50':>10} {'p95':>10}")
+    print(f"{nombre:<8} {'prom':>10} {'min':>10} {'max':>10} {'p50':>10} {'p95':>10}")
     print(f"{'mylox':<8} {ms(promedio):>10.2f} {ms(minimo):>10.2f} {ms(maximo):>10.2f} {ms(mediana):>10.2f} {ms(p95):>10.2f}")
+
+    if tiempo_plox is not None:
+        print(f"{'plox':<8} {ms(tiempo_plox):>10.2f} {'-':>10} {'-':>10} {'-':>10} {'-':>10}")
+        print(f"\nvelocidad relativa: {tiempo_plox / mediana:.2f}x")
+    elif tiempo_plox is None and len(ordenados) > 0:
+        pass
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -78,6 +104,12 @@ def main(argv: list[str] | None = None) -> int:
         default=20,
         help="cantidad de ejecuciones medidas (por defecto: 20)",
     )
+    parser.add_argument(
+        "-c",
+        "--comparar-plox",
+        action="store_true",
+        help="mide también el intérprete de la cátedra (plox) y compara",
+    )
 
     args = parser.parse_args(argv)
 
@@ -93,7 +125,13 @@ def main(argv: list[str] | None = None) -> int:
         print(f"[error] {error}", file=sys.stderr)
         return EXIT_ERROR
 
-    informar(args.file, tiempos)
+    tiempo_plox = None
+    if args.comparar_plox:
+        tiempo_plox = medir_plox(args.file, args.repeticiones)
+        if tiempo_plox is None:
+            print("[error] no se pudo comparar con plox; ¿está instalado?", file=sys.stderr)
+
+    informar(args.file, tiempos, tiempo_plox)
     return EXIT_OK
 
 
