@@ -9,8 +9,8 @@ from ..tokens import LiteralValue
 from .opcodes import MAX_CONSTANT_INDEX, OpCode, takes_operand
 
 # Un byte de código no puede representar valores fuera de este rango.
-BYTE_MINIMO = 0
-BYTE_MAXIMO = 255
+MIN_BYTE = 0
+MAX_BYTE = 255
 
 
 class Chunk:
@@ -27,7 +27,7 @@ class Chunk:
     def write_byte(self, byte: int, line: int) -> None:
         """Agrega un byte al final del chunk y registra su línea de origen."""
 
-        if not BYTE_MINIMO <= byte <= BYTE_MAXIMO:
+        if not MIN_BYTE <= byte <= MAX_BYTE:
             raise CompileError(f"el valor {byte} no entra en un byte de código")
 
         self._bytes.append(byte)
