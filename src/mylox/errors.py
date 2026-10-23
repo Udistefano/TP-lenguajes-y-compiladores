@@ -26,3 +26,12 @@ class LoxRuntimeError(LoxError):
     def __init__(self, token: Token, message: str) -> None:
         self.token = token
         super().__init__(message)
+
+
+class VMRuntimeError(LoxError):
+    """Error ocurrido al ejecutar bytecode en la máquina virtual.
+    """
+
+    def __init__(self, message: str, line: int = 1) -> None:
+        self.line = line
+        super().__init__(message)
