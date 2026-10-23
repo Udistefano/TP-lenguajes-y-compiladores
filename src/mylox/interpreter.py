@@ -258,6 +258,19 @@ class Interpreter(Visitor):
                 operator, "Operands of " + operator.lexeme + " must be numbers"
             )
 
+    def check_nonzero_divisor(self, operator: Token, right: object, mensaje: str) -> None:
+        """Impide dividir o tomar resto por cero.
+
+        Lox no define un valor para el resultado de ``1 / 0``: es un error en
+        tiempo de ejecución. Sin esta comprobación, Python lanzaría
+        ZeroDivisionError y el programa terminaría con una traza de error en
+        lugar de un mensaje de Lox con la posición del operador. ``mensaje``
+        describe la operación rechazada para distinguir la división del
+        resto. Devuelve None cuando el divisor no es cero.
+        """
+        if right == 0:
+            raise LoxRuntimeError(operator, mensaje)
+
     def check_plus_operands(self, operator: Token, left: object, right: object) -> None:
         """Valida que ``+`` reciba dos números o dos cadenas.
 
@@ -385,9 +398,15 @@ class Interpreter(Visitor):
                 return left * right
             case TokenKind.SLASH:
                 self.check_number_operands(expression.operator, left, right)
+                self.check_nonzero_divisor(
+                    expression.operator, right, "Division by zero is not allowed"
+                )
                 return left / right
             case TokenKind.PERCENT:
                 self.check_number_operands(expression.operator, left, right)
+                self.check_nonzero_divisor(
+                    expression.operator, right, "Modulo by zero is not allowed"
+                )
                 return left % right
             case TokenKind.GREATER:
                 self.check_number_operands(expression.operator, left, right)

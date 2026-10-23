@@ -79,8 +79,10 @@ la palabra `ERROR`.
 - Las llamadas evalúan los argumentos antes de validar la aridad, para no perder efectos.
 - Los closures guardan el entorno real de la definición; un resolver (`BindingResolver`) ata cada variable a su ámbito antes de ejecutar (un `return` fuera de función falla en parseo, no en runtime).
 - Errores como jerarquía propia (`ScanError`, `ParseError`, `LoxRuntimeError`); el `return` es una excepción interna, NO un error.
+- División y módulo por cero dan error de runtime con posición, no un traceback de Python.
 - CLI con códigos de salida estándar (0, 65, 70), errores en `stderr` con línea/columna, y modos `--tokens` y `--tree` para debug.
 - Tests propios que comparan stdout, stderr vacío y exit 0.
+- Benchmark propio que mide scan+parse+resolve+interpret contra plox, jlox y clox, con warmup y verificación de equivalencia de salida.
 
 ## Guías del código
 
@@ -89,6 +91,7 @@ la palabra `ERROR`.
 - [Variables y ámbitos](docs/variables.md).
 - [Control de flujo](docs/control-de-flujo.md).
 - [Funciones, retornos y closures](docs/funciones-y-closures.md).
+- [Benchmarks: metodología, resultados y conclusiones](docs/benchmarks.md).
 
 ## Integración con funciones
 
@@ -105,9 +108,23 @@ los vínculos léxicos de las referencias; el intérprete usa `get_local()` y
 
 ## Benchmark
 
+Comparación de rendimiento entre **mylox**, **plox** (cátedra), **jlox** (Java, tree-walk) y **clox** (C, bytecode VM). Se mide scan + parse + resolve + interpret, en proceso, con warmup y chequeo de equivalencia de salida entre implementaciones.
+
 ```sh
-uv run python benchmarks/bench.py benchmarks/programas/suma.lox -n 20
+# todos los programas e implementaciones disponibles
+uv run python benchmarks/bench.py -n 20
+
+# un programa en particular
+uv run python benchmarks/bench.py --programa fibonacci.lox -n 20
+
+# solo mylox vs plox
+uv run python benchmarks/bench.py --implementaciones mylox,plox -n 20
+
+# habilitar jlox y clox (requiere javac/gcc y el repo del libro)
+benchmarks/setup.sh
+uv run python benchmarks/bench.py -n 20
 ```
 
-El benchmark usa el mismo parseo, resolución y ejecución de programas que
-la CLI. Los programas medidos deben incluir los puntos y coma de Lox.
+Los programas son portables (sin `%` ni clases) y el script verifica antes de medir que todas las implementaciones dan la misma salida normalizada. Si falta `javac`, `gcc` o el repo externo, las implementaciones correspondientes se omiten sin fallar; el mínimo garantizado es **mylox vs plox**.
+
+Metodología, resultados reales y conclusiones en [docs/benchmarks.md](docs/benchmarks.md).

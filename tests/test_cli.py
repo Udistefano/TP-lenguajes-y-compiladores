@@ -69,6 +69,34 @@ def test_report_error_runtime_devuelve_70_y_posicion(capsys):
     assert "línea 1, columna 5" in err
 
 
+def test_division_por_cero_no_rompe_la_cli(capsys, tmp_path):
+    source = tmp_path / "cero.lox"
+    source.write_text("1 / 0;", encoding="utf-8")
+    assert main([str(source)]) == EXIT_RUNTIME
+    err = capsys.readouterr().err
+    assert "Division by zero" in err
+    assert "Traceback" not in err
+
+
+def test_repl_continua_tras_division_por_cero(capsys, monkeypatch):
+    monkeypatch.setattr(sys, "stdin", io.StringIO("1 / 0;\nprint 2 + 2;\n"))
+    assert main([]) == EXIT_OK
+    captured = capsys.readouterr()
+    assert "Division by zero" in captured.err
+    # El prompt "> " se escribe en stdout, junto a la salida del print.
+    assert "4" in captured.out
+    assert "Traceback" not in captured.err
+
+
+def test_recursion_infinita_no_muestra_traza(capsys, tmp_path):
+    source = tmp_path / "infinita.lox"
+    source.write_text("fun f(n) { return f(n + 1); } f(0);", encoding="utf-8")
+    assert main([str(source)]) == EXIT_RUNTIME
+    err = capsys.readouterr().err
+    assert "recursión excedida" in err
+    assert "Traceback" not in err
+
+
 def test_main_con_archivo_run(capsys, tmp_path):
     source = tmp_path / "calc.lox"
     source.write_text("1 + 2 * 3; print 1 + 2 * 3;", encoding="utf-8")
