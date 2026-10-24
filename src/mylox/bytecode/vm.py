@@ -77,6 +77,9 @@ class VM:
                 case OpCode.OP_DIVIDE:
                     right, left = self.pop(), self.pop()
                     self.push(left / right)
+                case OpCode.OP_MODULO:
+                    right, left = self.pop(), self.pop()
+                    self.push(left % right)
                 case OpCode.OP_EQUAL:
                     right, left = self.pop(), self.pop()
                     self.push(left == right)

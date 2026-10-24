@@ -31,6 +31,7 @@ class OpCode(Enum):
     OP_SUBTRACT = auto()
     OP_MULTIPLY = auto()
     OP_DIVIDE = auto()
+    OP_MODULO = auto()
 
     # Unarias
     OP_NOT = auto()
@@ -63,6 +64,7 @@ INSTRUCTIONS: dict[OpCode, Instruction] = {
     OpCode.OP_SUBTRACT: Instruction(stack_effect=-1, has_operand=False),
     OpCode.OP_MULTIPLY: Instruction(stack_effect=-1, has_operand=False),
     OpCode.OP_DIVIDE: Instruction(stack_effect=-1, has_operand=False),
+    OpCode.OP_MODULO: Instruction(stack_effect=-1, has_operand=False),
     # Las unarias reemplazan el operando por su resultado.
     OpCode.OP_NOT: Instruction(stack_effect=0, has_operand=False),
     OpCode.OP_NEGATE: Instruction(stack_effect=0, has_operand=False),
