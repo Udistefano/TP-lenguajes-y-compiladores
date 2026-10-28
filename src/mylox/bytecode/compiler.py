@@ -8,7 +8,7 @@ from .opcodes import OpCode
 
 
 class Compiler:
-    """Traduce una secuencia de tokens en un chunk de bytecode.
+    """Traduce una secuencia de tokens en un chunk de bytecode. No construye AST: parsea y emite instrucciones en el mismo recorrido
     """
 
     def __init__(self, tokens: list[Token]) -> None:
@@ -18,18 +18,27 @@ class Compiler:
         self.chunk = Chunk()
 
     def compile(self) -> Chunk:
-        """Compila una expresión completa y devuelve el chunk resultante."""
-        self.expression()
-        if not self.is_at_end():
-            token = self.peek()
-            raise ParseError(
-                f"Se esperaba fin de archivo, se encontró {token.lexeme!r} "
-                f"en la línea {token.line}, columna {token.column}"
-            )
+        """Compila un programa completo y devuelve el chunk resultante."""
+        while not self.is_at_end():
+            self.statement()
         self.chunk.emit(OpCode.OP_RETURN, self.previous().line)
         return self.chunk
 
-    # Reglas 
+    #  Sentencia
+
+    def statement(self) -> None:
+        """Lee una sentencia y emite sus instrucciones."""
+        if self.match(TokenKind.PRINT):
+            self.expression()
+            self.consume(TokenKind.SEMICOLON, "Se esperaba ';' después de print")
+            self.chunk.emit(OpCode.OP_PRINT, self.previous().line)
+            return
+
+        self.expression()
+        self.consume(TokenKind.SEMICOLON, "Se esperaba ';' después de la expresión")
+        self.chunk.emit(OpCode.OP_POP, self.previous().line)
+
+    #  Expresiones
 
     def expression(self) -> None:
         """expression → equality"""
@@ -139,7 +148,7 @@ class Compiler:
             f"en la línea {token.line}, columna {token.column}"
         )
 
-    #Tokens 
+    # ---------- Tokens ---------- #
 
     def is_at_end(self) -> bool:
         """Indica si el cursor llegó al token EOF."""
@@ -172,3 +181,13 @@ class Compiler:
         if self.is_at_end():
             return False
         return self.peek().kind == kind
+
+    def consume(self, kind: TokenKind, message: str) -> Token:
+        """Exige un tipo de token y lo consume, o informa un error de sintaxis."""
+        if not self.check(kind):
+            token = self.peek()
+            raise ParseError(
+                f"{message}, se encontró {token.lexeme!r} "
+                f"en la línea {token.line}, columna {token.column}"
+            )
+        return self.advance()

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from ..errors import VMRuntimeError
 from ..tokens import LiteralValue
-from ..values import is_truthy, stringify
+from ..values import is_equal, is_number, is_string, is_truthy, stringify
 from .chunk import Chunk
 from .opcodes import OpCode
 
@@ -25,14 +25,14 @@ class VM:
         self.stack.append(value)
 
     def pop(self) -> object:
-        """Devuelve el tope de la pila y lo retira"""
+        """Devuelve el tope de la pila y lo retira."""
         if not self.stack:
             raise VMRuntimeError("STACK UNDERFLOW", line=self.current_line)
         return self.stack.pop()
 
     # Lectura del chunk
     def read_byte(self) -> int:
-        """Consume el byte en la posición actual y avanza el puntero"""
+        """Consume el byte en la posición actual y avanza el puntero."""
         byte = self.chunk.read(self.ip)
         self.ip += 1
         return byte
@@ -44,7 +44,8 @@ class VM:
     def run(self) -> None:
         """Consume instrucciones hasta OP_RETURN o el final del chunk."""
         while self.ip < len(self.chunk):
-            # La línea se lee antes de consumir el opcode: el op de una instrucción comparte línea con su código, así que sirve para
+            # La línea se lee antes de consumir el opcode: el operando de una
+            # instrucción comparte línea con su código, así que sirve para
             # reportar cualquier error de esta instrucción.
             self.current_line = self.chunk.line_at(self.ip)
 
@@ -62,32 +63,77 @@ class VM:
                 case OpCode.OP_PRINT:
                     print(stringify(self.pop()))
                 case OpCode.OP_NEGATE:
-                    self.push(-self.pop())
+                    value = self.pop()
+                    if not is_number(value):
+                        raise VMRuntimeError(
+                            "Operand of - must be a number", line=self.current_line
+                        )
+                    self.push(-value)
                 case OpCode.OP_NOT:
                     self.push(not is_truthy(self.pop()))
                 case OpCode.OP_ADD:
                     right, left = self.pop(), self.pop()
-                    self.push(left + right)
+                    if is_number(left) and is_number(right):
+                        self.push(left + right)
+                    elif is_string(left) and is_string(right):
+                        self.push(left + right)
+                    else:
+                        raise VMRuntimeError(
+                            "Operands of + must be either numbers or strings",
+                            line=self.current_line,
+                        )
                 case OpCode.OP_SUBTRACT:
                     right, left = self.pop(), self.pop()
+                    if not (is_number(left) and is_number(right)):
+                        raise VMRuntimeError(
+                            "Operands of - must be numbers", line=self.current_line
+                        )
                     self.push(left - right)
                 case OpCode.OP_MULTIPLY:
                     right, left = self.pop(), self.pop()
+                    if not (is_number(left) and is_number(right)):
+                        raise VMRuntimeError(
+                            "Operands of * must be numbers", line=self.current_line
+                        )
                     self.push(left * right)
                 case OpCode.OP_DIVIDE:
                     right, left = self.pop(), self.pop()
+                    if not (is_number(left) and is_number(right)):
+                        raise VMRuntimeError(
+                            "Operands of / must be numbers", line=self.current_line
+                        )
+                    if right == 0:
+                        raise VMRuntimeError(
+                            "Division by zero is not allowed", line=self.current_line
+                        )
                     self.push(left / right)
                 case OpCode.OP_MODULO:
                     right, left = self.pop(), self.pop()
+                    if not (is_number(left) and is_number(right)):
+                        raise VMRuntimeError(
+                            "Operands of % must be numbers", line=self.current_line
+                        )
+                    if right == 0:
+                        raise VMRuntimeError(
+                            "Modulo by zero is not allowed", line=self.current_line
+                        )
                     self.push(left % right)
                 case OpCode.OP_EQUAL:
                     right, left = self.pop(), self.pop()
-                    self.push(left == right)
+                    self.push(is_equal(left, right))
                 case OpCode.OP_GREATER:
                     right, left = self.pop(), self.pop()
+                    if not (is_number(left) and is_number(right)):
+                        raise VMRuntimeError(
+                            "Operands of > must be numbers", line=self.current_line
+                        )
                     self.push(left > right)
                 case OpCode.OP_LESS:
                     right, left = self.pop(), self.pop()
+                    if not (is_number(left) and is_number(right)):
+                        raise VMRuntimeError(
+                            "Operands of < must be numbers", line=self.current_line
+                        )
                     self.push(left < right)
                 case OpCode.OP_RETURN:
                     return

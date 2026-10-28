@@ -17,7 +17,7 @@ from .nodes import (
 )
 from .resolver import BindingResolver
 from .tokens import Token, TokenKind
-from .values import is_truthy, stringify
+from .values import is_equal, is_number, is_string, is_truthy, stringify
 
 
 class Interpreter(Visitor):
@@ -227,7 +227,7 @@ class Interpreter(Visitor):
         son válidos devuelve None; en otro caso lanza LoxRuntimeError usando
         el token del operador para conservar la ubicación del error.
         """
-        if not (self.is_number(left) and self.is_number(right)):
+        if not (is_number(left) and is_number(right)):
             raise LoxRuntimeError(
                 operator, "Operands of " + operator.lexeme + " must be numbers"
             )
@@ -253,7 +253,7 @@ class Interpreter(Visitor):
         el par es válido y lanza LoxRuntimeError con el operador si no lo es.
         """
         if not (
-            (self.is_number(left) and self.is_number(right)) or (self.is_string(left) and self.is_string(right))
+            (is_number(left) and is_number(right)) or (is_string(left) and is_string(right))
         ):
             raise LoxRuntimeError(
                 operator,
@@ -291,7 +291,7 @@ class Interpreter(Visitor):
         #Se utiliza match case como en el libro de lox para manejar los diferentes operadores unarios
         match expression.operator.kind:
             case TokenKind.MINUS:
-                if not self.is_number(right):
+                if not is_number(right):
                     raise LoxRuntimeError(
                         expression.operator, "Operand of - must be a number"
                     )
@@ -395,9 +395,9 @@ class Interpreter(Visitor):
                 self.check_number_operands(expression.operator, left, right)
                 return left <= right
             case TokenKind.EQUAL_EQUAL:
-                return left == right
+                return is_equal(left, right)
             case TokenKind.BANG_EQUAL:
-                return left != right
+                return not is_equal(left, right)
 
         raise LoxRuntimeError(
             expression.operator, "Unknown binary operator " + expression.operator.lexeme,

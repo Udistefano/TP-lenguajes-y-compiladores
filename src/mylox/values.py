@@ -27,3 +27,24 @@ def is_truthy(value: object) -> bool:
     verdaderos. Esta regla evita las diferencias con ``bool()`` de Python.
     """
     return not (value is None or value is False)
+
+
+def is_number(value: object) -> bool:
+    """Indica si el valor es un número de Lox (un float)."""
+    return isinstance(value, float)
+
+
+def is_string(value: object) -> bool:
+    """Indica si el valor es una cadena de Lox."""
+    return isinstance(value, str)
+
+
+def is_equal(left: object, right: object) -> bool:
+    """Igualdad de Lox: tipos distintos nunca son iguales."""
+    if left is None and right is None:
+        return True
+    if left is None or right is None:
+        return False
+    if type(left) is not type(right):
+        return False
+    return left == right
