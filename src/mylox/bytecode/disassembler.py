@@ -6,6 +6,7 @@ from .opcodes import OpCode, takes_operand
 
 RAW_BYTES_HEADER = "== RAW BYTES =="
 COMPILETIME_HEADER = "== COMPILETIME =="
+RUNTIME_HEADER = "== RUNTIME =="
 
 # Bytes por renglón de la vista cruda.
 BYTES_PER_LINE = 5

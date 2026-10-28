@@ -75,7 +75,28 @@ def test_pop_pila_vacia_error_vm():
     chunk.emit(OpCode.OP_POP, line=7)
 
     with pytest.raises(VMRuntimeError) as excinfo:
-        ejecutar(chunk)
+        VM(chunk).run()
 
     assert "STACK UNDERFLOW" in str(excinfo.value)
     assert excinfo.value.line == 7
+
+
+def test_run_con_trace_muestra_el_stack(capsys):
+    chunk = Chunk()
+    carga(chunk, 6.0)
+    carga(chunk, 3.0)
+    chunk.emit(OpCode.OP_DIVIDE, line=1)
+    VM(chunk).run(trace=True)
+
+    salida = capsys.readouterr().out
+    assert "== RUNTIME ==" in salida
+    assert "STACK" in salida
+
+
+def test_run_con_trace_muestra_screen_output_para_print(capsys):
+    chunk = Chunk()
+    carga(chunk, 6.0)
+    chunk.emit(OpCode.OP_PRINT, line=1)
+    VM(chunk).run(trace=True)
+
+    assert "SCREEN OUTPUT 6" in capsys.readouterr().out

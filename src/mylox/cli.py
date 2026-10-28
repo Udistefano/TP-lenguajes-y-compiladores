@@ -65,7 +65,7 @@ def run_actions(
             print(disassemble(chunk), end="")
 
         try:
-            VM(chunk).run()
+            VM(chunk).run(trace=debug)
         except VMRuntimeError as error:
             return report_error(error)
         return EXIT_OK

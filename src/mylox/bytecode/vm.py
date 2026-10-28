@@ -5,11 +5,13 @@ from ..errors import VMRuntimeError
 from ..tokens import LiteralValue
 from ..values import is_equal, is_number, is_string, is_truthy, stringify
 from .chunk import Chunk
+from .disassembler import RUNTIME_HEADER
 from .opcodes import OpCode
 
 
 class VM:
-    """Corre las instrucciones de un chunk sobre una pila de valores.
+    """Corre las instrucciones de un chunk sobre una pila de valores.  se lee el byte en ip y se ejecuta su
+    lógica y avanza. No hay recursión ni nodos del AST, así que los resultados intermedios de las expresiones viven en stack
     """
 
     def __init__(self, chunk: Chunk) -> None:
@@ -41,12 +43,13 @@ class VM:
         """Consume un índice y devuelve la constante del pool que referencia."""
         return self.chunk.constant(self.read_byte())
 
-    def run(self) -> None:
+    def run(self, trace: bool = False) -> None:
         """Consume instrucciones hasta OP_RETURN o el final del chunk."""
+        if trace:
+            print(RUNTIME_HEADER)
+
         while self.ip < len(self.chunk):
-            # La línea se lee antes de consumir el opcode: el operando de una
-            # instrucción comparte línea con su código, así que sirve para
-            # reportar cualquier error de esta instrucción.
+            start = self.ip
             self.current_line = self.chunk.line_at(self.ip)
 
             match OpCode(self.read_byte()):
@@ -61,7 +64,11 @@ class VM:
                 case OpCode.OP_POP:
                     self.pop()
                 case OpCode.OP_PRINT:
-                    print(stringify(self.pop()))
+                    value = self.pop()
+                    if trace:
+                        print(f"{start:04d}| SCREEN OUTPUT {stringify(value)}")
+                        continue
+                    print(stringify(value))
                 case OpCode.OP_NEGATE:
                     value = self.pop()
                     if not is_number(value):
@@ -136,4 +143,13 @@ class VM:
                         )
                     self.push(left < right)
                 case OpCode.OP_RETURN:
+                    if trace:
+                        print(f"{start:04d}| THE END")
                     return
+                case _:
+                    raise VMRuntimeError(
+                        f"UNKNOWN OPCODE {opcode.value}", line=self.current_line
+                    )
+
+            if trace:
+                print(f"{start:04d}| STACK {self.stack}")
