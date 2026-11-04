@@ -16,11 +16,10 @@ def disassemble_instruction(chunk: Chunk, offset: int) -> tuple[str, int]:
     """Renderiza la instrucción en offset y devuelve el próximo offset"""
     opcode = OpCode(chunk.read(offset))
 
-    # Instrucciones de variables globales: el operando es un índice del pool
-    # que referencia el nombre de la variable.
-    if opcode in (OpCode.OP_DEFINE_GLOBAL, OpCode.OP_GET_GLOBAL, OpCode.OP_SET_GLOBAL):
-        name = chunk.constant(chunk.read(offset + 1))
-        return f"{offset:04d}| {opcode.name}<{name!r}>", offset + 2
+    # Instrucciones de variables locales: el operando es un slot del stack.
+    if opcode in (OpCode.OP_GET_LOCAL, OpCode.OP_SET_LOCAL):
+        slot = chunk.read(offset + 1)
+        return f"{offset:04d}| {opcode.name}<{slot}>", offset + 2
 
     # Instrucciones de variables globales: el operando es un índice del pool
     # que referencia el nombre de la variable.

@@ -7,6 +7,19 @@ from .chunk import Chunk
 from .opcodes import OpCode
 
 
+class Local:
+    """Una variable local durante la compilación.
+
+    ``depth`` indica el nivel de anidación del scope que la declaró.
+    ``initialized`` evita leer la variable en su propia inicialización.
+    """
+
+    def __init__(self, name: str, depth: int) -> None:
+        self.name = name
+        self.depth = depth
+        self.initialized = False
+
+
 class Compiler:
     """Traduce una secuencia de tokens en un chunk de bytecode. No construye AST: parsea y emite instrucciones en el mismo recorrido
     """
@@ -16,6 +29,52 @@ class Compiler:
         self.tokens = tokens
         self.current = 0
         self.chunk = Chunk()
+        self.scope_depth = 0
+        self.locals: list[Local] = []
+
+    # ---------- Scopes ---------- #
+
+    def begin_scope(self) -> None:
+        """Entra a un bloque nuevo, incrementando la profundidad de scope."""
+        self.scope_depth += 1
+
+    def end_scope(self) -> None:
+        """Sale del bloque actual y retira las variables locales del stack."""
+        self.scope_depth -= 1
+        removed = 0
+        while self.locals and self.locals[-1].depth > self.scope_depth:
+            removed += 1
+            self.locals.pop()
+        for _ in range(removed):
+            self.chunk.emit(OpCode.OP_POP, self.previous().line)
+
+    def declare(self, name: str) -> None:
+        """Registra una variable local en el scope actual."""
+        if self.scope_depth == 0:
+            return
+        for local in reversed(self.locals):
+            if local.depth < self.scope_depth:
+                break
+            if local.name == name:
+                raise ParseError(f"Variable {name} ya existe en este ámbito")
+        self.locals.append(Local(name, self.scope_depth))
+
+    def mark_initialized(self) -> None:
+        """Marca la última variable local declarada como inicializada."""
+        if self.locals:
+            self.locals[-1].initialized = True
+
+    def resolve_local(self, name: Token) -> int | None:
+        """Devuelve el slot de la variable local, o None si es global."""
+        for idx, local in enumerate(reversed(self.locals), 1):
+            if local.name == name.lexeme:
+                if not local.initialized:
+                    raise ParseError(
+                        f"No se puede leer la variable local en su propia "
+                        f"inicialización en la línea {name.line}, columna {name.column}"
+                    )
+                return len(self.locals) - idx
+        return None
 
     def compile(self) -> Chunk:
         """Compila un programa completo y devuelve el chunk resultante."""
@@ -35,18 +94,34 @@ class Compiler:
     def var_declaration(self) -> None:
         """Compila ``var nombre (= expresión)? ;``."""
         name = self.consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de variable")
+        is_local = self.scope_depth > 0
+
+        if is_local:
+            self.declare(name.lexeme)
+
         if self.match(TokenKind.EQUAL):
             self.expression()
         else:
             self.chunk.emit(OpCode.OP_NIL, name.line)
+
         self.consume(TokenKind.SEMICOLON, "Se esperaba ';' después de var")
-        index = self.chunk.add_constant(name.lexeme)
-        self.chunk.emit(OpCode.OP_DEFINE_GLOBAL, name.line, index)
+
+        if is_local:
+            self.mark_initialized()
+        else:
+            index = self.chunk.add_constant(name.lexeme)
+            self.chunk.emit(OpCode.OP_DEFINE_GLOBAL, name.line, index)
 
     # Sentencias
 
     def statement(self) -> None:
         """Lee una sentencia y emite sus instrucciones."""
+        if self.match(TokenKind.LEFT_BRACE):
+            self.begin_scope()
+            self.block()
+            self.end_scope()
+            return
+
         if self.match(TokenKind.PRINT):
             self.expression()
             self.consume(TokenKind.SEMICOLON, "Se esperaba ';' después de print")
@@ -56,6 +131,12 @@ class Compiler:
         self.expression()
         self.consume(TokenKind.SEMICOLON, "Se esperaba ';' después de la expresión")
         self.chunk.emit(OpCode.OP_POP, self.previous().line)
+
+    def block(self) -> None:
+        """Lee el contenido de un bloque cuya llave de apertura ya se consumió."""
+        while not self.is_at_end() and not self.check(TokenKind.RIGHT_BRACE):
+            self.declaration()
+        self.consume(TokenKind.RIGHT_BRACE, "Se esperaba '}' después del bloque")
 
     #  Expresiones
 
@@ -69,8 +150,12 @@ class Compiler:
             name = self.advance()
             self.consume(TokenKind.EQUAL, "Se esperaba '=' después del nombre")
             self.assignment()
-            index = self.chunk.add_constant(name.lexeme)
-            self.chunk.emit(OpCode.OP_SET_GLOBAL, name.line, index)
+            slot = self.resolve_local(name)
+            if slot is not None:
+                self.chunk.emit(OpCode.OP_SET_LOCAL, name.line, slot)
+            else:
+                index = self.chunk.add_constant(name.lexeme)
+                self.chunk.emit(OpCode.OP_SET_GLOBAL, name.line, index)
             return
         self.equality()
         if self.match(TokenKind.EQUAL):
@@ -167,6 +252,15 @@ class Compiler:
                 OpCode.OP_CONSTANT, token.line, self.chunk.add_constant(token.literal)
             )
             return
+        if self.match(TokenKind.IDENTIFIER):
+            name = self.previous()
+            slot = self.resolve_local(name)
+            if slot is not None:
+                self.chunk.emit(OpCode.OP_GET_LOCAL, name.line, slot)
+            else:
+                index = self.chunk.add_constant(name.lexeme)
+                self.chunk.emit(OpCode.OP_GET_GLOBAL, name.line, index)
+            return
         if self.match(TokenKind.LEFT_PAREN):
             self.expression()
             if not self.match(TokenKind.RIGHT_PAREN):
@@ -176,12 +270,6 @@ class Compiler:
                     f"se encontró {token.lexeme!r} en la línea {token.line}, "
                     f"columna {token.column}"
                 )
-            return
-
-        if self.match(TokenKind.IDENTIFIER):
-            name = self.previous()
-            index = self.chunk.add_constant(name.lexeme)
-            self.chunk.emit(OpCode.OP_GET_GLOBAL, name.line, index)
             return
 
         token = self.peek()

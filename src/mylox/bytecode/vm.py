@@ -89,6 +89,12 @@ class VM:
                             f"Undefined variable '{var_name}'", line=self.current_line
                         )
                     self.push(self.globals[str(var_name)])
+                case OpCode.OP_GET_LOCAL:
+                    slot = self.read_byte()
+                    self.push(self.stack[slot])
+                case OpCode.OP_SET_LOCAL:
+                    slot = self.read_byte()
+                    self.stack[slot] = self.peek()
                 case OpCode.OP_POP:
                     self.pop()
                 case OpCode.OP_PRINT:

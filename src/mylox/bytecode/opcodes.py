@@ -16,6 +16,10 @@ class OpCode(Enum):
     OP_FALSE = auto()
     OP_NIL = auto()
 
+    # Variables locales
+    OP_GET_LOCAL = auto()
+    OP_SET_LOCAL = auto()
+
     # Variables globales
     OP_DEFINE_GLOBAL = auto()
     OP_GET_GLOBAL = auto()
@@ -53,6 +57,8 @@ class Instruction:
 INSTRUCTIONS: dict[OpCode, Instruction] = {
     # Las cuatro cargas empujan un valor y no consumen ninguno.
     OpCode.OP_CONSTANT: Instruction(stack_effect=+1, has_operand=True),
+    OpCode.OP_GET_LOCAL: Instruction(stack_effect=+1, has_operand=True),
+    OpCode.OP_SET_LOCAL: Instruction(stack_effect=0, has_operand=True),
     OpCode.OP_DEFINE_GLOBAL: Instruction(stack_effect=-1, has_operand=True),
     OpCode.OP_GET_GLOBAL: Instruction(stack_effect=+1, has_operand=True),
     OpCode.OP_SET_GLOBAL: Instruction(stack_effect=0, has_operand=True),
