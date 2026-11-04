@@ -4,6 +4,7 @@ from __future__ import annotations
 from ..errors import ParseError
 from ..tokens import Token, TokenKind
 from .chunk import Chunk
+from .function import Function
 from .opcodes import OpCode
 
 
@@ -24,13 +25,14 @@ class Compiler:
     """Traduce una secuencia de tokens en un chunk de bytecode. No construye AST: parsea y emite instrucciones en el mismo recorrido
     """
 
-    def __init__(self, tokens: list[Token]) -> None:
+    def __init__(self, tokens: list[Token], start: int = 0) -> None:
         """Conserva la secuencia de tokens e inicia el cursor y el chunk."""
         self.tokens = tokens
-        self.current = 0
+        self.current = start
         self.chunk = Chunk()
         self.scope_depth = 0
         self.locals: list[Local] = []
+        self.in_function = False
 
     # ---------- Scopes ---------- #
 
@@ -80,13 +82,16 @@ class Compiler:
         """Compila un programa completo y devuelve el chunk resultante."""
         while not self.is_at_end():
             self.declaration()
+        self.chunk.emit(OpCode.OP_NIL, self.previous().line)
         self.chunk.emit(OpCode.OP_RETURN, self.previous().line)
         return self.chunk
 
     # Declaraciones
     def declaration(self) -> None:
-        """Lee una declaración var o delega en una sentencia ordinaria."""
-        if self.match(TokenKind.VAR):
+        """Lee una declaración var, fun o delega en una sentencia ordinaria."""
+        if self.match(TokenKind.FUN):
+            self.function_declaration()
+        elif self.match(TokenKind.VAR):
             self.var_declaration()
         else:
             self.statement()
@@ -197,10 +202,62 @@ class Compiler:
 
         self.end_scope()
 
+    def function_declaration(self) -> None:
+        """Compila ``fun nombre ( params? ) { cuerpo }``."""
+        name = self.consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de función")
+        is_local = self.scope_depth > 0
+
+        if is_local:
+            self.declare(name.lexeme)
+            self.mark_initialized()
+
+        self.consume(TokenKind.LEFT_PAREN, "Se esperaba '(' después del nombre")
+
+        params: list[Token] = []
+        if not self.check(TokenKind.RIGHT_PAREN):
+            params.append(self.consume(TokenKind.IDENTIFIER, "Se esperaba un parámetro"))
+            while self.match(TokenKind.COMMA):
+                params.append(self.consume(TokenKind.IDENTIFIER, "Se esperaba un parámetro"))
+
+        self.consume(TokenKind.RIGHT_PAREN, "Se esperaba ')' después de los parámetros")
+        self.consume(TokenKind.LEFT_BRACE, "Se esperaba '{' antes del cuerpo")
+
+        body_compiler = Compiler(self.tokens, start=self.current)
+        body_compiler.in_function = True
+        body_compiler.begin_scope()
+
+        for param in params:
+            body_compiler.declare(param.lexeme)
+            body_compiler.mark_initialized()
+
+        while not body_compiler.is_at_end() and not body_compiler.check(TokenKind.RIGHT_BRACE):
+            body_compiler.declaration()
+
+        body_compiler.consume(TokenKind.RIGHT_BRACE, "Se esperaba '}' después del cuerpo")
+
+        # Failsafe return
+        body_compiler.chunk.emit(OpCode.OP_NIL, body_compiler.previous().line)
+        body_compiler.chunk.emit(OpCode.OP_RETURN, body_compiler.previous().line)
+
+        self.current = body_compiler.current
+
+        function = Function(name.lexeme)
+        function.chunk = body_compiler.chunk
+        function.arity = len(params)
+        index = self.chunk.add_constant(function)
+        self.chunk.emit(OpCode.OP_CLOSURE, name.line, index)
+
+        if not is_local:
+            name_index = self.chunk.add_constant(name.lexeme)
+            self.chunk.emit(OpCode.OP_DEFINE_GLOBAL, name.line, name_index)
+
     # Sentencias
 
     def statement(self) -> None:
         """Lee una sentencia y emite sus instrucciones."""
+        if self.match(TokenKind.RETURN):
+            self.return_statement()
+            return
         if self.match(TokenKind.IF):
             self.if_statement()
             return
@@ -225,6 +282,17 @@ class Compiler:
         self.expression()
         self.consume(TokenKind.SEMICOLON, "Se esperaba ';' después de la expresión")
         self.chunk.emit(OpCode.OP_POP, self.previous().line)
+
+    def return_statement(self) -> None:
+        """Compila ``return (expresión)? ;``."""
+        if not self.in_function:
+            raise ParseError("No se puede usar 'return' fuera de una función")
+        if self.match(TokenKind.SEMICOLON):
+            self.chunk.emit(OpCode.OP_NIL, self.previous().line)
+        else:
+            self.expression()
+            self.consume(TokenKind.SEMICOLON, "Se esperaba ';' después de return")
+        self.chunk.emit(OpCode.OP_RETURN, self.previous().line)
 
     def block(self) -> None:
         """Lee el contenido de un bloque cuya llave de apertura ya se consumió."""
@@ -374,6 +442,18 @@ class Compiler:
             else:
                 index = self.chunk.add_constant(name.lexeme)
                 self.chunk.emit(OpCode.OP_GET_GLOBAL, name.line, index)
+
+            # Llamadas encadenadas: f(x)(y)
+            while self.match(TokenKind.LEFT_PAREN):
+                arg_count = 0
+                if not self.check(TokenKind.RIGHT_PAREN):
+                    self.expression()
+                    arg_count += 1
+                    while self.match(TokenKind.COMMA):
+                        self.expression()
+                        arg_count += 1
+                self.consume(TokenKind.RIGHT_PAREN, "Se esperaba ')' después de los argumentos")
+                self.chunk.emit(OpCode.OP_CALL, name.line, arg_count)
             return
         if self.match(TokenKind.LEFT_PAREN):
             self.expression()

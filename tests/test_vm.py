@@ -67,7 +67,9 @@ def test_op_return_detiene_ejecucion():
     chunk.emit(OpCode.OP_RETURN, line=1)
     carga(chunk, 2.0)
 
-    assert ejecutar(chunk).stack == [1.0]
+    vm = VM(chunk)
+    vm.run()
+    assert vm.stack == []
 
 
 def test_pop_pila_vacia_error_vm():

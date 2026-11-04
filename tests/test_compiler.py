@@ -13,23 +13,25 @@ def compilar(source: str) -> Chunk:
 
 def test_un_literal_numero_es_una_sentencia_de_expresion():
     chunk = compilar("6;")
-    assert len(chunk) == 4
+    assert len(chunk) == 5
     assert chunk.read(0) == OpCode.OP_CONSTANT.value
     assert chunk.read(2) == OpCode.OP_POP.value
-    assert chunk.read(3) == OpCode.OP_RETURN.value
+    assert chunk.read(3) == OpCode.OP_NIL.value
+    assert chunk.read(4) == OpCode.OP_RETURN.value
 
 
 def test_la_expresion_seis_sobre_tres_menos_uno_coincide_con_la_diapositiva():
     chunk = compilar("6 / 3 - 1;")
 
-    assert len(chunk) == 10
+    assert len(chunk) == 11
     assert chunk.read(0) == OpCode.OP_CONSTANT.value
     assert chunk.read(2) == OpCode.OP_CONSTANT.value
     assert chunk.read(4) == OpCode.OP_DIVIDE.value
     assert chunk.read(5) == OpCode.OP_CONSTANT.value
     assert chunk.read(7) == OpCode.OP_SUBTRACT.value
     assert chunk.read(8) == OpCode.OP_POP.value
-    assert chunk.read(9) == OpCode.OP_RETURN.value
+    assert chunk.read(9) == OpCode.OP_NIL.value
+    assert chunk.read(10) == OpCode.OP_RETURN.value
 
 
 def test_print_emite_op_print_despues_de_la_expresion():
@@ -37,20 +39,22 @@ def test_print_emite_op_print_despues_de_la_expresion():
 
     assert chunk.read(0) == OpCode.OP_CONSTANT.value
     assert chunk.read(2) == OpCode.OP_PRINT.value
-    assert chunk.read(3) == OpCode.OP_RETURN.value
+    assert chunk.read(3) == OpCode.OP_NIL.value
+    assert chunk.read(4) == OpCode.OP_RETURN.value
 
 
 def test_un_programa_con_varias_sentencias_compila_todas():
     chunk = compilar("print 2; 3 + 4;")
 
-    assert len(chunk) == 10
+    assert len(chunk) == 11
     assert chunk.read(0) == OpCode.OP_CONSTANT.value
     assert chunk.read(2) == OpCode.OP_PRINT.value
     assert chunk.read(3) == OpCode.OP_CONSTANT.value
     assert chunk.read(5) == OpCode.OP_CONSTANT.value
     assert chunk.read(7) == OpCode.OP_ADD.value
     assert chunk.read(8) == OpCode.OP_POP.value
-    assert chunk.read(9) == OpCode.OP_RETURN.value
+    assert chunk.read(9) == OpCode.OP_NIL.value
+    assert chunk.read(10) == OpCode.OP_RETURN.value
 
 
 def test_la_agrupacion_cambia_el_orden_de_evaluacion():
@@ -133,5 +137,6 @@ def test_el_error_de_sintaxis_conserva_la_posicion():
 
 def test_un_programa_vacio_emite_solo_return():
     chunk = compilar("")
-    assert len(chunk) == 1
-    assert chunk.read(0) == OpCode.OP_RETURN.value
+    assert len(chunk) == 2
+    assert chunk.read(0) == OpCode.OP_NIL.value
+    assert chunk.read(1) == OpCode.OP_RETURN.value

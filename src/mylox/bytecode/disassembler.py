@@ -25,8 +25,17 @@ def disassemble_instruction(chunk: Chunk, offset: int) -> tuple[str, int]:
             return f"{offset:04d}| {opcode.name}<-{target}>", offset + 3
         return f"{offset:04d}| {opcode.name}<+{target}>", offset + 3
 
-    # Instrucciones de variables locales: el operando es un slot del stack.
-    if opcode in (OpCode.OP_GET_LOCAL, OpCode.OP_SET_LOCAL):
+    # Funciones: OP_CALL lleva la cantidad de argumentos.
+    if opcode == OpCode.OP_CALL:
+        argc = chunk.read(offset + 1)
+        return f"{offset:04d}| {opcode.name}<{argc}>", offset + 2
+
+    # OP_CLOSURE lleva un índice del pool que referencia una función.
+    if opcode == OpCode.OP_CLOSURE:
+        function = chunk.constant(chunk.read(offset + 1))
+        name = getattr(function, "name", None)
+        display_name = name if name is not None else "script"
+        return f"{offset:04d}| {opcode.name}<fn {display_name}()>", offset + 2
         slot = chunk.read(offset + 1)
         return f"{offset:04d}| {opcode.name}<{slot}>", offset + 2
 

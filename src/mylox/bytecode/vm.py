@@ -6,21 +6,44 @@ from ..tokens import LiteralValue
 from ..values import is_equal, is_number, is_string, is_truthy, stringify
 from .chunk import Chunk
 from .disassembler import RUNTIME_HEADER
+from .function import CallFrame, Closure, Function
 from .opcodes import OpCode
 
 
 class VM:
-    """Corre las instrucciones de un chunk sobre una pila de valores.  se lee el byte en ip y se ejecuta su
-    lógica y avanza. No hay recursión ni nodos del AST, así que los resultados intermedios de las expresiones viven en stack
+    """Corre las instrucciones de un chunk sobre una pila de valores.
+
+    La ejecución es un bucle lineal: se lee el byte en ``ip``, se ejecuta su
+    lógica y se avanza. No hay recursión ni nodos del AST, así que los
+    resultados intermedios de las expresiones viven en ``stack``.
+
+    Cada invocación de función crea un ``CallFrame`` con su propio ``ip`` y
+    su base en el stack, de modo que las variables locales se indexan de
+    forma relativa a ese frame.
     """
 
     def __init__(self, chunk: Chunk) -> None:
         """Crea la máquina lista para ejecutar chunk, con la pila vacía."""
-        self.chunk = chunk
-        self.ip = 0
+        self.main_chunk = chunk
+        self.frames: list[CallFrame] = []
         self.stack: list[object] = []
         self.globals: dict[str, object] = {}
+        self.open_upvalues: list = []
         self.current_line = 1
+
+    @property
+    def chunk(self) -> Chunk:
+        """El chunk del frame que se está ejecutando."""
+        return self.frames[-1].closure.function.chunk
+
+    @property
+    def ip(self) -> int:
+        """El ip del frame que se está ejecutando."""
+        return self.frames[-1].ip
+
+    @ip.setter
+    def ip(self, value: int) -> None:
+        self.frames[-1].ip = value
 
     # Pila
     def push(self, value: object) -> None:
@@ -52,12 +75,28 @@ class VM:
 
     def run(self, trace: bool = False) -> None:
         """Consume instrucciones hasta OP_RETURN o el final del chunk."""
+        # Frame del script principal
+        main_function = Function(None)
+        main_function.chunk = self.main_chunk
+        main_closure = Closure(main_function)
+        main_frame = CallFrame(main_closure, 0)
+        self.frames.append(main_frame)
+
         if trace:
             print(RUNTIME_HEADER)
 
-        while self.ip < len(self.chunk):
+        while self.frames:
+            if self.ip >= len(self.chunk):
+                # Chunk agotado sin OP_RETURN: retorno implícito.
+                finished_frame = self.frames.pop()
+                if not self.frames:
+                    return
+                self.stack = self.stack[: finished_frame.stack_slot - 1]
+                self.push(None)
+                continue
+
             start = self.ip
-            self.current_line = self.chunk.line_at(self.ip)
+            self.current_line = self.chunk.line_at(self.ip) if self.ip < len(self.chunk) else 1
 
             match OpCode(self.read_byte()):
                 case OpCode.OP_CONSTANT:
@@ -91,10 +130,12 @@ class VM:
                     self.push(self.globals[str(var_name)])
                 case OpCode.OP_GET_LOCAL:
                     slot = self.read_byte()
-                    self.push(self.stack[slot])
+                    base = self.frames[-1].stack_slot
+                    self.push(self.stack[base + slot])
                 case OpCode.OP_SET_LOCAL:
                     slot = self.read_byte()
-                    self.stack[slot] = self.peek()
+                    base = self.frames[-1].stack_slot
+                    self.stack[base + slot] = self.peek()
                 case OpCode.OP_POP:
                     self.pop()
                 case OpCode.OP_PRINT:
@@ -103,16 +144,6 @@ class VM:
                         print(f"{start:04d}| SCREEN OUTPUT {stringify(value)}")
                         continue
                     print(stringify(value))
-                case OpCode.OP_JUMP:
-                    offset = (self.read_byte() << 8) | self.read_byte()
-                    self.ip += offset
-                case OpCode.OP_JUMP_IF_FALSE:
-                    offset = (self.read_byte() << 8) | self.read_byte()
-                    if not is_truthy(self.peek()):
-                        self.ip += offset
-                case OpCode.OP_LOOP:
-                    offset = (self.read_byte() << 8) | self.read_byte()
-                    self.ip -= offset
                 case OpCode.OP_NEGATE:
                     value = self.pop()
                     if not is_number(value):
@@ -186,10 +217,58 @@ class VM:
                             "Operands of < must be numbers", line=self.current_line
                         )
                     self.push(left < right)
-                case OpCode.OP_RETURN:
+                case OpCode.OP_JUMP:
+                    offset = (self.read_byte() << 8) | self.read_byte()
+                    self.ip += offset
+                case OpCode.OP_JUMP_IF_FALSE:
+                    offset = (self.read_byte() << 8) | self.read_byte()
+                    if not is_truthy(self.peek()):
+                        self.ip += offset
+                case OpCode.OP_LOOP:
+                    offset = (self.read_byte() << 8) | self.read_byte()
+                    self.ip -= offset
+                case OpCode.OP_CALL:
+                    arg_count = self.read_byte()
+                    closure = self.peek(arg_count)
+                    if not isinstance(closure, Closure):
+                        raise VMRuntimeError(
+                            f"Cannot call non-callable object: {closure}",
+                            line=self.current_line,
+                        )
+                    if closure.function.arity != arg_count:
+                        raise VMRuntimeError(
+                            f"Expected {closure.function.arity} arguments, got {arg_count}",
+                            line=self.current_line,
+                        )
+                    self.frames[-1].ip = self.ip
+                    fn_callframe = CallFrame(closure, len(self.stack) - arg_count)
+                    self.frames.append(fn_callframe)
+                    self.ip = 0
                     if trace:
-                        print(f"{start:04d}| THE END")
-                    return
+                        print(f"{start:04d}| ENTERING CALLFRAME {closure.function.name}()")
+                        continue
+                case OpCode.OP_CLOSURE:
+                    fun_index = self.read_byte()
+                    function = self.chunk.constant(fun_index)
+                    closure = Closure(function)
+                    self.push(closure)
+                case OpCode.OP_RETURN:
+                    result = self.pop()
+                    finished_frame = self.frames.pop()
+                    if not self.frames:
+                        if self.stack:
+                            raise VMRuntimeError(
+                                "Inconsistent Stack Height: should be empty at exit",
+                                line=self.current_line,
+                            )
+                        if trace:
+                            print(f"{start:04d}| THE END")
+                        return
+                    self.stack = self.stack[: finished_frame.stack_slot - 1]
+                    self.push(result)
+                    if trace:
+                        print(f"{start:04d}| EXITING CALLFRAME {finished_frame.closure.function.name}()")
+                        continue
                 case _:
                     raise VMRuntimeError(
                         f"UNKNOWN OPCODE {opcode.value}", line=self.current_line

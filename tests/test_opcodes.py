@@ -18,6 +18,8 @@ def test_solo_opcodes_de_variables_globales_y_locales_llevan_operando_junto_a_co
         OpCode.OP_JUMP,
         OpCode.OP_JUMP_IF_FALSE,
         OpCode.OP_LOOP,
+        OpCode.OP_CALL,
+        OpCode.OP_CLOSURE,
     }
 
 
