@@ -103,6 +103,16 @@ class VM:
                         print(f"{start:04d}| SCREEN OUTPUT {stringify(value)}")
                         continue
                     print(stringify(value))
+                case OpCode.OP_JUMP:
+                    offset = (self.read_byte() << 8) | self.read_byte()
+                    self.ip += offset
+                case OpCode.OP_JUMP_IF_FALSE:
+                    offset = (self.read_byte() << 8) | self.read_byte()
+                    if not is_truthy(self.peek()):
+                        self.ip += offset
+                case OpCode.OP_LOOP:
+                    offset = (self.read_byte() << 8) | self.read_byte()
+                    self.ip -= offset
                 case OpCode.OP_NEGATE:
                     value = self.pop()
                     if not is_number(value):

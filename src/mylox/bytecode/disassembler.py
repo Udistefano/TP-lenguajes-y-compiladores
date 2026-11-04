@@ -16,6 +16,15 @@ def disassemble_instruction(chunk: Chunk, offset: int) -> tuple[str, int]:
     """Renderiza la instrucción en offset y devuelve el próximo offset"""
     opcode = OpCode(chunk.read(offset))
 
+    # Saltos: operando de 2 bytes (offset).
+    if opcode in (OpCode.OP_JUMP, OpCode.OP_JUMP_IF_FALSE, OpCode.OP_LOOP):
+        high = chunk.read(offset + 1)
+        low = chunk.read(offset + 2)
+        target = (high << 8) | low
+        if opcode == OpCode.OP_LOOP:
+            return f"{offset:04d}| {opcode.name}<-{target}>", offset + 3
+        return f"{offset:04d}| {opcode.name}<+{target}>", offset + 3
+
     # Instrucciones de variables locales: el operando es un slot del stack.
     if opcode in (OpCode.OP_GET_LOCAL, OpCode.OP_SET_LOCAL):
         slot = chunk.read(offset + 1)

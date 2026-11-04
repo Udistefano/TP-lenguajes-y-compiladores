@@ -82,6 +82,18 @@ class Chunk:
         """El pool completo, en sólo lectura, para el desensamblador."""
         return tuple(self._constants)
 
+    def patch(self, offset: int, byte: int) -> None:
+        """Sobrescribe el byte en ``offset`` con un nuevo valor.
+
+        Se usa para emparchar los placeholders de los saltos una vez que se
+        conoce el offset real.
+        """
+        if not (0 <= offset < len(self._bytes)):
+            raise CompileError(f"offset {offset} fuera de rango")
+        if not (0 <= byte <= 255):
+            raise CompileError(f"el byte {byte} no entra en un byte de código")
+        self._bytes[offset] = byte
+
     def __len__(self) -> int:
-        """Cantidad de bytes del chunk, que no equivale a cantidad de instrucciones"""
+        """Cantidad de bytes del chunk, que no equivale a cantidad de instrucciones."""
         return len(self._bytes)

@@ -112,10 +112,104 @@ class Compiler:
             index = self.chunk.add_constant(name.lexeme)
             self.chunk.emit(OpCode.OP_DEFINE_GLOBAL, name.line, index)
 
+    def if_statement(self) -> None:
+        """Compila ``if (condición) sentencia (else sentencia)?``."""
+        self.consume(TokenKind.LEFT_PAREN, "Se esperaba '(' después de if")
+        self.expression()
+        self.consume(TokenKind.RIGHT_PAREN, "Se esperaba ')' después de la condición")
+
+        then_jump = self.emit_jump(OpCode.OP_JUMP_IF_FALSE, self.previous().line)
+        self.chunk.emit(OpCode.OP_POP, self.previous().line)
+
+        self.statement()
+
+        else_jump = self.emit_jump(OpCode.OP_JUMP, self.previous().line)
+        self.patch_jump(then_jump)
+        self.chunk.emit(OpCode.OP_POP, self.previous().line)
+
+        if self.match(TokenKind.ELSE):
+            self.statement()
+
+        self.patch_jump(else_jump)
+
+    def while_statement(self) -> None:
+        """Compila ``while (condición) sentencia``."""
+        loop_start = len(self.chunk)
+        self.consume(TokenKind.LEFT_PAREN, "Se esperaba '(' después de while")
+        self.expression()
+        self.consume(TokenKind.RIGHT_PAREN, "Se esperaba ')' después de la condición")
+
+        exit_jump = self.emit_jump(OpCode.OP_JUMP_IF_FALSE, self.previous().line)
+        self.chunk.emit(OpCode.OP_POP, self.previous().line)
+
+        self.statement()
+
+        self.emit_loop(loop_start, self.previous().line)
+        self.patch_jump(exit_jump)
+        self.chunk.emit(OpCode.OP_POP, self.previous().line)
+
+    def for_statement(self) -> None:
+        """Compila ``for (init; cond; incr) sentencia``."""
+        self.begin_scope()
+        self.consume(TokenKind.LEFT_PAREN, "Se esperaba '(' después de for")
+
+        # Inicializador
+        if self.match(TokenKind.SEMICOLON):
+            pass
+        elif self.match(TokenKind.VAR):
+            self.var_declaration()
+        else:
+            self.expression()
+            self.consume(TokenKind.SEMICOLON, "Se esperaba ';' después de la expresión")
+            self.chunk.emit(OpCode.OP_POP, self.previous().line)
+
+        # Condición
+        loop_start = len(self.chunk)
+        exit_jump = None
+        if not self.check(TokenKind.SEMICOLON):
+            self.expression()
+            self.consume(TokenKind.SEMICOLON, "Se esperaba ';' después de la condición")
+            exit_jump = self.emit_jump(OpCode.OP_JUMP_IF_FALSE, self.previous().line)
+            self.chunk.emit(OpCode.OP_POP, self.previous().line)
+        else:
+            self.consume(TokenKind.SEMICOLON, "Se esperaba ';' después de la condición")
+
+        # Incremento
+        if not self.check(TokenKind.RIGHT_PAREN):
+            body_jump = self.emit_jump(OpCode.OP_JUMP, self.previous().line)
+            increment_start = len(self.chunk)
+            self.expression()
+            self.chunk.emit(OpCode.OP_POP, self.previous().line)
+            self.consume(TokenKind.RIGHT_PAREN, "Se esperaba ')' después de las cláusulas")
+            self.emit_loop(loop_start, self.previous().line)
+            loop_start = increment_start
+            self.patch_jump(body_jump)
+        else:
+            self.consume(TokenKind.RIGHT_PAREN, "Se esperaba ')' después de las cláusulas")
+
+        # Cuerpo
+        self.statement()
+        self.emit_loop(loop_start, self.previous().line)
+
+        if exit_jump is not None:
+            self.patch_jump(exit_jump)
+            self.chunk.emit(OpCode.OP_POP, self.previous().line)
+
+        self.end_scope()
+
     # Sentencias
 
     def statement(self) -> None:
         """Lee una sentencia y emite sus instrucciones."""
+        if self.match(TokenKind.IF):
+            self.if_statement()
+            return
+        if self.match(TokenKind.WHILE):
+            self.while_statement()
+            return
+        if self.match(TokenKind.FOR):
+            self.for_statement()
+            return
         if self.match(TokenKind.LEFT_BRACE):
             self.begin_scope()
             self.block()
@@ -157,13 +251,33 @@ class Compiler:
                 index = self.chunk.add_constant(name.lexeme)
                 self.chunk.emit(OpCode.OP_SET_GLOBAL, name.line, index)
             return
-        self.equality()
+        self.logical_or()
         if self.match(TokenKind.EQUAL):
             token = self.previous()
             raise ParseError(
                 f"Destino inválido de asignación en la línea {token.line}, "
                 f"columna {token.column}"
             )
+
+    def logical_or(self) -> None:
+        """logical_or → logical_and ( 'or' logical_and )*"""
+        self.logical_and()
+        while self.match(TokenKind.OR):
+            else_jump = self.emit_jump(OpCode.OP_JUMP_IF_FALSE, self.previous().line)
+            end_jump = self.emit_jump(OpCode.OP_JUMP, self.previous().line)
+            self.patch_jump(else_jump)
+            self.chunk.emit(OpCode.OP_POP, self.previous().line)
+            self.logical_and()
+            self.patch_jump(end_jump)
+
+    def logical_and(self) -> None:
+        """logical_and → equality ( 'and' equality )*"""
+        self.equality()
+        while self.match(TokenKind.AND):
+            end_jump = self.emit_jump(OpCode.OP_JUMP_IF_FALSE, self.previous().line)
+            self.chunk.emit(OpCode.OP_POP, self.previous().line)
+            self.equality()
+            self.patch_jump(end_jump)
 
     def equality(self) -> None:
         """equality → comparison ( ( '!=' | '==' ) comparison )*"""
@@ -277,6 +391,28 @@ class Compiler:
             f"Se esperaba una expresión, se encontró {token.lexeme!r} "
             f"en la línea {token.line}, columna {token.column}"
         )
+
+    # ---------- Saltos ---------- #
+
+    def emit_jump(self, opcode: OpCode, line: int) -> int:
+        """Emite un salto con placeholder de 2 bytes. Devuelve la posición del primer byte del operando."""
+        self.chunk.write_byte(opcode.value, line)
+        self.chunk.write_byte(0xFF, line)
+        self.chunk.write_byte(0xFF, line)
+        return len(self.chunk) - 2
+
+    def patch_jump(self, offset: int) -> None:
+        """Emparcha un salto con el offset calculado desde la posición actual."""
+        target = len(self.chunk) - offset - 2
+        self.chunk.patch(offset, (target >> 8) & 0xFF)
+        self.chunk.patch(offset + 1, target & 0xFF)
+
+    def emit_loop(self, loop_start: int, line: int) -> None:
+        """Emite un salto hacia atrás hacia loop_start."""
+        self.chunk.write_byte(OpCode.OP_LOOP.value, line)
+        target = len(self.chunk) - loop_start + 2
+        self.chunk.write_byte((target >> 8) & 0xFF, line)
+        self.chunk.write_byte(target & 0xFF, line)
 
     # ---------- Tokens ---------- #
 
