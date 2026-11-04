@@ -19,6 +19,7 @@ class VM:
         self.chunk = chunk
         self.ip = 0
         self.stack: list[object] = []
+        self.globals: dict[str, object] = {}
         self.current_line = 1
 
     # Pila
@@ -31,6 +32,12 @@ class VM:
         if not self.stack:
             raise VMRuntimeError("STACK UNDERFLOW", line=self.current_line)
         return self.stack.pop()
+
+    def peek(self, distance: int = 0) -> object:
+        """Devuelve el valor a ``distance`` posiciones del tope, sin retirarlo."""
+        if len(self.stack) <= distance:
+            raise VMRuntimeError("STACK UNDERFLOW", line=self.current_line)
+        return self.stack[-1 - distance]
 
     # Lectura del chunk
     def read_byte(self) -> int:
@@ -61,6 +68,27 @@ class VM:
                     self.push(False)
                 case OpCode.OP_NIL:
                     self.push(None)
+                case OpCode.OP_DEFINE_GLOBAL:
+                    var_index = self.read_byte()
+                    var_name = self.chunk.constant(var_index)
+                    var_value = self.pop()
+                    self.globals[str(var_name)] = var_value
+                case OpCode.OP_SET_GLOBAL:
+                    var_index = self.read_byte()
+                    var_name = self.chunk.constant(var_index)
+                    if str(var_name) not in self.globals:
+                        raise VMRuntimeError(
+                            f"Undefined variable '{var_name}'", line=self.current_line
+                        )
+                    self.globals[str(var_name)] = self.peek()
+                case OpCode.OP_GET_GLOBAL:
+                    var_index = self.read_byte()
+                    var_name = self.chunk.constant(var_index)
+                    if str(var_name) not in self.globals:
+                        raise VMRuntimeError(
+                            f"Undefined variable '{var_name}'", line=self.current_line
+                        )
+                    self.push(self.globals[str(var_name)])
                 case OpCode.OP_POP:
                     self.pop()
                 case OpCode.OP_PRINT:

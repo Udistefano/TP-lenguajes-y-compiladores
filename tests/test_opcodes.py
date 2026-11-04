@@ -6,9 +6,14 @@ def test_las_instrucciones_tienen_codigos_distintos():
     assert len(valores) == len(set(valores))
 
 
-def test_solo_op_constant_lleva_operando():
+def test_solo_opcodes_de_variables_globales_llevan_operando_junto_a_constant():
     con_operando = {opcode for opcode in OpCode if takes_operand(opcode)}
-    assert con_operando == {OpCode.OP_CONSTANT}
+    assert con_operando == {
+        OpCode.OP_CONSTANT,
+        OpCode.OP_DEFINE_GLOBAL,
+        OpCode.OP_GET_GLOBAL,
+        OpCode.OP_SET_GLOBAL,
+    }
 
 
 def test_toda_instruccion_tiene_su_descripcion():

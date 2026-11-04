@@ -20,11 +20,30 @@ class Compiler:
     def compile(self) -> Chunk:
         """Compila un programa completo y devuelve el chunk resultante."""
         while not self.is_at_end():
-            self.statement()
+            self.declaration()
         self.chunk.emit(OpCode.OP_RETURN, self.previous().line)
         return self.chunk
 
-    #  Sentencia
+    # Declaraciones
+    def declaration(self) -> None:
+        """Lee una declaración var o delega en una sentencia ordinaria."""
+        if self.match(TokenKind.VAR):
+            self.var_declaration()
+        else:
+            self.statement()
+
+    def var_declaration(self) -> None:
+        """Compila ``var nombre (= expresión)? ;``."""
+        name = self.consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de variable")
+        if self.match(TokenKind.EQUAL):
+            self.expression()
+        else:
+            self.chunk.emit(OpCode.OP_NIL, name.line)
+        self.consume(TokenKind.SEMICOLON, "Se esperaba ';' después de var")
+        index = self.chunk.add_constant(name.lexeme)
+        self.chunk.emit(OpCode.OP_DEFINE_GLOBAL, name.line, index)
+
+    # Sentencias
 
     def statement(self) -> None:
         """Lee una sentencia y emite sus instrucciones."""
@@ -41,8 +60,25 @@ class Compiler:
     #  Expresiones
 
     def expression(self) -> None:
-        """expression → equality"""
+        """expression → assignment"""
+        self.assignment()
+
+    def assignment(self) -> None:
+        """assignment → equality ( '=' assignment )?"""
+        if self.check(TokenKind.IDENTIFIER) and self._peek_next() == TokenKind.EQUAL:
+            name = self.advance()
+            self.consume(TokenKind.EQUAL, "Se esperaba '=' después del nombre")
+            self.assignment()
+            index = self.chunk.add_constant(name.lexeme)
+            self.chunk.emit(OpCode.OP_SET_GLOBAL, name.line, index)
+            return
         self.equality()
+        if self.match(TokenKind.EQUAL):
+            token = self.previous()
+            raise ParseError(
+                f"Destino inválido de asignación en la línea {token.line}, "
+                f"columna {token.column}"
+            )
 
     def equality(self) -> None:
         """equality → comparison ( ( '!=' | '==' ) comparison )*"""
@@ -142,6 +178,12 @@ class Compiler:
                 )
             return
 
+        if self.match(TokenKind.IDENTIFIER):
+            name = self.previous()
+            index = self.chunk.add_constant(name.lexeme)
+            self.chunk.emit(OpCode.OP_GET_GLOBAL, name.line, index)
+            return
+
         token = self.peek()
         raise ParseError(
             f"Se esperaba una expresión, se encontró {token.lexeme!r} "
@@ -157,6 +199,12 @@ class Compiler:
     def peek(self) -> Token:
         """Devuelve el token actual sin consumirlo."""
         return self.tokens[self.current]
+
+    def _peek_next(self) -> TokenKind:
+        """Devuelve el tipo del token siguiente al actual, sin consumirlo."""
+        if self.current + 1 < len(self.tokens):
+            return self.tokens[self.current + 1].kind
+        return TokenKind.EOF
 
     def previous(self) -> Token:
         """Devuelve el último token consumido."""
