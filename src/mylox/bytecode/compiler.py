@@ -13,19 +13,22 @@ class Local:
 
     ``depth`` indica el nivel de anidación del scope que la declaró.
     ``initialized`` evita leer la variable en su propia inicialización.
+    ``is_captured`` indica si algún closure capturó esta variable: al cerrar
+    el scope se emite OP_CLOSE_UPVALUE en vez de OP_POP.
     """
 
     def __init__(self, name: str, depth: int) -> None:
         self.name = name
         self.depth = depth
         self.initialized = False
+        self.is_captured = False
 
 
 class Compiler:
     """Traduce una secuencia de tokens en un chunk de bytecode. No construye AST: parsea y emite instrucciones en el mismo recorrido
     """
 
-    def __init__(self, tokens: list[Token], start: int = 0) -> None:
+    def __init__(self, tokens: list[Token], start: int = 0, enclosing=None) -> None:
         """Conserva la secuencia de tokens e inicia el cursor y el chunk."""
         self.tokens = tokens
         self.current = start
@@ -33,6 +36,8 @@ class Compiler:
         self.scope_depth = 0
         self.locals: list[Local] = []
         self.in_function = False
+        self.enclosing = enclosing
+        self.upvalues: list[tuple[bool, int]] = []
 
     # ---------- Scopes ---------- #
 
@@ -46,9 +51,11 @@ class Compiler:
         removed = 0
         while self.locals and self.locals[-1].depth > self.scope_depth:
             removed += 1
-            self.locals.pop()
-        for _ in range(removed):
-            self.chunk.emit(OpCode.OP_POP, self.previous().line)
+            local = self.locals.pop()
+            if local.is_captured:
+                self.chunk.emit(OpCode.OP_CLOSE_UPVALUE, self.previous().line)
+            else:
+                self.chunk.emit(OpCode.OP_POP, self.previous().line)
 
     def declare(self, name: str) -> None:
         """Registra una variable local en el scope actual."""
@@ -77,6 +84,32 @@ class Compiler:
                     )
                 return len(self.locals) - idx
         return None
+
+    def resolve_upvalue(self, name: Token) -> int | None:
+        """Busca la variable en los scopes exteriores. Si la encuentra, la
+        registra como upvalue del compilador actual y devuelve su índice."""
+        if self.enclosing is None:
+            return None
+
+        slot = self.enclosing.resolve_local(name)
+        if slot is not None:
+            # Marcar el local como capturado
+            self.enclosing.locals[slot].is_captured = True
+            return self.add_upvalue(slot, is_local=True)
+
+        upvalue_index = self.enclosing.resolve_upvalue(name)
+        if upvalue_index is not None:
+            return self.add_upvalue(upvalue_index, is_local=False)
+
+        return None
+
+    def add_upvalue(self, slot: int, is_local: bool) -> int:
+        """Registra un upvalue y devuelve su índice en la lista."""
+        for idx, (local, s) in enumerate(self.upvalues):
+            if local == is_local and s == slot:
+                return idx
+        self.upvalues.append((is_local, slot))
+        return len(self.upvalues) - 1
 
     def compile(self) -> Chunk:
         """Compila un programa completo y devuelve el chunk resultante."""
@@ -222,7 +255,7 @@ class Compiler:
         self.consume(TokenKind.RIGHT_PAREN, "Se esperaba ')' después de los parámetros")
         self.consume(TokenKind.LEFT_BRACE, "Se esperaba '{' antes del cuerpo")
 
-        body_compiler = Compiler(self.tokens, start=self.current)
+        body_compiler = Compiler(self.tokens, start=self.current, enclosing=self)
         body_compiler.in_function = True
         body_compiler.begin_scope()
 
@@ -244,8 +277,14 @@ class Compiler:
         function = Function(name.lexeme)
         function.chunk = body_compiler.chunk
         function.arity = len(params)
+        function.upvalue_count = len(body_compiler.upvalues)
         index = self.chunk.add_constant(function)
         self.chunk.emit(OpCode.OP_CLOSURE, name.line, index)
+
+        # Emitir los upvalues capturados
+        for is_local, slot in body_compiler.upvalues:
+            self.chunk.write_byte(1 if is_local else 0, name.line)
+            self.chunk.write_byte(slot, name.line)
 
         if not is_local:
             name_index = self.chunk.add_constant(name.lexeme)
@@ -316,8 +355,12 @@ class Compiler:
             if slot is not None:
                 self.chunk.emit(OpCode.OP_SET_LOCAL, name.line, slot)
             else:
-                index = self.chunk.add_constant(name.lexeme)
-                self.chunk.emit(OpCode.OP_SET_GLOBAL, name.line, index)
+                upvalue_index = self.resolve_upvalue(name)
+                if upvalue_index is not None:
+                    self.chunk.emit(OpCode.OP_SET_UPVALUE, name.line, upvalue_index)
+                else:
+                    index = self.chunk.add_constant(name.lexeme)
+                    self.chunk.emit(OpCode.OP_SET_GLOBAL, name.line, index)
             return
         self.logical_or()
         if self.match(TokenKind.EQUAL):
@@ -440,8 +483,12 @@ class Compiler:
             if slot is not None:
                 self.chunk.emit(OpCode.OP_GET_LOCAL, name.line, slot)
             else:
-                index = self.chunk.add_constant(name.lexeme)
-                self.chunk.emit(OpCode.OP_GET_GLOBAL, name.line, index)
+                upvalue_index = self.resolve_upvalue(name)
+                if upvalue_index is not None:
+                    self.chunk.emit(OpCode.OP_GET_UPVALUE, name.line, upvalue_index)
+                else:
+                    index = self.chunk.add_constant(name.lexeme)
+                    self.chunk.emit(OpCode.OP_GET_GLOBAL, name.line, index)
 
             # Llamadas encadenadas: f(x)(y)
             while self.match(TokenKind.LEFT_PAREN):

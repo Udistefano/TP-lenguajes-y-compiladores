@@ -4,6 +4,27 @@ from __future__ import annotations
 from .chunk import Chunk
 
 
+class Upvalue:
+    """Una variable capturada por un closure"""
+
+    def __init__(self, stack_index: int | None = None) -> None:
+        self.stack_index = stack_index
+        self.closed_value: object | None = None
+
+
+class Upvalue:
+    """Una variable capturada por un closure.
+
+    Mientras el scope que la declaró siga vivo, ``stack_index`` apunta a su
+    posición en el stack. Al cerrarse, el valor se copia a ``closed_value`` y
+    ``stack_index`` queda en None.
+    """
+
+    def __init__(self, stack_index: int | None = None) -> None:
+        self.stack_index = stack_index
+        self.closed_value: object | None = None
+
+
 class Function:
     """Una función cruda: lo que se sabe en tiempo de compilación.
 

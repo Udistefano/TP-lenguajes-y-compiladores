@@ -50,6 +50,11 @@ class OpCode(Enum):
     OP_CALL = auto()
     OP_CLOSURE = auto()
 
+    # Upvalues (closures)
+    OP_GET_UPVALUE = auto()
+    OP_SET_UPVALUE = auto()
+    OP_CLOSE_UPVALUE = auto()
+
     # Saltos
     OP_JUMP = auto()
     OP_JUMP_IF_FALSE = auto()
@@ -87,6 +92,9 @@ INSTRUCTIONS: dict[OpCode, Instruction] = {
     OpCode.OP_NEGATE: Instruction(stack_effect=0, has_operand=False),
     OpCode.OP_CALL: Instruction(stack_effect=-1, has_operand=True),
     OpCode.OP_CLOSURE: Instruction(stack_effect=+1, has_operand=True),
+    OpCode.OP_GET_UPVALUE: Instruction(stack_effect=+1, has_operand=True),
+    OpCode.OP_SET_UPVALUE: Instruction(stack_effect=0, has_operand=True),
+    OpCode.OP_CLOSE_UPVALUE: Instruction(stack_effect=-1, has_operand=False),
     OpCode.OP_JUMP: Instruction(stack_effect=0, has_operand=True),
     OpCode.OP_JUMP_IF_FALSE: Instruction(stack_effect=0, has_operand=True),
     OpCode.OP_LOOP: Instruction(stack_effect=0, has_operand=True),

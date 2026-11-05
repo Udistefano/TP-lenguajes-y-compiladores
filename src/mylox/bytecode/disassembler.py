@@ -30,14 +30,23 @@ def disassemble_instruction(chunk: Chunk, offset: int) -> tuple[str, int]:
         argc = chunk.read(offset + 1)
         return f"{offset:04d}| {opcode.name}<{argc}>", offset + 2
 
-    # OP_CLOSURE lleva un índice del pool que referencia una función.
+    # Upvalues: OP_GET_UPVALUE y OP_SET_UPVALUE llevan un índice de upvalue.
+    if opcode in (OpCode.OP_GET_UPVALUE, OpCode.OP_SET_UPVALUE):
+        slot = chunk.read(offset + 1)
+        return f"{offset:04d}| {opcode.name}<{slot}>", offset + 2
+
+    # OP_CLOSE_UPVALUE no lleva operando.
+    if opcode == OpCode.OP_CLOSE_UPVALUE:
+        return f"{offset:04d}| {opcode.name}", offset + 1
+
+    # OP_CLOSURE lleva un índice del pool que referencia una función, seguido
+    # de los upvalues que captura (is_local + slot por cada uno).
     if opcode == OpCode.OP_CLOSURE:
         function = chunk.constant(chunk.read(offset + 1))
         name = getattr(function, "name", None)
         display_name = name if name is not None else "script"
-        return f"{offset:04d}| {opcode.name}<fn {display_name}()>", offset + 2
-        slot = chunk.read(offset + 1)
-        return f"{offset:04d}| {opcode.name}<{slot}>", offset + 2
+        upvalue_count = getattr(function, "upvalue_count", 0)
+        return f"{offset:04d}| {opcode.name}<fn {display_name}()>", offset + 2 + 2 * upvalue_count
 
     # Instrucciones de variables globales: el operando es un índice del pool
     # que referencia el nombre de la variable.

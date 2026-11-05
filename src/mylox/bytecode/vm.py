@@ -6,7 +6,7 @@ from ..tokens import LiteralValue
 from ..values import is_equal, is_number, is_string, is_truthy, stringify
 from .chunk import Chunk
 from .disassembler import RUNTIME_HEADER
-from .function import CallFrame, Closure, Function
+from .function import CallFrame, Closure, Function, Upvalue
 from .opcodes import OpCode
 
 
@@ -49,6 +49,33 @@ class VM:
     def push(self, value: object) -> None:
         """Agrega un valor al tope de la pila."""
         self.stack.append(value)
+
+    # Upvalues (closures)
+    def capture_upvalue(self, stack_index: int):
+        """Asegura que exista un upvalue abierto para stack_index."""
+        for upvalue in self.open_upvalues:
+            if upvalue.stack_index == stack_index:
+                return upvalue
+
+        created = Upvalue(stack_index)
+        insert_pos = len(self.open_upvalues)
+        for i, upvalue in enumerate(self.open_upvalues):
+            if upvalue.stack_index is None or upvalue.stack_index > stack_index:
+                insert_pos = i
+                break
+        self.open_upvalues.insert(insert_pos, created)
+        return created
+
+    def close_upvalues(self, last: int) -> None:
+        """Cierra todos los upvalues que vivan en posiciones >= last."""
+        while self.open_upvalues:
+            upvalue = self.open_upvalues[0]
+            if upvalue.stack_index is not None and upvalue.stack_index >= last:
+                upvalue.closed_value = self.stack[upvalue.stack_index]
+                upvalue.stack_index = None
+                self.open_upvalues.pop(0)
+            else:
+                break
 
     def pop(self) -> object:
         """Devuelve el tope de la pila y lo retira."""
@@ -252,9 +279,36 @@ class VM:
                     function = self.chunk.constant(fun_index)
                     closure = Closure(function)
                     self.push(closure)
+                    for _ in range(function.upvalue_count):
+                        is_local = self.read_byte() == 1
+                        slot = self.read_byte()
+                        if is_local:
+                            stack_index = self.frames[-1].stack_slot + slot
+                            upvalue = self.capture_upvalue(stack_index)
+                        else:
+                            upvalue = self.frames[-1].closure.upvalues[slot]
+                        closure.upvalues.append(upvalue)
+                case OpCode.OP_GET_UPVALUE:
+                    slot = self.read_byte()
+                    upvalue = self.frames[-1].closure.upvalues[slot]
+                    if upvalue.closed_value is not None:
+                        self.push(upvalue.closed_value)
+                    else:
+                        self.push(self.stack[upvalue.stack_index])
+                case OpCode.OP_SET_UPVALUE:
+                    slot = self.read_byte()
+                    upvalue = self.frames[-1].closure.upvalues[slot]
+                    if upvalue.closed_value is not None:
+                        upvalue.closed_value = self.peek()
+                    else:
+                        self.stack[upvalue.stack_index] = self.peek()
+                case OpCode.OP_CLOSE_UPVALUE:
+                    self.close_upvalues(len(self.stack) - 1)
+                    self.pop()
                 case OpCode.OP_RETURN:
                     result = self.pop()
                     finished_frame = self.frames.pop()
+                    self.close_upvalues(finished_frame.stack_slot - 1)
                     if not self.frames:
                         if self.stack:
                             raise VMRuntimeError(
