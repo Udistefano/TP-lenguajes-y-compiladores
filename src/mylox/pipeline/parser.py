@@ -8,8 +8,9 @@ from __future__ import annotations
 
 from ..errors import ParseError
 from ..nodes import (
-    Assign, Binary, BlockStmt, Call, ExprStmt, FunctionDecl, Grouping, IfStmt,
-    Literal, Logical, Node, PrintStmt, ReturnStmt, Unary, VarDecl, Variable, WhileStmt,
+    Assign, Binary, BlockStmt, Call, ClassDecl, ExprStmt, FunctionDecl, Get,
+    Grouping, IfStmt, Literal, Logical, Node, PrintStmt, ReturnStmt, Set, Super,
+    This, Unary, VarDecl, Variable, WhileStmt,
 )
 from ..tokens import Token, TokenKind
 
@@ -45,13 +46,9 @@ class Parser:
         return statements
 
     def _declaration(self) -> Node:
-        """Lee una declaración var o fun, o delega en una sentencia ordinaria.
-
-        La declaración tiene forma ``var nombre (= expresión)? ;``. Guarda
-        un inicializador opcional en VarDecl; su ausencia se representa con
-        None en el AST. Aquí se reconoce la sintaxis: el nombre y su valor
-        se incorporan al ambiente recién al ejecutar el nodo.
-        """
+        """Lee una declaración class, var o fun, o delega en una sentencia."""
+        if self._match(TokenKind.CLASS):
+            return self._class_declaration()
         if self._match(TokenKind.FUN):
             return self._function_declaration()
         if self._match(TokenKind.VAR):
@@ -79,6 +76,32 @@ class Parser:
         self._consume(TokenKind.RIGHT_PAREN, "Se esperaba ')' después de los parámetros")
         self._consume(TokenKind.LEFT_BRACE, "Se esperaba '{' antes del cuerpo de la función")
         return FunctionDecl(name, parameters, self._block())
+
+    def _class_declaration(self) -> ClassDecl:
+        """Lee ``class nombre ( < superclase )? { métodos }`` tras consumir class."""
+        name = self._consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de clase")
+        superclass = None
+        if self._match(TokenKind.LESS):
+            superclass = Variable(
+                self._consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de superclase")
+            )
+        self._consume(TokenKind.LEFT_BRACE, "Se esperaba '{' después del nombre")
+        methods: list[FunctionDecl] = []
+        while not self._check(TokenKind.RIGHT_BRACE) and not self._check(TokenKind.EOF):
+            # Los métodos se declaran sin 'fun', como en Lox estándar.
+            method_name = self._consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de método")
+            self._consume(TokenKind.LEFT_PAREN, "Se esperaba '(' después del nombre")
+            parameters: list[Token] = []
+            if not self._check(TokenKind.RIGHT_PAREN):
+                parameters.append(self._consume(TokenKind.IDENTIFIER, "Se esperaba un parámetro"))
+                while self._match(TokenKind.COMMA):
+                    parameters.append(self._consume(TokenKind.IDENTIFIER, "Se esperaba un parámetro"))
+            self._consume(TokenKind.RIGHT_PAREN, "Se esperaba ')' después de los parámetros")
+            self._consume(TokenKind.LEFT_BRACE, "Se esperaba '{' antes del cuerpo")
+            body = self._block()
+            methods.append(FunctionDecl(method_name, parameters, body))
+        self._consume(TokenKind.RIGHT_BRACE, "Se esperaba '}' después de la clase")
+        return ClassDecl(name, superclass, methods)
 
     def _statement(self) -> Node:
         """Selecciona la forma de sentencia a partir del próximo token.
@@ -220,6 +243,8 @@ class Parser:
             value = self._assignment()
             if isinstance(expression, Variable):
                 return Assign(expression.name, value)
+            if isinstance(expression, Get):
+                return Set(expression.object, expression.name, value)
             raise ParseError(
                 f"Destino inválido de asignación en la línea {equals.line}, "
                 f"columna {equals.column}"
@@ -356,20 +381,26 @@ class Parser:
 
         expression = self._primary()
 
-        while self._match(TokenKind.LEFT_PAREN):
-            paren = self._previous()
-            arguments: list[Node] = []
+        while True:
+            if self._match(TokenKind.LEFT_PAREN):
+                paren = self._previous()
+                arguments: list[Node] = []
 
-            if not self._check(TokenKind.RIGHT_PAREN):
-                arguments.append(self._expression())
-                while self._match(TokenKind.COMMA):
+                if not self._check(TokenKind.RIGHT_PAREN):
                     arguments.append(self._expression())
+                    while self._match(TokenKind.COMMA):
+                        arguments.append(self._expression())
 
-            self._consume(
-                TokenKind.RIGHT_PAREN,
-                "Se esperaba ')' tras los argumentos",
-            )
-            expression = Call(expression, paren, arguments)
+                self._consume(
+                    TokenKind.RIGHT_PAREN,
+                    "Se esperaba ')' tras los argumentos",
+                )
+                expression = Call(expression, paren, arguments)
+            elif self._match(TokenKind.DOT):
+                name = self._consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de propiedad")
+                expression = Get(expression, name)
+            else:
+                break
 
         return expression
 
@@ -390,6 +421,15 @@ class Parser:
 
         if self._match(TokenKind.NIL):
             return Literal(None)
+
+        if self._match(TokenKind.THIS):
+            return This(self._previous())
+
+        if self._match(TokenKind.SUPER):
+            keyword = self._previous()
+            self._consume(TokenKind.DOT, "Se esperaba '.' después de super")
+            method = self._consume(TokenKind.IDENTIFIER, "Se esperaba el nombre del método")
+            return Super(keyword, method)
 
         if self._match(TokenKind.NUMBER, TokenKind.STRING):
             return Literal(self._previous().literal)

@@ -11,10 +11,11 @@ from .env import Env
 from .errors import LoxRuntimeError
 from .function import Function, ReturnValue
 from .nodes import (
-    Assign, Binary, BlockStmt, Call, ExprStmt, FunctionDecl, Grouping, IfStmt,
-    Literal, Logical, Node, PrintStmt, ReturnStmt, Unary, VarDecl, Variable,
-    Visitor, WhileStmt,
+    Assign, Binary, BlockStmt, Call, ClassDecl, ExprStmt, FunctionDecl, Get,
+    Grouping, IfStmt, Literal, Logical, Node, PrintStmt, ReturnStmt, Set, Super,
+    This, Unary, VarDecl, Variable, Visitor, WhileStmt,
 )
+from .oop import LoxClass, LoxFunction, LoxInstance
 from .resolver import BindingResolver
 from .tokens import Token, TokenKind
 from .values import is_equal, is_number, is_string, is_truthy, stringify
@@ -170,6 +171,90 @@ class Interpreter(Visitor):
         value = self.evaluate(statement.value) if statement.value is not None else None
         raise ReturnValue(value)
 
+    def visit_class_decl(self, statement: ClassDecl) -> None:
+        """Define una clase con sus métodos y superclase opcional."""
+        superclass = None
+        if statement.superclass is not None:
+            superclass = self.evaluate(statement.superclass)
+            if not isinstance(superclass, LoxClass):
+                raise LoxRuntimeError(
+                    statement.superclass.name, "Superclass must be a class."
+                )
+
+        self.environment.define(statement.name.lexeme, None)
+
+        if superclass is not None:
+            self.environment = Env(enclosing=self.environment)
+            self.environment.define("super", superclass)
+
+        methods: dict[str, LoxFunction] = {}
+        for method in statement.methods:
+            is_initializer = method.name.lexeme == "init"
+            function = LoxFunction(method, self.environment, is_initializer)
+            methods[method.name.lexeme] = function
+
+        klass = LoxClass(statement.name.lexeme, superclass, methods)
+
+        if superclass is not None:
+            self.environment = self.environment.enclosing
+
+        self.environment.assign(statement.name, klass)
+
+    def visit_get(self, expression: Get) -> object:
+        """Accede a una propiedad de un objeto."""
+        obj = self.evaluate(expression.object)
+        if isinstance(obj, LoxInstance):
+            return obj.get(expression.name)
+        raise LoxRuntimeError(
+            expression.name, "Only instances have properties."
+        )
+
+    def visit_set(self, expression: Set) -> object:
+        """Asigna un valor a una propiedad de un objeto."""
+        obj = self.evaluate(expression.object)
+        if not isinstance(obj, LoxInstance):
+            raise LoxRuntimeError(
+                expression.name, "Only instances have fields."
+            )
+        value = self.evaluate(expression.value)
+        obj.set(expression.name, value)
+        return value
+
+    def visit_this(self, expression: This) -> object:
+        """Devuelve la instancia actual."""
+        env = self.environment
+        while env is not None:
+            if "this" in env.values:
+                return env.values["this"]
+            env = env.enclosing
+        raise LoxRuntimeError(expression.keyword, "No se puede usar 'this' fuera de un método.")
+
+    def visit_super(self, expression: Super) -> object:
+        """Busca un método en la superclase del this actual."""
+        env = self.environment
+        superclass = None
+        obj = None
+        while env is not None:
+            if "super" in env.values and superclass is None:
+                superclass = env.values["super"]
+            if "this" in env.values and obj is None:
+                obj = env.values["this"]
+            if superclass is not None and obj is not None:
+                break
+            env = env.enclosing
+
+        if not isinstance(superclass, LoxClass):
+            raise LoxRuntimeError(expression.keyword, "Superclass must be a class.")
+        if not isinstance(obj, LoxInstance):
+            raise LoxRuntimeError(expression.keyword, "Super must be used inside a method.")
+
+        method = superclass.find_method(expression.method.lexeme)
+        if method is None:
+            raise LoxRuntimeError(
+                expression.method, f"Undefined property '{expression.method.lexeme}'."
+            )
+        return method.bind(obj)
+
     def visit_if_stmt(self, statement: IfStmt) -> None:
         """Evalúa la condición de ``if`` y ejecuta solamente la rama elegida.
 
@@ -215,10 +300,15 @@ class Interpreter(Visitor):
     def is_callable(self, value: object) -> bool:
         """Comprueba el contrato de invocación con las operaciones arity y call.
 
-        Function expone ambas. La validación ocurre después de evaluar los
-        argumentos para conservar sus efectos aunque la invocación falle.
+        Function, LoxClass y LoxFunction exponen ambas. La validación ocurre
+        después de evaluar los argumentos para conservar sus efectos aunque la
+        invocación falle.
         """
-        return hasattr(value, "arity") and hasattr(value, "call")
+        return (
+            hasattr(value, "arity")
+            and hasattr(value, "call")
+            and callable(getattr(value, "call", None))
+        ) or isinstance(value, LoxClass)
 
     def check_number_operands(self, operator: Token, left: object, right: object) -> None:
         """Exige que los dos operandos ya evaluados sean números de Lox.

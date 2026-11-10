@@ -2,11 +2,12 @@
 from __future__ import annotations
 
 from ..errors import VMRuntimeError
+from ..oop import LoxClass, LoxInstance
 from ..tokens import LiteralValue
 from ..values import is_equal, is_number, is_string, is_truthy, stringify
 from .chunk import Chunk
 from .disassembler import RUNTIME_HEADER
-from .function import CallFrame, Closure, Function, Upvalue
+from .function import BoundMethod, CallFrame, Closure, Function, Upvalue
 from .opcodes import OpCode
 
 
@@ -256,10 +257,50 @@ class VM:
                     self.ip -= offset
                 case OpCode.OP_CALL:
                     arg_count = self.read_byte()
-                    closure = self.peek(arg_count)
-                    if not isinstance(closure, Closure):
+                    callee = self.peek(arg_count)
+                    if isinstance(callee, LoxClass):
+                        # Instanciación: reemplaza la clase por la instancia
+                        instance = LoxInstance(callee)
+                        initializer = callee.find_method("init")
+                        if isinstance(initializer, Closure):
+                            if initializer.function.arity != arg_count:
+                                raise VMRuntimeError(
+                                    f"Expected {initializer.function.arity} arguments, "
+                                    f"got {arg_count}",
+                                    line=self.current_line,
+                                )
+                            self.stack[-arg_count - 1] = instance
+                            self.frames[-1].ip = self.ip
+                            self.frames.append(
+                                CallFrame(initializer, len(self.stack) - arg_count - 1)
+                            )
+                            self.ip = 0
+                            if trace:
+                                print(
+                                    f"{start:04d}| ENTERING CALLFRAME "
+                                    f"{callee.name}.init()"
+                                )
+                            continue
+                        if arg_count != 0:
+                            raise VMRuntimeError(
+                                f"Expected 0 arguments, got {arg_count} "
+                                f"for class '{callee.name}'",
+                                line=self.current_line,
+                            )
+                        self.stack[-arg_count - 1] = instance
+                        if arg_count:
+                            del self.stack[-arg_count:]
+                        continue
+                    if isinstance(callee, BoundMethod):
+                        # El método ligado deja su instancia en el slot 0 del
+                        # nuevo frame: ahí el compilador declaró ``this``.
+                        closure = callee.method
+                        self.stack[-arg_count - 1] = callee.instance
+                    elif isinstance(callee, Closure):
+                        closure = callee
+                    else:
                         raise VMRuntimeError(
-                            f"Cannot call non-callable object: {closure}",
+                            f"Cannot call non-callable object: {callee}",
                             line=self.current_line,
                         )
                     if closure.function.arity != arg_count:
@@ -268,7 +309,7 @@ class VM:
                             line=self.current_line,
                         )
                     self.frames[-1].ip = self.ip
-                    fn_callframe = CallFrame(closure, len(self.stack) - arg_count)
+                    fn_callframe = CallFrame(closure, len(self.stack) - arg_count - 1)
                     self.frames.append(fn_callframe)
                     self.ip = 0
                     if trace:
@@ -291,41 +332,123 @@ class VM:
                 case OpCode.OP_GET_UPVALUE:
                     slot = self.read_byte()
                     upvalue = self.frames[-1].closure.upvalues[slot]
-                    if upvalue.closed_value is not None:
+                    if upvalue.stack_index is None:
                         self.push(upvalue.closed_value)
                     else:
                         self.push(self.stack[upvalue.stack_index])
                 case OpCode.OP_SET_UPVALUE:
                     slot = self.read_byte()
                     upvalue = self.frames[-1].closure.upvalues[slot]
-                    if upvalue.closed_value is not None:
+                    if upvalue.stack_index is None:
                         upvalue.closed_value = self.peek()
                     else:
                         self.stack[upvalue.stack_index] = self.peek()
                 case OpCode.OP_CLOSE_UPVALUE:
                     self.close_upvalues(len(self.stack) - 1)
                     self.pop()
+                case OpCode.OP_CLASS:
+                    name = str(self.chunk.constant(self.read_byte()))
+                    self.push(LoxClass(name, None, {}))
+                case OpCode.OP_GET_PROPERTY:
+                    name = str(self.chunk.constant(self.read_byte()))
+                    obj = self.pop()
+                    if not isinstance(obj, LoxInstance):
+                        raise VMRuntimeError(
+                            "Only instances have properties", line=self.current_line
+                        )
+                    if name in obj.fields:
+                        self.push(obj.fields[name])
+                    else:
+                        method = obj.klass.find_method(name)
+                        if isinstance(method, Closure):
+                            self.push(BoundMethod(obj, method))
+                        else:
+                            raise VMRuntimeError(
+                                f"Undefined property '{name}'.", line=self.current_line
+                            )
+                case OpCode.OP_SET_PROPERTY:
+                    name = str(self.chunk.constant(self.read_byte()))
+                    value = self.pop()
+                    obj = self.pop()
+                    if not isinstance(obj, LoxInstance):
+                        raise VMRuntimeError(
+                            "Only instances have fields", line=self.current_line
+                        )
+                    obj.fields[name] = value
+                    self.push(value)
+                case OpCode.OP_METHOD:
+                    name = str(self.chunk.constant(self.read_byte()))
+                    method = self.pop()
+                    klass = self.peek()
+                    if not isinstance(klass, LoxClass) or not isinstance(method, Closure):
+                        raise VMRuntimeError(
+                            "Invalid method definition", line=self.current_line
+                        )
+                    klass.methods[name] = method
+                case OpCode.OP_INHERIT:
+                    # El stack tiene [superclass, subclass]: la subclase fue
+                    # empujada despues por OP_CLASS.
+                    subclass = self.pop()
+                    superclass = self.pop()
+                    if not isinstance(superclass, LoxClass):
+                        raise VMRuntimeError(
+                            "Superclass must be a class", line=self.current_line
+                        )
+                    if not isinstance(subclass, LoxClass):
+                        raise VMRuntimeError(
+                            "Invalid inherit target", line=self.current_line
+                        )
+                    subclass.superclass = superclass
+                    self.push(subclass)
+                case OpCode.OP_GET_SUPER:
+                    name = str(self.chunk.constant(self.read_byte()))
+                    this_value = self.stack[self.frames[-1].stack_slot]
+                    if not isinstance(this_value, LoxInstance):
+                        raise VMRuntimeError(
+                            "super is only allowed inside a method",
+                            line=self.current_line,
+                        )
+                    # La superclase se resuelve lexicamente respecto de la clase
+                    # en la que el método está definido, no respecto de la clase
+                    # real de la instancia (que puede ser una subclase).
+                    defining_class_name = self.frames[-1].closure.function.enclosing_class
+                    defining_class = this_value.klass
+                    if defining_class_name is not None and defining_class_name in self.globals:
+                        candidate = self.globals[defining_class_name]
+                        if isinstance(candidate, LoxClass):
+                            defining_class = candidate
+                    superclass = defining_class.superclass
+                    if not isinstance(superclass, LoxClass):
+                        raise VMRuntimeError(
+                            "No superclass to call super from",
+                            line=self.current_line,
+                        )
+                    method = superclass.find_method(name)
+                    if not isinstance(method, Closure):
+                        raise VMRuntimeError(
+                            f"Undefined property '{name}'.", line=self.current_line
+                        )
+                    self.push(BoundMethod(this_value, method))
                 case OpCode.OP_RETURN:
                     result = self.pop()
                     finished_frame = self.frames.pop()
+                    if finished_frame.closure.function.is_initializer:
+                        # init descarta su valor y devuelve la instancia
+                        # (que ocupa el slot 0 del frame que termina).
+                        result = self.stack[finished_frame.stack_slot]
                     self.close_upvalues(finished_frame.stack_slot - 1)
                     if not self.frames:
-                        if self.stack:
-                            raise VMRuntimeError(
-                                "Inconsistent Stack Height: should be empty at exit",
-                                line=self.current_line,
-                            )
                         if trace:
                             print(f"{start:04d}| THE END")
                         return
-                    self.stack = self.stack[: finished_frame.stack_slot - 1]
+                    self.stack = self.stack[: finished_frame.stack_slot]
                     self.push(result)
                     if trace:
                         print(f"{start:04d}| EXITING CALLFRAME {finished_frame.closure.function.name}()")
                         continue
                 case _:
                     raise VMRuntimeError(
-                        f"UNKNOWN OPCODE {opcode.value}", line=self.current_line
+                        f"UNKNOWN OPCODE", line=self.current_line
                     )
 
             if trace:

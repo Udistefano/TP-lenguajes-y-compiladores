@@ -5,14 +5,6 @@ from .chunk import Chunk
 
 
 class Upvalue:
-    """Una variable capturada por un closure"""
-
-    def __init__(self, stack_index: int | None = None) -> None:
-        self.stack_index = stack_index
-        self.closed_value: object | None = None
-
-
-class Upvalue:
     """Una variable capturada por un closure.
 
     Mientras el scope que la declaró siga vivo, ``stack_index`` apunta a su
@@ -37,6 +29,8 @@ class Function:
         self.chunk = Chunk()
         self.arity = 0
         self.upvalue_count = 0
+        self.is_initializer = False
+        self.enclosing_class: str | None = None
 
     def __repr__(self) -> str:
         if self.name is None:
@@ -64,3 +58,29 @@ class CallFrame:
         self.closure = closure
         self.ip = 0
         self.stack_slot = stack_slot
+
+
+class BoundMethod:
+    """Un método ligado a una instancia, para el backend bytecode.
+
+    Guarda la instancia (receiver) y el closure del método. Al llamarlo,
+    la VM reemplaza este objeto en el stack por la instancia, de modo que
+    ``this`` (slot 0 del frame) la reciba como primer slot.
+    """
+
+    def __init__(self, instance: object, method: Closure) -> None:
+        self.instance = instance
+        self.method = method
+
+    @property
+    def function(self) -> Function:
+        """La función cruda del método ligado."""
+        return self.method.function
+
+    @property
+    def arity(self) -> int:
+        """Cantidad de argumentos que espera el método (sin contar ``this``)."""
+        return self.method.function.arity
+
+    def __repr__(self) -> str:
+        return f"<bound {self.method.function.name}>"

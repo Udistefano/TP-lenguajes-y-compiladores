@@ -101,6 +101,107 @@ class Visitor:
         """Define la operación sobre return y su expresión opcional."""
         raise NotImplementedError()
 
+    def visit_class_decl(self, statement: ClassDecl) -> object:
+        """Define la operación sobre una declaración de clase."""
+        raise NotImplementedError()
+
+    def visit_get(self, expression: Get) -> object:
+        """Define la operación sobre un acceso a propiedad."""
+        raise NotImplementedError()
+
+    def visit_set(self, expression: Set) -> object:
+        """Define la operación sobre una asignación a propiedad."""
+        raise NotImplementedError()
+
+    def visit_this(self, expression: This) -> object:
+        """Define la operación sobre la referencia a la instancia actual."""
+        raise NotImplementedError()
+
+    def visit_super(self, expression: Super) -> object:
+        """Define la operación sobre el acceso a la superclase."""
+        raise NotImplementedError()
+
+
+@dataclass(frozen=True, slots=True)
+class ClassDecl(Node):
+    """Declaración de clase con nombre, superclase opcional y métodos.
+
+    ``superclass`` es None si no hay herencia. ``methods`` contiene las
+    declaraciones de función que se convierten en métodos al ejecutar.
+    """
+
+    name: Token
+    superclass: "Variable | None"
+    methods: list[FunctionDecl]
+
+    def accept(self, visitor: Visitor) -> object:
+        """Selecciona visit_class_decl para visitar la clase completa."""
+        return visitor.visit_class_decl(self)
+
+
+@dataclass(frozen=True, slots=True)
+class Get(Node):
+    """Acceso a una propiedad de un objeto, como ``obj.prop``.
+
+    ``object`` es la expresión que produce la instancia; ``name`` es el
+    token del identificador de la propiedad.
+    """
+
+    object: Node
+    name: Token
+
+    def accept(self, visitor: Visitor) -> object:
+        """Selecciona visit_get para visitar el objeto y su propiedad."""
+        return visitor.visit_get(self)
+
+
+@dataclass(frozen=True, slots=True)
+class Set(Node):
+    """Asignación a una propiedad de un objeto, como ``obj.prop = val``.
+
+    ``object`` es la expresión que produce la instancia, ``name`` es el
+    token del identificador y ``value`` es el subárbol que produce el valor.
+    """
+
+    object: Node
+    name: Token
+    value: Node
+
+    def accept(self, visitor: Visitor) -> object:
+        """Selecciona visit_set para visitar el objeto, el nombre y el valor."""
+        return visitor.visit_set(self)
+
+
+@dataclass(frozen=True, slots=True)
+class This(Node):
+    """Referencia a la instancia actual dentro de un método.
+
+    ``keyword`` conserva el token ``this`` para reportar errores de uso
+    fuera de un método.
+    """
+
+    keyword: Token
+
+    def accept(self, visitor: Visitor) -> object:
+        """Selecciona visit_this para visitar la referencia a la instancia."""
+        return visitor.visit_this(self)
+
+
+@dataclass(frozen=True, slots=True)
+class Super(Node):
+    """Acceso a un método de la superclase, como ``super.method``.
+
+    ``keyword`` conserva el token ``super`` y ``method`` el nombre del
+    método buscado en la superclase.
+    """
+
+    keyword: Token
+    method: Token
+
+    def accept(self, visitor: Visitor) -> object:
+        """Selecciona visit_super para visitar el acceso a la superclase."""
+        return visitor.visit_super(self)
+
 
 @dataclass(frozen=True, slots=True)
 class Literal(Node):

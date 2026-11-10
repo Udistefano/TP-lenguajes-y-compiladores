@@ -7,9 +7,9 @@ ni producir los efectos de sus sentencias.
 from __future__ import annotations
 
 from .nodes import (
-    Assign, Binary, BlockStmt, Call, ExprStmt, FunctionDecl, Grouping, IfStmt,
-    Literal, Logical, Node, PrintStmt, ReturnStmt, Unary, VarDecl, Variable,
-    Visitor, WhileStmt,
+    Assign, Binary, BlockStmt, Call, ClassDecl, ExprStmt, FunctionDecl, Get,
+    Grouping, IfStmt, Literal, Logical, Node, PrintStmt, ReturnStmt, Set, Super,
+    This, Unary, VarDecl, Variable, Visitor, WhileStmt,
 )
 
 
@@ -117,6 +117,28 @@ class Impresor(Visitor):
         """Describe return y su posible expresión sin abandonar ningún cuerpo."""
         value = statement.value.accept(self) if statement.value is not None else "nil"
         return f"ReturnStmt({value})"
+
+    def visit_class_decl(self, statement: ClassDecl) -> str:
+        """Describe ClassDecl con su nombre, superclase y métodos."""
+        superclass = statement.superclass.accept(self) if statement.superclass else "nil"
+        methods = ", ".join(method.accept(self) for method in statement.methods)
+        return f"ClassDecl({statement.name.lexeme!r}, superclass={superclass}, methods=[{methods}])"
+
+    def visit_get(self, expression: Get) -> str:
+        """Describe Get con el objeto y el nombre de la propiedad."""
+        return f"Get({expression.object.accept(self)}, {expression.name.lexeme!r})"
+
+    def visit_set(self, expression: Set) -> str:
+        """Describe Set con el objeto, el nombre y el valor."""
+        return f"Set({expression.object.accept(self)}, {expression.name.lexeme!r}, {expression.value.accept(self)})"
+
+    def visit_this(self, expression: This) -> str:
+        """Describe This con su keyword."""
+        return f"This({expression.keyword.lexeme!r})"
+
+    def visit_super(self, expression: Super) -> str:
+        """Describe Super con su keyword y el método buscado."""
+        return f"Super({expression.keyword.lexeme!r}, {expression.method.lexeme!r})"
 
 
 def imprimir(nodo: Node | list[Node]) -> str:

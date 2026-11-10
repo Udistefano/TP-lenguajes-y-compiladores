@@ -92,6 +92,8 @@ la palabra `ERROR`.
 - [Control de flujo](docs/control-de-flujo.md).
 - [Funciones, retornos y closures](docs/funciones-y-closures.md).
 - [Benchmarks: metodología, resultados y conclusiones](docs/benchmarks.md).
+- [Backend bytecode: compilador y VM](docs/bytecode.md).
+- [Programación orientada a objetos](docs/oop.md).
 
 ## Integración con funciones
 
@@ -128,3 +130,77 @@ uv run python benchmarks/bench.py -n 20
 Los programas son portables (sin `%` ni clases) y el script verifica antes de medir que todas las implementaciones dan la misma salida normalizada. Si falta `javac`, `gcc` o el repo externo, las implementaciones correspondientes se omiten sin fallar; el mínimo garantizado es **mylox vs plox**.
 
 Metodología, resultados reales y conclusiones en [docs/benchmarks.md](docs/benchmarks.md).
+
+
+## Backends de ejecución
+
+mylox tiene dos backends seleccionables con ``--backend``:
+
+```sh
+# tree-walk (default): evalúa el AST directamente
+uv run mylox programa.lox
+
+# bytecode: compila a bytecode y ejecuta en la VM propia
+uv run mylox programa.lox --backend bytecode
+
+# modo de depuración: muestra RAW BYTES, COMPILETIME y RUNTIME
+uv run mylox programa.lox --backend bytecode --debug
+```
+
+El backend bytecode reutiliza el lexer y las reglas de precedencia del parser, y agrega un compilador single-pass y una VM con pila. Las dos opciones producen la misma salida para todo programa que el backend bytecode soporte (hoy: expresiones, variables, control de flujo, funciones y clases con herencia).
+
+## Programación orientada a objetos
+
+mylox soporta clases, herencia y métodos (sin keyword `fun`), compatible con
+la sintaxis de Lox:
+
+```lox
+class Persona {
+  init(nombre) { this.nombre = nombre; }
+  decir() { return "Soy " + this.nombre; }
+}
+
+class Estudiante < Persona {
+  init(nombre, carrera) {
+    super.init(nombre);
+    this.carrera = carrera;
+  }
+  decir() { return super.decir() + ", estudio " + this.carrera; }
+}
+
+var e = Estudiante("Ana", "Fisica");
+print e.decir();
+```
+
+Características soportadas en **ambos backends** (tree-walk y bytecode):
+
+- Declaración de clases: `class Nombre { ... }`
+- Herencia: `class Nombre < Superclase { ... }`
+- Métodos (sin `fun`): `metodo(params) { ... }`
+- Constructor `init(...)` (se ejecuta al instanciar)
+- `this` y `super` (incluyendo `super.metodo()`)
+- Acceso a propiedades: `obj.prop` y asignación `obj.prop = valor`
+- Métodos ligados (bound methods): `var m = obj.metodo; m();`
+- Closures dentro de métodos que capturan `this`
+
+Opcodes OOP del backend bytecode (diseño propio, no copiado de clox):
+
+| Opcode | Operandos | Descripción |
+|--------|-----------|-------------|
+| `OP_CLASS` | 1 byte (nombre) | Crea una `LoxClass` |
+| `OP_GET_PROPERTY` | 1 byte (nombre) | Lee campo o método ligado |
+| `OP_SET_PROPERTY` | 1 byte (nombre) | Asigna campo |
+| `OP_METHOD` | 1 byte (nombre) | Registra un método en la clase |
+| `OP_INHERIT` | 0 bytes | Establece la superclase |
+| `OP_GET_SUPER` | 1 byte (nombre) | Resuelve `super.metodo` lexicamente |
+
+## Uso real del lenguaje
+
+El directorio `examples/` contiene programas concretos que demuestran la sintaxis y semántica de Lox:
+
+```sh
+uv run mylox examples/fibonacci_memo.lox
+uv run mylox examples/fibonacci_memo.lox --backend bytecode
+```
+
+
