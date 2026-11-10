@@ -332,14 +332,14 @@ class VM:
                 case OpCode.OP_GET_UPVALUE:
                     slot = self.read_byte()
                     upvalue = self.frames[-1].closure.upvalues[slot]
-                    if upvalue.closed_value is not None:
+                    if upvalue.stack_index is None:
                         self.push(upvalue.closed_value)
                     else:
                         self.push(self.stack[upvalue.stack_index])
                 case OpCode.OP_SET_UPVALUE:
                     slot = self.read_byte()
                     upvalue = self.frames[-1].closure.upvalues[slot]
-                    if upvalue.closed_value is not None:
+                    if upvalue.stack_index is None:
                         upvalue.closed_value = self.peek()
                     else:
                         self.stack[upvalue.stack_index] = self.peek()
