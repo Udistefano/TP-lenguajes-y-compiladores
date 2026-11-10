@@ -1,0 +1,36 @@
+// primos_hasta_100.lox - Encuentra todos los primos hasta 100.
+//
+// Demuestra: funciones, variables, control de flujo (if, while, for),
+// operadores aritmeticos y comparaciones, print. Un programa con un
+// objetivo concreto: imprimir los numeros primos hasta 100.
+
+fun es_divisible(n, d) {
+  // Chequea si d divide a n usando resta repetida.
+  while (n >= d) {
+    n = n - d;
+  }
+  return n == 0;
+}
+
+fun es_primo(n) {
+  if (n < 2) {
+    return false;
+  }
+  var d = 2;
+  while (d * d <= n) {
+    if (es_divisible(n, d)) {
+      return false;
+    }
+    d = d + 1;
+  }
+  return true;
+}
+
+// Recorrer del 2 al 100 e imprimir los primos.
+var n = 2;
+while (n <= 100) {
+  if (es_primo(n)) {
+    print n;
+  }
+  n = n + 1;
+}

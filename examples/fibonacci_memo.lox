@@ -1,0 +1,56 @@
+// fibonacci_memo.lox — Fibonacci con memoización usando closures.
+//
+// Demuestra: funciones, closures (captura de variables), variables, control de
+// flujo (if, while, for), operadores aritméticos y comparaciones. Calcula
+// Fibonacci de forma eficiente reutilizando resultados previos.
+
+// Memoización: la función interna captura la tabla `memo` del scope exterior.
+fun make_fib() {
+  var memo = nil;
+  // Inicializamos la tabla como una cadena de pares (n, valor).
+  // Usamos una lista enlazada simple: cada nodo es [n, valor, siguiente].
+  var head = nil;
+
+  fun lookup(n) {
+    var node = head;
+    while (node != nil) {
+      if (node[0] == n) {
+        return node[1];
+      }
+      node = node[2];
+    }
+    return nil;
+  }
+
+  fun store(n, value) {
+    var node = [n, value, head];
+    head = node;
+  }
+
+  fun fib(n) {
+    if (n < 2) {
+      return n;
+    }
+    var cached = lookup(n);
+    if (cached != nil) {
+      return cached;
+    }
+    var result = fib(n - 1) + fib(n - 2);
+    store(n, result);
+    return result;
+  }
+
+  return fib;
+}
+
+var fib = make_fib();
+
+// Tabla de Fibonacci del 0 al 20.
+var i = 0;
+while (i <= 20) {
+  print fib(i);
+  i = i + 1;
+}
+
+// Algunos valores sueltos para verificar.
+print fib(30);

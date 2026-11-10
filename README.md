@@ -92,6 +92,7 @@ la palabra `ERROR`.
 - [Control de flujo](docs/control-de-flujo.md).
 - [Funciones, retornos y closures](docs/funciones-y-closures.md).
 - [Benchmarks: metodología, resultados y conclusiones](docs/benchmarks.md).
+- [Backend bytecode: compilador y VM](docs/bytecode.md).
 
 ## Integración con funciones
 
@@ -128,3 +129,32 @@ uv run python benchmarks/bench.py -n 20
 Los programas son portables (sin `%` ni clases) y el script verifica antes de medir que todas las implementaciones dan la misma salida normalizada. Si falta `javac`, `gcc` o el repo externo, las implementaciones correspondientes se omiten sin fallar; el mínimo garantizado es **mylox vs plox**.
 
 Metodología, resultados reales y conclusiones en [docs/benchmarks.md](docs/benchmarks.md).
+
+
+## Backends de ejecución
+
+mylox tiene dos backends seleccionables con ``--backend``:
+
+```sh
+# tree-walk (default): evalúa el AST directamente
+uv run mylox programa.lox
+
+# bytecode: compila a bytecode y ejecuta en la VM propia
+uv run mylox programa.lox --backend bytecode
+
+# modo de depuración: muestra RAW BYTES, COMPILETIME y RUNTIME
+uv run mylox programa.lox --backend bytecode --debug
+```
+
+El backend bytecode reutiliza el lexer y las reglas de precedencia del parser, y agrega un compilador single-pass y una VM con pila. Las dos opciones producen la misma salida para todo programa que el backend bytecode soporte (hoy: expresiones, variables, control de flujo y funciones).
+
+## Uso real del lenguaje
+
+El directorio `examples/` contiene programas concretos que demuestran la sintaxis y semántica de Lox:
+
+```sh
+uv run mylox examples/fibonacci_memo.lox
+uv run mylox examples/fibonacci_memo.lox --backend bytecode
+```
+
+
