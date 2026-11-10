@@ -39,6 +39,7 @@ class Compiler:
         self.in_method = False
         self.in_class = False
         self.has_superclass = False
+        self.current_class = None
         self.enclosing = enclosing
         self.upvalues: list[tuple[bool, int]] = []
 
@@ -305,7 +306,16 @@ class Compiler:
     def class_declaration(self) -> None:
         """Compila ``class nombre ( < superclase )? { métodos }``."""
         name = self.consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de clase")
+        is_local = self.scope_depth > 0
         has_superclass = False
+
+        if is_local:
+            # El nombre queda declarado antes de compilar los métodos para
+            # que puedan referirse a la propia clase (fábricas, recursion).
+            self.declare(name.lexeme)
+
+        previous_class = self.current_class
+        self.current_class = name
 
         if self.match(TokenKind.LESS):
             has_superclass = True
@@ -334,18 +344,13 @@ class Compiler:
 
         self.consume(TokenKind.RIGHT_BRACE, "Se esperaba '}' después de la clase")
 
-        self.chunk.emit(OpCode.OP_POP, name.line)
-
-        if self.scope_depth == 0:
+        if is_local:
+            self.mark_initialized()
+        else:
             name_index = self.chunk.add_constant(name.lexeme)
             self.chunk.emit(OpCode.OP_DEFINE_GLOBAL, name.line, name_index)
-        else:
-            slot = self.resolve_local(name)
-            if slot is not None:
-                self.chunk.emit(OpCode.OP_SET_LOCAL, name.line, slot)
-            else:
-                name_index = self.chunk.add_constant(name.lexeme)
-                self.chunk.emit(OpCode.OP_DEFINE_GLOBAL, name.line, name_index)
+
+        self.current_class = previous_class
 
     def method_declaration(self) -> None:
         """Compila un método de clase (sin keyword fun)."""
@@ -391,6 +396,8 @@ class Compiler:
         function.chunk = body_compiler.chunk
         function.arity = len(params)
         function.upvalue_count = len(body_compiler.upvalues)
+        function.is_initializer = name.lexeme == "init"
+        function.enclosing_class = self.current_class.lexeme if self.current_class is not None else None
         index = self.chunk.add_constant(function)
         self.chunk.emit(OpCode.OP_CLOSURE, name.line, index)
 
@@ -481,7 +488,19 @@ class Compiler:
         """Compila ``obj.prop = val`` o ``this.prop = val``."""
         # Compilar el objeto
         if self.match(TokenKind.THIS):
-            self.chunk.emit(OpCode.OP_GET_LOCAL, self.previous().line, 0)
+            token = self.previous()
+            slot = self.resolve_local(token)
+            if slot is not None:
+                self.chunk.emit(OpCode.OP_GET_LOCAL, token.line, slot)
+            else:
+                upvalue_index = self.resolve_upvalue(token)
+                if upvalue_index is not None:
+                    self.chunk.emit(OpCode.OP_GET_UPVALUE, token.line, upvalue_index)
+                else:
+                    raise ParseError(
+                        f"'this' solo es válido dentro de un método en la línea {token.line}, "
+                        f"columna {token.column}"
+                    )
         elif self.match(TokenKind.SUPER):
             raise ParseError("No se puede asignar a una propiedad de super")
         else:
@@ -644,7 +663,18 @@ class Compiler:
             return
         if self.match(TokenKind.THIS):
             token = self.previous()
-            self.chunk.emit(OpCode.OP_GET_LOCAL, token.line, 0)
+            slot = self.resolve_local(token)
+            if slot is not None:
+                self.chunk.emit(OpCode.OP_GET_LOCAL, token.line, slot)
+            else:
+                upvalue_index = self.resolve_upvalue(token)
+                if upvalue_index is not None:
+                    self.chunk.emit(OpCode.OP_GET_UPVALUE, token.line, upvalue_index)
+                else:
+                    raise ParseError(
+                        f"'this' solo es válido dentro de un método en la línea {token.line}, "
+                        f"columna {token.column}"
+                    )
             # Postfix: property access and calls
             while True:
                 if self.match(TokenKind.DOT):
