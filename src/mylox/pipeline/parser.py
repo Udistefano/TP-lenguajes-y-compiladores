@@ -88,8 +88,18 @@ class Parser:
         self._consume(TokenKind.LEFT_BRACE, "Se esperaba '{' después del nombre")
         methods: list[FunctionDecl] = []
         while not self._check(TokenKind.RIGHT_BRACE) and not self._check(TokenKind.EOF):
-            self._consume(TokenKind.FUN, "Se esperaba 'fun' para un método")
-            methods.append(self._function_declaration())
+            # Los métodos se declaran sin 'fun', como en Lox estándar.
+            method_name = self._consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de método")
+            self._consume(TokenKind.LEFT_PAREN, "Se esperaba '(' después del nombre")
+            parameters: list[Token] = []
+            if not self._check(TokenKind.RIGHT_PAREN):
+                parameters.append(self._consume(TokenKind.IDENTIFIER, "Se esperaba un parámetro"))
+                while self._match(TokenKind.COMMA):
+                    parameters.append(self._consume(TokenKind.IDENTIFIER, "Se esperaba un parámetro"))
+            self._consume(TokenKind.RIGHT_PAREN, "Se esperaba ')' después de los parámetros")
+            self._consume(TokenKind.LEFT_BRACE, "Se esperaba '{' antes del cuerpo")
+            body = self._block()
+            methods.append(FunctionDecl(method_name, parameters, body))
         self._consume(TokenKind.RIGHT_BRACE, "Se esperaba '}' después de la clase")
         return ClassDecl(name, superclass, methods)
 

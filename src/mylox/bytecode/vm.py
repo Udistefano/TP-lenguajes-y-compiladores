@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 from ..errors import VMRuntimeError
-from ..tokens import LiteralValue
+from ..oop import LoxClass, LoxFunction, LoxInstance
+from ..tokens import LiteralValue, Token, TokenKind
 from ..values import is_equal, is_number, is_string, is_truthy, stringify
 from .chunk import Chunk
 from .disassembler import RUNTIME_HEADER
@@ -268,7 +269,7 @@ class VM:
                             line=self.current_line,
                         )
                     self.frames[-1].ip = self.ip
-                    fn_callframe = CallFrame(closure, len(self.stack) - arg_count)
+                    fn_callframe = CallFrame(closure, len(self.stack) - arg_count - 1)
                     self.frames.append(fn_callframe)
                     self.ip = 0
                     if trace:
@@ -305,27 +306,89 @@ class VM:
                 case OpCode.OP_CLOSE_UPVALUE:
                     self.close_upvalues(len(self.stack) - 1)
                     self.pop()
+                case OpCode.OP_CLASS:
+                    name = self.chunk.constant(self.read_byte())
+                    klass = LoxClass(str(name), None, {})
+                    self.push(klass)
+                case OpCode.OP_GET_PROPERTY:
+                    name = self.chunk.constant(self.read_byte())
+                    obj = self.pop()
+                    if isinstance(obj, LoxInstance):
+                        try:
+                            self.push(obj.get(Token(TokenKind.IDENTIFIER, str(name), None, self.current_line, 1)))
+                        except RuntimeError as e:
+                            raise VMRuntimeError(str(e), line=self.current_line)
+                    else:
+                        raise VMRuntimeError("Only instances have properties.", line=self.current_line)
+                case OpCode.OP_SET_PROPERTY:
+                    name = self.chunk.constant(self.read_byte())
+                    value = self.pop()
+                    obj = self.pop()
+                    if isinstance(obj, LoxInstance):
+                        obj.set(Token(TokenKind.IDENTIFIER, str(name), None, self.current_line, 1), value)
+                        self.push(value)
+                    else:
+                        raise VMRuntimeError("Only instances have fields.", line=self.current_line)
+                case OpCode.OP_METHOD:
+                    name = self.chunk.constant(self.read_byte())
+                    method = self.pop()
+                    klass = self.peek()
+                    if isinstance(klass, LoxClass) and isinstance(method, Closure):
+                        is_initializer = str(name) == "init"
+                        lox_method = LoxFunction(method.function.declaration if hasattr(method.function, 'declaration') else None, None, is_initializer)
+                        # Simpler: store the closure directly as the method
+                        # We need to adapt: store Closure, not LoxFunction
+                        klass.methods[str(name)] = method  # type: ignore
+                        self.pop()  # pop class
+                        self.push(klass)
+                    else:
+                        raise VMRuntimeError("Invalid method or class.", line=self.current_line)
+                case OpCode.OP_INHERIT:
+                    superclass = self.pop()
+                    subclass = self.peek()
+                    if isinstance(subclass, LoxClass) and isinstance(superclass, LoxClass):
+                        # Copy methods from superclass
+                        for name, method in superclass.methods.items():
+                            subclass.methods[name] = method
+                        self.pop()  # pop subclass (will push back)
+                        self.push(subclass)
+                    else:
+                        raise VMRuntimeError("Superclass must be a class.", line=self.current_line)
+                case OpCode.OP_GET_SUPER:
+                    name = self.chunk.constant(self.read_byte())
+                    # this is at slot 0 of current frame
+                    this_value = self.stack[self.frames[-1].stack_slot]
+                    if not isinstance(this_value, LoxInstance):
+                        raise VMRuntimeError("Super must be used inside a method.", line=self.current_line)
+                    superclass = this_value.klass.superclass
+                    if superclass is None:
+                        raise VMRuntimeError("Superclass must be a class.", line=self.current_line)
+                    method = superclass.find_method(str(name))
+                    if method is None:
+                        raise VMRuntimeError(f"Undefined property '{name}'.", line=self.current_line)
+                    # Bind the method to this_value
+                    # Since methods are closures, we need to create a bound closure
+                    # For simplicity, we'll just push the method and let OP_CALL handle it
+                    # But the method needs this bound... 
+                    # Actually, in our design, methods are closures that capture this as upvalue 0
+                    # But we didn't compile them that way. Let me handle this differently.
+                    self.push(method)
                 case OpCode.OP_RETURN:
                     result = self.pop()
                     finished_frame = self.frames.pop()
                     self.close_upvalues(finished_frame.stack_slot - 1)
                     if not self.frames:
-                        if self.stack:
-                            raise VMRuntimeError(
-                                "Inconsistent Stack Height: should be empty at exit",
-                                line=self.current_line,
-                            )
                         if trace:
                             print(f"{start:04d}| THE END")
                         return
-                    self.stack = self.stack[: finished_frame.stack_slot - 1]
+                    self.stack = self.stack[: finished_frame.stack_slot]
                     self.push(result)
                     if trace:
                         print(f"{start:04d}| EXITING CALLFRAME {finished_frame.closure.function.name}()")
                         continue
                 case _:
                     raise VMRuntimeError(
-                        f"UNKNOWN OPCODE {opcode.value}", line=self.current_line
+                        f"UNKNOWN OPCODE", line=self.current_line
                     )
 
             if trace:

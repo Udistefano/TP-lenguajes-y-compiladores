@@ -38,7 +38,7 @@ def run_program(source: str) -> str:
 def test_clase_basica_con_metodo():
     source = """
     class Foo {
-      fun bar() { return 42; }
+      bar() { return 42; }
     }
     var f = Foo();
     print f.bar();
@@ -49,8 +49,8 @@ def test_clase_basica_con_metodo():
 def test_this_refiere_a_la_instancia():
     source = """
     class Foo {
-      fun set(x) { this.x = x; }
-      fun get() { return this.x; }
+      set(x) { this.x = x; }
+      get() { return this.x; }
     }
     var f = Foo();
     f.set(10);
@@ -74,7 +74,7 @@ def test_propiedades_get_y_set():
 def test_herencia_simple():
     source = """
     class A {
-      fun greet() { return "hello"; }
+      greet() { return "hello"; }
     }
     class B < A {}
     var b = B();
@@ -86,10 +86,10 @@ def test_herencia_simple():
 def test_super_llama_al_metodo_de_la_superclase():
     source = """
     class A {
-      fun greet() { return "hello from A"; }
+      greet() { return "hello from A"; }
     }
     class B < A {
-      fun greet() { return super.greet() + " and B"; }
+      greet() { return super.greet() + " and B"; }
     }
     var b = B();
     print b.greet();
@@ -100,8 +100,8 @@ def test_super_llama_al_metodo_de_la_superclase():
 def test_init_es_constructor():
     source = """
     class Foo {
-      fun init(x) { this.x = x; }
-      fun get() { return this.x; }
+      init(x) { this.x = x; }
+      get() { return this.x; }
     }
     var f = Foo(42);
     print f.get();
@@ -117,13 +117,13 @@ def test_this_fuera_de_clase_falla():
 
 
 def test_super_sin_superclase_falla():
-    source = "class Foo { fun bar() { return super.bar(); } }"
+    source = "class Foo { bar() { return super.bar(); } }"
     statements = Parser(Lexer(source).run()).parse()
     with pytest.raises(ParseError):
         BindingResolver().resolve_program(statements)
 
     # El error se detecta en el resolver, no en el parser.
-    source = "class Foo { fun bar() { return super.bar(); } }"
+    source = "class Foo { bar() { return super.bar(); } }"
     statements = Parser(Lexer(source).run()).parse()
     with pytest.raises(ParseError):
         BindingResolver().resolve_program(statements)
@@ -144,13 +144,13 @@ def test_propiedad_indefinida_falla():
 def test_herencia_multinivel():
     source = """
     class A {
-      fun speak() { return "sound"; }
+      speak() { return "sound"; }
     }
     class B < A {
-      fun speak() { return super.speak() + " (B)"; }
+      speak() { return super.speak() + " (B)"; }
     }
     class C < B {
-      fun speak() { return super.speak() + " (C)"; }
+      speak() { return super.speak() + " (C)"; }
     }
     var c = C();
     print c.speak();

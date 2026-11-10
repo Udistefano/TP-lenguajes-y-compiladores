@@ -55,6 +55,16 @@ class OpCode(Enum):
     OP_SET_UPVALUE = auto()
     OP_CLOSE_UPVALUE = auto()
 
+    # Clases y herencia (OOP)
+    OP_CLASS = auto()
+    OP_GET_PROPERTY = auto()
+    OP_SET_PROPERTY = auto()
+    OP_METHOD = auto()
+    OP_INHERIT = auto()
+    OP_GET_SUPER = auto()
+    OP_INVOKE = auto()
+    OP_SUPER_INVOKE = auto()
+
     # Saltos
     OP_JUMP = auto()
     OP_JUMP_IF_FALSE = auto()
@@ -64,48 +74,61 @@ class OpCode(Enum):
 @dataclass(frozen=True, slots=True)
 class Instruction:
     stack_effect: int
-    has_operand: bool
+    operand_size: int
 
 
 INSTRUCTIONS: dict[OpCode, Instruction] = {
-    OpCode.OP_CONSTANT: Instruction(stack_effect=+1, has_operand=True),
-    OpCode.OP_TRUE: Instruction(stack_effect=+1, has_operand=False),
-    OpCode.OP_FALSE: Instruction(stack_effect=+1, has_operand=False),
-    OpCode.OP_NIL: Instruction(stack_effect=+1, has_operand=False),
-    OpCode.OP_DEFINE_GLOBAL: Instruction(stack_effect=-1, has_operand=True),
-    OpCode.OP_GET_GLOBAL: Instruction(stack_effect=+1, has_operand=True),
-    OpCode.OP_SET_GLOBAL: Instruction(stack_effect=0, has_operand=True),
-    OpCode.OP_GET_LOCAL: Instruction(stack_effect=+1, has_operand=True),
-    OpCode.OP_SET_LOCAL: Instruction(stack_effect=0, has_operand=True),
-    OpCode.OP_POP: Instruction(stack_effect=-1, has_operand=False),
-    OpCode.OP_PRINT: Instruction(stack_effect=-1, has_operand=False),
-    OpCode.OP_RETURN: Instruction(stack_effect=-1, has_operand=False),
-    OpCode.OP_EQUAL: Instruction(stack_effect=-1, has_operand=False),
-    OpCode.OP_GREATER: Instruction(stack_effect=-1, has_operand=False),
-    OpCode.OP_LESS: Instruction(stack_effect=-1, has_operand=False),
-    OpCode.OP_ADD: Instruction(stack_effect=-1, has_operand=False),
-    OpCode.OP_SUBTRACT: Instruction(stack_effect=-1, has_operand=False),
-    OpCode.OP_MULTIPLY: Instruction(stack_effect=-1, has_operand=False),
-    OpCode.OP_DIVIDE: Instruction(stack_effect=-1, has_operand=False),
-    OpCode.OP_MODULO: Instruction(stack_effect=-1, has_operand=False),
-    OpCode.OP_NOT: Instruction(stack_effect=0, has_operand=False),
-    OpCode.OP_NEGATE: Instruction(stack_effect=0, has_operand=False),
-    OpCode.OP_CALL: Instruction(stack_effect=-1, has_operand=True),
-    OpCode.OP_CLOSURE: Instruction(stack_effect=+1, has_operand=True),
-    OpCode.OP_GET_UPVALUE: Instruction(stack_effect=+1, has_operand=True),
-    OpCode.OP_SET_UPVALUE: Instruction(stack_effect=0, has_operand=True),
-    OpCode.OP_CLOSE_UPVALUE: Instruction(stack_effect=-1, has_operand=False),
-    OpCode.OP_JUMP: Instruction(stack_effect=0, has_operand=True),
-    OpCode.OP_JUMP_IF_FALSE: Instruction(stack_effect=0, has_operand=True),
-    OpCode.OP_LOOP: Instruction(stack_effect=0, has_operand=True),
+    OpCode.OP_CONSTANT: Instruction(stack_effect=+1, operand_size=1),
+    OpCode.OP_TRUE: Instruction(stack_effect=+1, operand_size=0),
+    OpCode.OP_FALSE: Instruction(stack_effect=+1, operand_size=0),
+    OpCode.OP_NIL: Instruction(stack_effect=+1, operand_size=0),
+    OpCode.OP_DEFINE_GLOBAL: Instruction(stack_effect=-1, operand_size=1),
+    OpCode.OP_GET_GLOBAL: Instruction(stack_effect=+1, operand_size=1),
+    OpCode.OP_SET_GLOBAL: Instruction(stack_effect=0, operand_size=1),
+    OpCode.OP_GET_LOCAL: Instruction(stack_effect=+1, operand_size=1),
+    OpCode.OP_SET_LOCAL: Instruction(stack_effect=0, operand_size=1),
+    OpCode.OP_POP: Instruction(stack_effect=-1, operand_size=0),
+    OpCode.OP_PRINT: Instruction(stack_effect=-1, operand_size=0),
+    OpCode.OP_RETURN: Instruction(stack_effect=-1, operand_size=0),
+    OpCode.OP_EQUAL: Instruction(stack_effect=-1, operand_size=0),
+    OpCode.OP_GREATER: Instruction(stack_effect=-1, operand_size=0),
+    OpCode.OP_LESS: Instruction(stack_effect=-1, operand_size=0),
+    OpCode.OP_ADD: Instruction(stack_effect=-1, operand_size=0),
+    OpCode.OP_SUBTRACT: Instruction(stack_effect=-1, operand_size=0),
+    OpCode.OP_MULTIPLY: Instruction(stack_effect=-1, operand_size=0),
+    OpCode.OP_DIVIDE: Instruction(stack_effect=-1, operand_size=0),
+    OpCode.OP_MODULO: Instruction(stack_effect=-1, operand_size=0),
+    OpCode.OP_NOT: Instruction(stack_effect=0, operand_size=0),
+    OpCode.OP_NEGATE: Instruction(stack_effect=0, operand_size=0),
+    OpCode.OP_CALL: Instruction(stack_effect=-1, operand_size=1),
+    OpCode.OP_CLOSURE: Instruction(stack_effect=+1, operand_size=1),
+    OpCode.OP_GET_UPVALUE: Instruction(stack_effect=+1, operand_size=1),
+    OpCode.OP_SET_UPVALUE: Instruction(stack_effect=0, operand_size=1),
+    OpCode.OP_CLOSE_UPVALUE: Instruction(stack_effect=-1, operand_size=0),
+    OpCode.OP_CLASS: Instruction(stack_effect=+1, operand_size=1),
+    OpCode.OP_GET_PROPERTY: Instruction(stack_effect=0, operand_size=1),
+    OpCode.OP_SET_PROPERTY: Instruction(stack_effect=-1, operand_size=1),
+    OpCode.OP_METHOD: Instruction(stack_effect=-1, operand_size=1),
+    OpCode.OP_INHERIT: Instruction(stack_effect=-1, operand_size=0),
+    OpCode.OP_GET_SUPER: Instruction(stack_effect=+1, operand_size=1),
+    OpCode.OP_INVOKE: Instruction(stack_effect=0, operand_size=2),
+    OpCode.OP_SUPER_INVOKE: Instruction(stack_effect=0, operand_size=2),
+    OpCode.OP_JUMP: Instruction(stack_effect=0, operand_size=2),
+    OpCode.OP_JUMP_IF_FALSE: Instruction(stack_effect=0, operand_size=2),
+    OpCode.OP_LOOP: Instruction(stack_effect=0, operand_size=2),
 }
 
 
 def takes_operand(opcode: OpCode) -> bool:
-    """Indica si opcode lleva un byte de operando después del código."""
-    return INSTRUCTIONS[opcode].has_operand
+    """Indica si ``opcode`` lleva al menos un byte de operando."""
+    return INSTRUCTIONS[opcode].operand_size > 0
+
+
+def operand_bytes(opcode: OpCode) -> int:
+    """Devuelve cuántos bytes de operando lleva ``opcode``."""
+    return INSTRUCTIONS[opcode].operand_size
 
 
 def stack_effect(opcode: OpCode) -> int:
-    """Devuelve cuánto cambia el tamaño de la pila al ejecutar opcode"""
+    """Devuelve cuánto cambia el tamaño de la pila al ejecutar ``opcode``."""
     return INSTRUCTIONS[opcode].stack_effect
