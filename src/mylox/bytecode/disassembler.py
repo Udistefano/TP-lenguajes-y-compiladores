@@ -54,6 +54,20 @@ def disassemble_instruction(chunk: Chunk, offset: int) -> tuple[str, int]:
         name = chunk.constant(chunk.read(offset + 1))
         return f"{offset:04d}| {opcode.name}<{name!r}>", offset + 2
 
+    if opcode in (OpCode.OP_CLASS, OpCode.OP_GET_PROPERTY, OpCode.OP_SET_PROPERTY,
+                  OpCode.OP_METHOD, OpCode.OP_GET_SUPER):
+        name = chunk.constant(chunk.read(offset + 1))
+        return f"{offset:04d}| {opcode.name}<{name!r}>", offset + 2
+
+    if opcode == OpCode.OP_INHERIT:
+        return f"{offset:04d}| {opcode.name}", offset + 1
+
+    # OP_INVOKE / OP_SUPER_INVOKE: nombre + cantidad de argumentos.
+    if opcode in (OpCode.OP_INVOKE, OpCode.OP_SUPER_INVOKE):
+        name = chunk.constant(chunk.read(offset + 1))
+        argc = chunk.read(offset + 2)
+        return f"{offset:04d}| {opcode.name}<{name!r}, {argc}>", offset + 3
+
     if not takes_operand(opcode):
         return f"{offset:04d}| {opcode.name}", offset + 1
 
