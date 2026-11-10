@@ -9,9 +9,9 @@ from __future__ import annotations
 
 from .errors import ParseError
 from .nodes import (
-    Assign, Binary, BlockStmt, Call, ExprStmt, FunctionDecl, Grouping, IfStmt,
-    Literal, Logical, Node, PrintStmt, ReturnStmt, Unary, VarDecl, Variable,
-    Visitor, WhileStmt,
+    Assign, Binary, BlockStmt, Call, ClassDecl, ExprStmt, FunctionDecl, Get,
+    Grouping, IfStmt, Literal, Logical, Node, PrintStmt, ReturnStmt, Set, Super,
+    This, Unary, VarDecl, Variable, Visitor, WhileStmt,
 )
 from .tokens import Token
 
@@ -34,6 +34,8 @@ class BindingResolver(Visitor):
         """
         self._scope_names: list[set[str]] = []
         self._inside_functions = 0
+        self._inside_classes = 0
+        self._current_class_has_superclass = False
         self.local_bindings: dict[int, tuple[Node, int]] = {}
 
     def resolve_program(self, statements: list[Node]) -> dict[int, tuple[Node, int]]:
@@ -149,6 +151,71 @@ class BindingResolver(Visitor):
             )
         if statement.value is not None:
             statement.value.accept(self)
+
+    def visit_class_decl(self, statement: ClassDecl) -> None:
+        """Registra la clase y resuelve sus métodos con this y super."""
+        self._register(statement.name)
+        had_superclass = self._current_class_has_superclass
+        self._inside_classes += 1
+        try:
+            if statement.superclass is not None:
+                self._current_class_has_superclass = True
+                statement.superclass.accept(self)
+            else:
+                self._current_class_has_superclass = False
+
+            # Cada método se resuelve en un ámbito propio con this (y super).
+            for method in statement.methods:
+                self._resolve_method(method)
+        finally:
+            self._inside_classes -= 1
+            self._current_class_has_superclass = had_superclass
+
+    def _resolve_method(self, method: FunctionDecl) -> None:
+        """Resuelve un método: registra this (y super) como locales."""
+        self._inside_functions += 1
+        try:
+            names = ["this"]
+            if self._current_class_has_superclass:
+                names.append("super")
+            self._walk_scope(method.body, tuple(names + [p.lexeme for p in method.parameters]))
+        finally:
+            self._inside_functions -= 1
+
+    def visit_get(self, expression: Get) -> None:
+        """Vincula la referencia al objeto; la propiedad se resuelve en runtime."""
+        expression.object.accept(self)
+
+    def visit_set(self, expression: Set) -> None:
+        """Vincula el objeto y el valor de la asignación a propiedad."""
+        expression.object.accept(self)
+        expression.value.accept(self)
+
+    def visit_this(self, expression: This) -> None:
+        """Resuelve this como variable local del método actual."""
+        if self._inside_classes == 0:
+            token = expression.keyword
+            raise ParseError(
+                f"No se puede usar 'this' fuera de una clase en la línea {token.line}, "
+                f"columna {token.column}"
+            )
+        self._link(expression, expression.keyword)
+
+    def visit_super(self, expression: Super) -> None:
+        """Resuelve super como variable local y vincula el método."""
+        if self._inside_classes == 0:
+            token = expression.keyword
+            raise ParseError(
+                f"No se puede usar 'super' fuera de una clase en la línea {token.line}, "
+                f"columna {token.column}"
+            )
+        if not self._current_class_has_superclass:
+            token = expression.keyword
+            raise ParseError(
+                f"No se puede usar 'super' sin superclase en la línea {token.line}, "
+                f"columna {token.column}"
+            )
+        self._link(expression, expression.keyword)
 
     def visit_expr_stmt(self, statement: ExprStmt) -> None:
         """Recorre la expresión de la sentencia sin ejecutar sus efectos."""
