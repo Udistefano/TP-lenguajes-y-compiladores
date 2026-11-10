@@ -172,13 +172,26 @@ class BindingResolver(Visitor):
             self._current_class_has_superclass = had_superclass
 
     def _resolve_method(self, method: FunctionDecl) -> None:
-        """Resuelve un método: registra this (y super) como locales."""
+        """Resuelve un método: this en el scope del método, super en el de la clase."""
         self._inside_functions += 1
         try:
-            names = ["this"]
+            # Scope de clase (exterior): contiene "super" si hay superclase.
+            class_scope: set[str] = set()
             if self._current_class_has_superclass:
-                names.append("super")
-            self._walk_scope(method.body, tuple(names + [p.lexeme for p in method.parameters]))
+                class_scope.add("super")
+            self._scope_names.append(class_scope)
+            try:
+                # Scope de método (interior): contiene "this" + parámetros.
+                method_scope: set[str] = {"this"}
+                method_scope.update(p.lexeme for p in method.parameters)
+                self._scope_names.append(method_scope)
+                try:
+                    for stmt in method.body:
+                        stmt.accept(self)
+                finally:
+                    self._scope_names.pop()
+            finally:
+                self._scope_names.pop()
         finally:
             self._inside_functions -= 1
 
