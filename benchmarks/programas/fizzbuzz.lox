@@ -1,0 +1,28 @@
+// fizzbuzz.lox — condicionales anidados y concatenación de strings.
+// Ejercita ramas if/else-if, comparaciones y la construcción de strings en
+// un bucle. Portable: no usa % (la divisibilidad se chequea por resta
+// repetida), ni clases.
+
+fun divisible(n, d) {
+  var r = n;
+  while (r >= d) {
+    r = r - d;
+  }
+  return r == 0;
+}
+
+var acc = "";
+var i = 1;
+while (i <= 400) {
+  if (divisible(i, 3) and divisible(i, 5)) {
+    acc = acc + "FizzBuzz";
+  } else if (divisible(i, 3)) {
+    acc = acc + "Fizz";
+  } else if (divisible(i, 5)) {
+    acc = acc + "Buzz";
+  } else {
+    acc = acc + ".";
+  }
+  i = i + 1;
+}
+print acc;

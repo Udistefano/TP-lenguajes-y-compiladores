@@ -17,6 +17,7 @@ from .nodes import (
 )
 from .resolver import BindingResolver
 from .tokens import Token, TokenKind
+from .values import is_equal, is_number, is_string, is_truthy, stringify
 
 
 class Interpreter(Visitor):
@@ -94,7 +95,7 @@ class Interpreter(Visitor):
         y ``print()`` agrega el salto de línea. La expresión se evalúa una
         sola vez; la sentencia produce ese efecto y devuelve None.
         """
-        print(self.stringify(self.evaluate(statement.expression)))
+        print(stringify(self.evaluate(statement.expression)))
 
     def visit_var_decl(self, statement: VarDecl) -> None:
         """Declara el nombre de ``var`` en el ámbito activo y devuelve None.
@@ -177,7 +178,7 @@ class Interpreter(Visitor):
         se evalúa una sola vez; los errores de la rama elegida se propagan y
         la sentencia devuelve None.
         """
-        if self.is_truthy(self.evaluate(statement.condition)):
+        if is_truthy(self.evaluate(statement.condition)):
             statement.then_branch.accept(self)
         elif statement.else_branch is not None:
             statement.else_branch.accept(self)
@@ -190,26 +191,8 @@ class Interpreter(Visitor):
         no se ejecuta. También ejecuta los ``for`` que el parser transformó
         en WhileStmt. Devuelve None al terminar y propaga errores del cuerpo.
         """
-        while self.is_truthy(self.evaluate(statement.condition)):
+        while is_truthy(self.evaluate(statement.condition)):
             statement.body.accept(self)
-
-    def stringify(self, value: object) -> str:
-        """Convierte un valor ya evaluado a su representación textual en Lox.
-
-        None se escribe ``nil`` y los booleanos se escriben en minúscula.
-        Los números enteros almacenados como float se muestran sin ``.0``;
-        las cadenas se muestran sin comillas. Devuelve texto sin imprimirlo
-        ni agregar un salto de línea.
-        """
-        if value is None:
-            return "nil"
-        if value is True:
-            return "true"
-        if value is False:
-            return "false"
-        if isinstance(value, float) and value.is_integer():
-            return str(int(value))
-        return str(value)
 
     # helpers
 
@@ -229,15 +212,6 @@ class Interpreter(Visitor):
         """
         return isinstance(value, str)
 
-    def is_truthy(self, value: object) -> bool:
-        """Devuelve la interpretación de un valor como condición de Lox.
-
-        Solamente None (``nil``) y False se consideran falsos. El cero y la
-        cadena vacía son verdaderos. Usar esta regla evita las diferencias
-        con ``bool()`` de Python al ejecutar ``if``, ``while`` o ``!``.
-        """
-        return not (value is None or value is False)
-
     def is_callable(self, value: object) -> bool:
         """Comprueba el contrato de invocación con las operaciones arity y call.
 
@@ -253,10 +227,23 @@ class Interpreter(Visitor):
         son válidos devuelve None; en otro caso lanza LoxRuntimeError usando
         el token del operador para conservar la ubicación del error.
         """
-        if not (self.is_number(left) and self.is_number(right)):
+        if not (is_number(left) and is_number(right)):
             raise LoxRuntimeError(
                 operator, "Operands of " + operator.lexeme + " must be numbers"
             )
+
+    def check_nonzero_divisor(self, operator: Token, right: object, mensaje: str) -> None:
+        """Impide dividir o tomar resto por cero.
+
+        Lox no define un valor para el resultado de ``1 / 0``: es un error en
+        tiempo de ejecución. Sin esta comprobación, Python lanzaría
+        ZeroDivisionError y el programa terminaría con una traza de error en
+        lugar de un mensaje de Lox con la posición del operador. ``mensaje``
+        describe la operación rechazada para distinguir la división del
+        resto. Devuelve None cuando el divisor no es cero.
+        """
+        if right == 0:
+            raise LoxRuntimeError(operator, mensaje)
 
     def check_plus_operands(self, operator: Token, left: object, right: object) -> None:
         """Valida que ``+`` reciba dos números o dos cadenas.
@@ -266,7 +253,7 @@ class Interpreter(Visitor):
         el par es válido y lanza LoxRuntimeError con el operador si no lo es.
         """
         if not (
-            (self.is_number(left) and self.is_number(right)) or (self.is_string(left) and self.is_string(right))
+            (is_number(left) and is_number(right)) or (is_string(left) and is_string(right))
         ):
             raise LoxRuntimeError(
                 operator,
@@ -304,13 +291,13 @@ class Interpreter(Visitor):
         #Se utiliza match case como en el libro de lox para manejar los diferentes operadores unarios
         match expression.operator.kind:
             case TokenKind.MINUS:
-                if not self.is_number(right):
+                if not is_number(right):
                     raise LoxRuntimeError(
                         expression.operator, "Operand of - must be a number"
                     )
                 return -right
             case TokenKind.BANG:
-                return not self.is_truthy(right)
+                return not is_truthy(right)
 
         raise LoxRuntimeError(
             expression.operator, "Unknown unary operator " + expression.operator.lexeme,
@@ -351,10 +338,10 @@ class Interpreter(Visitor):
 
         left = self.evaluate(expression.left)
 
-        if expression.operator.kind == TokenKind.OR and self.is_truthy(left):
+        if expression.operator.kind == TokenKind.OR and is_truthy(left):
             return left
 
-        if expression.operator.kind == TokenKind.AND and not self.is_truthy(left):
+        if expression.operator.kind == TokenKind.AND and not is_truthy(left):
             return left
 
         return self.evaluate(expression.right)
@@ -385,9 +372,15 @@ class Interpreter(Visitor):
                 return left * right
             case TokenKind.SLASH:
                 self.check_number_operands(expression.operator, left, right)
+                self.check_nonzero_divisor(
+                    expression.operator, right, "Division by zero is not allowed"
+                )
                 return left / right
             case TokenKind.PERCENT:
                 self.check_number_operands(expression.operator, left, right)
+                self.check_nonzero_divisor(
+                    expression.operator, right, "Modulo by zero is not allowed"
+                )
                 return left % right
             case TokenKind.GREATER:
                 self.check_number_operands(expression.operator, left, right)
@@ -402,9 +395,9 @@ class Interpreter(Visitor):
                 self.check_number_operands(expression.operator, left, right)
                 return left <= right
             case TokenKind.EQUAL_EQUAL:
-                return left == right
+                return is_equal(left, right)
             case TokenKind.BANG_EQUAL:
-                return left != right
+                return not is_equal(left, right)
 
         raise LoxRuntimeError(
             expression.operator, "Unknown binary operator " + expression.operator.lexeme,

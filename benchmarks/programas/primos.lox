@@ -1,0 +1,33 @@
+// primos.lox — bucles anidados con prueba de división.
+// Ejercita la anidación profunda de bucles, las comparaciones y la
+// aritmética en un conteo de primos por división por tentativas.
+// Portable: no usa % (la divisibilidad se chequea por resta repetida),
+// ni clases.
+
+fun es_primo(n) {
+  if (n < 2) {
+    return false;
+  }
+  var d = 2;
+  while (d * d <= n) {
+    var r = n;
+    while (r >= d) {
+      r = r - d;
+    }
+    if (r == 0) {
+      return false;
+    }
+    d = d + 1;
+  }
+  return true;
+}
+
+var cuenta = 0;
+var i = 2;
+while (i <= 300) {
+  if (es_primo(i)) {
+    cuenta = cuenta + 1;
+  }
+  i = i + 1;
+}
+print cuenta;

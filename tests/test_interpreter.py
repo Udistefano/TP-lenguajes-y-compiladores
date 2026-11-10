@@ -50,6 +50,42 @@ def test_modulo_de_no_numeros_falla():
         eval_expr("true % 2")
 
 
+def test_division_por_cero_es_error_de_lox():
+    with pytest.raises(LoxRuntimeError) as excinfo:
+        eval_expr("1 / 0")
+    assert "Division by zero" in str(excinfo.value)
+    assert excinfo.value.token.lexeme == "/"
+    assert excinfo.value.token.line == 1
+
+
+def test_modulo_por_cero_es_error_de_lox():
+    with pytest.raises(LoxRuntimeError) as excinfo:
+        eval_expr("5 % 0")
+    assert "Modulo by zero" in str(excinfo.value)
+    assert excinfo.value.token.lexeme == "%"
+
+
+def test_division_por_cero_con_floats_falla():
+    with pytest.raises(LoxRuntimeError):
+        eval_expr("1.5 / 0.0")
+
+
+def test_divisor_calculado_por_cero_tambien_falla():
+    # El divisor no es un literal: se evalúa antes de la comprobación.
+    with pytest.raises(LoxRuntimeError):
+        eval_expr("10 / (5 - 5)")
+
+
+def test_division_por_cero_no_escapa_como_error_de_python():
+    # El error debe ser de Lox, no un ZeroDivisionError de Python.
+    try:
+        eval_expr("1 / 0")
+    except LoxRuntimeError:
+        pass
+    except ZeroDivisionError:  # pragma: no cover - no debería ocurrir
+        pytest.fail("se escapó un ZeroDivisionError de Python")
+
+
 def test_or_devuelve_primer_truthy():
     assert eval_expr("true or false") is True
     assert eval_expr("false or 1") == 1.0
