@@ -1,0 +1,32 @@
+Temporal de pytest: /tmp/mylox-bench-verification-4jh7533o
+Temporal de prueba anterior eliminado: True
+/usr/bin/python3 -B -m pytest -q -p no:cacheprovider --basetemp /tmp/mylox-bench-verification-4jh7533o
+........................................................................ [ 17%]
+........................................................................ [ 34%]
+........................................................................ [ 51%]
+........................................................................ [ 69%]
+........................................................................ [ 86%]
+........................................................                 [100%]
+416 passed in 2.71s
+
+/usr/bin/python3 -B tests/strict_real_tests.py
+OK tree-walk 0-simple.lox: exit=0
+OK tree-walk 1-flow.lox: exit=0
+OK tree-walk 2-functions.lox: exit=0
+OK tree-walk 3-minsky.lox: exit=0
+OK tree-walk 4-fizzbuzz.lox: exit=0
+OK bytecode 0-simple.lox: exit=0
+OK bytecode 1-flow.lox: exit=0
+OK bytecode 2-functions.lox: exit=0
+OK bytecode 3-minsky.lox: exit=0
+OK bytecode 4-fizzbuzz.lox: exit=0
+
+Temporal eliminado: True
+Auditoría final de benchmarks:
+21 hashes de fuentes coinciden con ambas corridas.
+Cambios de runtime respecto de la referencia: ['mylox/bytecode/chunk.py', 'mylox/bytecode/function.py', 'mylox/bytecode/vm.py']
+940 muestras generales y 280 muestras de control; 20 por combinación, sin duplicados.
+8 directorios temporales de benchmark eliminados y verificados.
+El parche de referencia, los programas y el harness de C coinciden con los hashes registrados.
+Enlaces locales de la documentación y sintaxis de scripts de benchmarks: OK.
+Sin contenedores, volúmenes, worktrees nuevos ni instalaciones de dependencias.
