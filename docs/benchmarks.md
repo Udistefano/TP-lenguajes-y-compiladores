@@ -1,110 +1,337 @@
-# Benchmarks de mylox
+# Benchmarks de la entrega final
 
-## Objetivo
+Las tablas principales usan la versión de
+[optimized.json](../benchmarks/baselines/optimized.json). «Actual» se refiere
+a esa versión medida. Las correcciones de paridad y REPL se midieron después
+y tienen su propia comparación al final.
 
-Responder al pedido del profesor: **más programas**, **incluir conclusiones** y **comparar contra más de una implementación**.
+Las optimizaciones redujeron la mediana del tiempo de CPU de la VM entre
+**11,3% y 24,5%**, según el programa. El bytecode sigue siendo más lento que
+el tree-walk en seis de las siete cargas; en Fibonacci es más rápido.
+La compilación representa menos del 0,21% del tiempo total de estas cargas:
+el costo principal está en ejecutar las instrucciones desde Python.
 
-## Implementaciones comparadas
+## Versiones y entorno
 
-| Implementación | Origen | Arquitectura | Forma de medición |
-|---|---|---|---|
-| `mylox` | Propia | Tree-walk en Python con `Visitor`, nodos `@dataclass(frozen=True, slots=True)` y `BindingResolver` estático | In-process (import directo). Mide `Lexer → Parser → Resolver → Interpreter`. |
-| `plox` | Cátedra ([FdelMazo/plox](https://github.com/FdelMazo/plox), rama `main`) | Tree-walk en Python con `@singledispatchmethod` y resolver | In-process. Extraído del árbol de git con `git archive origin/main` (sin tocar el checkout local). Mide `Scanner → Parser → Resolver → Interpreter`. |
-| `jlox` | [Crafting Interpreters](https://github.com/munificent/craftinginterpreters) (Java) | Tree-walk en Java | In-process vía harness propio (`benchmarks/harness/jlox/Bench.java`). Replica el flujo de `Lox.run()` (`Scanner → Parser → Resolver → Interpreter`). |
-| `clox` | [Crafting Interpreters](https://github.com/munificent/craftinginterpreters) (C) | Máquina virtual de bytecode en C | In-process vía harness propio (`benchmarks/harness/clox/cloxbench.c`). Llama a `interpret(source)` (compila a bytecode y ejecuta en la VM). |
+Mediciones del 11 de noviembre de 2026, en la misma máquina:
 
-## Metodología
-
-- **Qué se mide:** scan + parse + resolve + interpret. **No** se mide arranque del proceso, arranque de JVM, lectura de archivo ni compilación de los harness.
-- **Medición in-process:** se evita el overhead de inicio para obtener una comparación justa entre implementaciones.
-- **Warmup:** se descartan **3 iteraciones** antes de las mediciones para amortiguar efectos de caché/JIT. En `jlox` y `clox` el calentamiento lo hace el harness **dentro del mismo proceso**: es necesario para que el JIT de la JVM optimice el camino caliente. Medir cada repetición en una JVM nueva daría el costo en frío (~5x más lento) y no el estado estable, que es lo que se quiere comparar.
-- **Repeticiones:** se reportan `prom`, `min`, `p50` y `p95` sobre las ejecuciones medidas.
-- **Chequeo de equivalencia:** antes de medir, se ejecuta cada programa en todas las implementaciones activas y se compara la salida normalizada. Se normalizan diferencias de formato (`7.0`→`7`, `None`→`nil`, `True`→`true`, notación científica de números grandes) para detectar divergencias semánticas reales. Si las salidas difieren, el programa se omite.
-- **Portabilidad:** los programas evitan `%` (ausente en jlox y clox) y clases (ausentes en plox). Aquellos que necesitan divisibilidad usan un helper `divisible/mod` propio.
-- **Robusto:** si falta `javac`, `gcc` o el repo del libro, `jlox`/`clox` se omiten con un mensaje; el mínimo garantizado es **mylox vs plox**. `plox` se extrae del repo hermano sin modificar su rama de trabajo.
-
-## Entorno
-
-| Componente | Versión / detalle |
+| Componente | Versión |
 |---|---|
-| SO | Linux |
-| Python | 3.12 (vía `uv`) |
-| Java | `javac`/`java` disponibles |
-| C | `gcc` disponible |
-| plox | extraído de `../plox` por `git archive origin/main` |
-| craftinginterpreters | clonado por `benchmarks/setup.sh` en `benchmarks/.cache/` |
+| CPU | AMD Ryzen 7 9700X; 8 CPU lógicas visibles en WSL |
+| Sistema | Ubuntu en WSL2, kernel 6.18.33.2-microsoft-standard-WSL2, glibc 2.39 |
+| Afinidad | CPU lógica 2 para todos los procesos medidos |
+| Python | CPython 3.12.3, compilado con GCC 13.3.0 |
+| C | GCC 13.3.0; clox compilado con `-std=c99 -O2 -DNDEBUG` |
+| JavaScript | Node v18.19.1, V8 10.2.154.26-node.28 |
+| Gráficos | Matplotlib 3.10.1 y NumPy 2.2.4; generados fuera de las mediciones |
+
+El parcial corresponde a `088a86c2c86816dea2bbd3d3bb5fe549855ccf6d`.
+La versión anterior a optimizar ya tenía clases y listas, por lo que esa
+comparación mantiene la misma funcionalidad. Las
+[referencias](../benchmarks/baselines/README.md) conservan commit base, parche
+y hashes de las fuentes.
+
+Las referencias externas están fijadas a
+[plox 734f4d2](https://github.com/FdelMazo/plox/tree/734f4d2adaf708c503dc5d17e88315e273c2f0ab)
+y [clox 4a840f7](https://github.com/munificent/craftinginterpreters/tree/4a840f70f69c6ddd17cfef4f6964f8e1bcd8c3d4/c).
+plox es un tree-walk en Python; clox es una VM en C. No medimos jlox porque
+el entorno Linux no tenía Java; sus resultados anteriores usan otro entorno.
+
+## Cómo medimos
+
+- **20 muestras y 3 ejecuciones de calentamiento** por combinación. Se informa
+  mediana e intervalo intercuartílico, del percentil 25 al 75. Las barras de
+  error muestran dispersión de muestras, no intervalos de confianza.
+- Los medidores Python alternan las variantes en orden aleatorio en cada ronda,
+  con semilla 1111. clox y JavaScript se miden después, en lotes separados,
+  con las mismas repeticiones y afinidad. El equipo podía tener otras tareas activas.
+- El tiempo de pared incluye preparación y ejecución: lexer, parser/resolver
+  o compilador, creación del runtime y ejecución. Cada muestra recibe un
+  runtime nuevo y compila otra vez la fuente. Se excluyen arranque del proceso,
+  importaciones, lectura de archivos y compilación del harness de C.
+- Se captura stdout y se verifica el resultado de **cada ejecución**, incluidos
+  los calentamientos. clox admite notación científica equivalente; una salida
+  distinta o un error detienen la medición.
+- El GC permanece habilitado. La recolección explícita previa a cada muestra
+  Python/JavaScript queda fuera del cronómetro. clox incluye inicializar y
+  liberar su VM. Los costos de gestión de memoria no quedan exactamente
+  equiparados entre runtimes.
+- La corrida general usa tiempo de pared. Al observar dispersión alta, hicimos
+  una **segunda corrida solo del antes/después**, registrando además
+  `process_time_ns`. El tiempo de CPU excluye los períodos en que el proceso
+  no está ejecutando, pero sigue sujeto a frecuencia, temperatura y efectos
+  de virtualización. No mezclamos sus milisegundos con los de la primera corrida.
+
+La captura tiene diferencias pequeñas entre runtimes: Python y JavaScript
+escriben en memoria; clox formatea y escribe al buffer de stdio, y vacía ese
+buffer fuera del intervalo. JavaScript crea un contexto de `vm.Script` nuevo
+por muestra y ese costo se incluye en ejecución. Tres calentamientos no
+prueban que el JIT haya alcanzado un estado estable.
 
 ## Programas
 
-| Programa | Qué ejercita | Notas |
-|---|---|---|
-| `suma.lox` | Bucles + aritmética acumulada | Reescrito como **bucle real** (el original era una única expresión larga). |
-| `fibonacci.lox` | Recursión + llamadas a función | Evalúa overhead de llamadas y resolución de ámbitos. |
-| `closures.lox` | Closures, captura de entorno, funciones de orden superior | Ejercita `BindingResolver` y el encadenamiento de entornos. |
-| `fizzbuzz.lox` | Condicionales anidados + concatenación de strings | Usa `divisible` por resta repetida (portable). |
-| `primos.lox` | Bucles anidados + división por tentativas | Conteo de primos hasta N usando resta repetida para portabilidad. |
+| Programa | Trabajo realizado |
+|---|---|
+| suma | 100.000 iteraciones con aritmética y asignación; resultado 5.000.050.000 |
+| fibonacci | Suma `fib(0)` a `fib(20)` mediante recursión; resultado 17.710 |
+| closures | Crea 30.000 sumadores y llama 30.000 veces a un contador capturado |
+| primos | Cuenta primos hasta 300 por división por tentativas; resultado 62 |
+| fizzbuzz | Construye una cadena para los números 1 a 400 |
+| objetos | 20.000 llamadas con campos, métodos y `super`; resultado 200.030.000 |
+| listas | Agrega, indexa, modifica y extrae 10.000 elementos; resultado 100.010.000 |
 
-## Resultados (reales)
+Los cinco primeros son portables entre las implementaciones de Lox medidas.
+Primos y FizzBuzz usan restas sucesivas para divisibilidad, porque clox no tiene
+`%`. Las traducciones a Python y JavaScript conservan los mismos algoritmos,
+límites y trabajo; no los sustituyen por funciones de biblioteca o `%`.
+Los acumuladores numéricos de Python se inicializan como `float`.
 
-Medidos con el harness del repo (`uv run python benchmarks/bench.py -n 10`):
+Clases se compara con nuestros backends y clox. Listas se compara solamente
+entre nuestros backends: es una extensión propia. Son cargas sintéticas; la
+[demo del combate](../examples/combate.lox) tiene un objetivo concreto, pero
+es demasiado corta para sacar conclusiones de rendimiento.
 
-```text
-programa         impl          prom        min        p50        p95
---------------------------------------------------------------------
-closures.lox     mylox       607.04     593.55     605.80     620.41
-closures.lox     plox       3337.68    3038.39    3083.14    4574.28
-closures.lox     jlox         33.88      30.21      31.80      43.35
-closures.lox     clox          6.47       6.24       6.43       6.91
+## Optimización: antes y después
 
-fibonacci.lox    mylox       604.91     591.83     599.04     624.69
-fibonacci.lox    plox       1918.94    1878.26    1909.80    2000.84
-fibonacci.lox    jlox         25.31      22.70      23.70      30.42
-fibonacci.lox    clox          2.80       2.71       2.80       2.90
+Medianas de **tiempo de CPU**, en milisegundos, de la corrida de control:
 
-fizzbuzz.lox     mylox       273.28     270.26     272.90     278.07
-fizzbuzz.lox     plox       1381.96    1363.72    1379.54    1403.81
-fizzbuzz.lox     jlox         10.34       8.03       8.52      14.01
-fizzbuzz.lox     clox          1.94       1.89       1.93       2.06
+| Programa | VM antes | VM optimizada | Reducción de tiempo |
+|---|---:|---:|---:|
+| suma | 1143.64 | 929.97 | 18.7% |
+| fibonacci | 476.94 | 409.69 | 14.1% |
+| closures | 887.98 | 750.46 | 15.5% |
+| primos | 265.56 | 217.24 | 18.2% |
+| fizzbuzz | 424.03 | 320.13 | 24.5% |
+| objetos | 508.69 | 401.29 | 21.1% |
+| listas | 383.74 | 340.31 | 11.3% |
 
-primos.lox       mylox       173.63     169.06     172.97     180.03
-primos.lox       plox       1007.43     961.07     986.65    1122.38
-primos.lox       jlox          9.73       5.83       9.22      20.14
-primos.lox       clox          1.32       1.28       1.32       1.36
+La reducción es `100 × (1 − después / antes)`, usando las medianas.
 
-suma.lox         mylox       437.15     430.93     435.07     449.04
-suma.lox         plox       3726.99    3595.29    3650.03    4100.13
-suma.lox         jlox         16.84      15.09      15.67      21.15
-suma.lox         clox          6.37       6.07       6.25       6.70
+![Antes y después: tiempo de CPU](../benchmarks/graphs/bytecode-cpu.png)
 
-Tiempos en milisegundos (promedio sobre repeticiones medidas, tras descartar 3 de warmup).
+En tiempo de pared, las medianas bajaron entre 2,7% y 26,0%, con mucha
+dispersión. En closures, la diferencia es menor que la variación entre
+muestras. El control de CPU ayuda a contrastar el resultado, pero estos
+porcentajes de pared no prueban significancia estadística.
+
+![Antes y después: tiempo de pared](../benchmarks/graphs/bytecode-before-after.png)
+
+### Qué cambiamos
+
+1. `Chunk` expone una `memoryview` de solo lectura. El closure guarda esa vista
+   y el pool de constantes; cada frame reutiliza las referencias. El bucle lee
+   directamente el opcode y las constantes, sin atravesar los métodos
+   `Chunk.read`, `Chunk.constant` y `Chunk.__len__` en cada instrucción.
+2. Las operaciones frecuentes se enlazan a variables locales del bucle.
+   `push` usa `list.append` directamente. `pop` y `peek` mantienen sus chequeos;
+   también se conservan la validación de tipos, las líneas de errores y el
+   `match` con nombres de opcodes.
+
+El chunk se termina antes de obtener sus vistas y mantiene el tamaño durante
+la ejecución. Esta optimización conserva el bytecode emitido y el orden de
+evaluación.
+
+### Qué mostró el perfil
+
+El perfil mide la ejecución con el programa ya compilado. Las 100.000
+iteraciones de `suma` ejecutan 2.100.014 instrucciones de bytecode.
+
+| Llamadas registradas por cProfile en suma | Antes | Después |
+|---|---:|---:|
+| Total, incluidas funciones internas | 25.400.170 | 12.600.087 |
+| `VM.read_byte` | 3.500.023 | 1.400.009 |
+| `Chunk.read` | 3.500.023 | 0 |
+| `Chunk.__len__` | 2.100.014 | 0 |
+| `VM.push` | 1.400.008 | 0 |
+
+Las llamadas bajan 50,4%; en Fibonacci pasan de 8.826.041 a 4.670.728.
+cProfile agrega costo a las llamadas, por lo que calculamos las mejoras de
+tiempo con las corridas sin profiler. Después del cambio, `VM._run` concentra
+cerca del 66% del tiempo perfilado de suma.
+
+Los perfiles completos están en [antes/suma](../benchmarks/results/profile-before-suma.txt),
+[después/suma](../benchmarks/results/profile-after-suma.txt),
+[antes/Fibonacci](../benchmarks/results/profile-before-fibonacci.txt) y
+[después/Fibonacci](../benchmarks/results/profile-after-fibonacci.txt).
+Los pilotos de cinco muestras fueron exploratorios. Las tablas usan las
+corridas de veinte muestras.
+
+## Costo de la VM frente al tree-walk
+
+La VM ejecuta en Python cada lectura de opcode, despacho, acceso a operandos,
+operación de pila y validación de tipos. Los accesos directos reducen llamadas,
+pero cada programa sigue requiriendo millones de esos pasos.
+
+La preparación del backend bytecode ocupa una fracción pequeña del total:
+
+| Programa | Preparación mediana (ms) | Mediana de preparación / total |
+|---|---:|---:|
+| suma | 0.327 | 0.027% |
+| fibonacci | 0.423 | 0.107% |
+| closures | 0.784 | 0.065% |
+| primos | 0.686 | 0.203% |
+| fizzbuzz | 0.885 | 0.128% |
+| objetos | 0.593 | 0.068% |
+| listas | 0.628 | 0.076% |
+
+Reutilizar bytecode ya compilado ahorraría poco en estas cargas largas.
+La proporción puede cambiar para programas cortos o con más trabajo de parseo.
+
+Fibonacci es la excepción observada. La VM usa frames explícitos, variables
+locales por índice y `OP_RETURN`; el tree-walk recorre nodos, crea entornos y
+propaga el retorno con una excepción interna. Es una explicación consistente
+con la ventaja de la VM en recursión, pero esta medición no aísla cuánto aporta
+cada mecanismo por separado.
+
+## Evolución desde el parcial
+
+Medianas de tiempo de pared total, en milisegundos, medidas en el mismo entorno.
+La última columna es `VM optimizada / tree-walk actual`;
+un valor mayor que 1 significa que la VM tarda más.
+
+| Programa | Parcial | Tree-walk actual | VM antes | VM optimizada | VM / tree-walk |
+|---|---:|---:|---:|---:|---:|
+| suma | 335.41 | 368.92 | 1432.75 | 1171.60 | 3.18× |
+| fibonacci | 522.12 | 757.23 | 448.91 | 402.92 | 0.53× |
+| closures | 587.20 | 607.28 | 1216.64 | 1183.83 | 1.95× |
+| primos | 131.01 | 133.05 | 412.63 | 327.47 | 2.46× |
+| fizzbuzz | 287.41 | 284.68 | 826.36 | 657.05 | 2.31× |
+| objetos | — | 565.89 | 1222.65 | 905.29 | 1.60× |
+| listas | — | 219.17 | 984.52 | 765.73 | 3.49× |
+
+![Evolución del proyecto](../benchmarks/graphs/evolution.png)
+
+En Fibonacci, la VM actual tarda un 46,8% menos que el tree-walk actual y un
+22,8% menos que el parcial. En las otras seis cargas tarda entre 1,60 y 3,49
+veces lo que el tree-walk actual. Agregar compilación no produjo una mejora
+uniforme de velocidad.
+
+En Fibonacci, el tree-walk tarda un 45,0% más que el parcial. Entre esas
+versiones cambiaron funcionalidades y semántica; la medición no aísla la
+causa de esa regresión.
+
+## Otras implementaciones y otros lenguajes
+
+Medianas de pared, en milisegundos. Las primeras cuatro columnas ejecutan el
+mismo Lox; las últimas dos ejecutan traducciones del algoritmo:
+
+| Programa | plox | Tree-walk | VM optimizada | clox | Python directo | JavaScript directo |
+|---|---:|---:|---:|---:|---:|---:|
+| suma | 3320.853 | 368.925 | 1171.601 | 3.427 | 9.445 | 2.529 |
+| fibonacci | 1656.777 | 757.231 | 402.922 | 1.124 | 2.543 | 5.455 |
+| closures | 2932.197 | 607.279 | 1183.829 | 3.478 | 11.289 | 5.781 |
+| primos | 852.050 | 133.046 | 327.470 | 0.537 | 1.029 | 1.622 |
+| fizzbuzz | 1642.233 | 284.678 | 657.050 | 1.031 | 1.657 | 1.303 |
+
+![Implementaciones de Lox](../benchmarks/graphs/lox-implementations.png)
+
+Nuestros dos backends tardan menos que plox. Los tree-walk difieren en
+visitor, resolución y objetos de runtime; no medimos el efecto separado de
+cada decisión. clox es mucho más rápido y ejecuta en C: cambian a la vez
+la arquitectura, el lenguaje anfitrión y la representación de valores.
+
+![Mismos algoritmos en distintos lenguajes](../benchmarks/graphs/native-languages.png)
+
+Python y JavaScript ejecutan los algoritmos sin nuestra capa de interpretación
+de Lox y tardan mucho menos que la VM. Python gana en Fibonacci y primos;
+JavaScript, en los otros tres. El resultado depende de estas cargas y harnesses.
+
+## Reproducir y verificar
+
+Desde la raíz del repositorio, con Linux/WSL, Python 3.12+, Git, GCC y Node.
+El repositorio hermano `../plox` debe contener el commit indicado; el README
+incluye los comandos para prepararlo en un checkout nuevo. clox se
+obtiene automáticamente; si ya se dispone de ese commit, se puede pasar
+`--clox-source /ruta/al/repo` a `external.py`. Se exigen al menos 20 GiB libres
+antes de compilar.
+
+```sh
+python3 -B benchmarks/compare.py --snapshot benchmarks/baselines/optimized.json --cpu 2 --repetitions 20 --warmup 3 --output benchmarks/results/new/final.json
+python3 -B benchmarks/external.py benchmarks/results/new/final.json
+python3 -B benchmarks/compare.py --snapshot benchmarks/baselines/optimized.json --only-vm --cpu 2 --repetitions 20 --warmup 3 --output benchmarks/results/new/control.json
 ```
 
-### Cuotas relativas (mylox = 1)
+Elegir una CPU válida si el entorno no expone la CPU 2. Para graficar se necesitan
+Matplotlib y NumPy, incluidos en el grupo opcional `bench` del lockfile.
+Esta etapa también puede ejecutarse desde Windows, usando su propio entorno:
 
-| Programa | plox | jlox | clox |
-| --- | ---: | ---: | ---: |
-| `suma.lox` | 8.5x | 0.039x | 0.015x |
-| `fibonacci.lox` | 3.2x | 0.042x | 0.005x |
-| `closures.lox` | 5.5x | 0.056x | 0.011x |
-| `fizzbuzz.lox` | 5.1x | 0.038x | 0.007x |
-| `primos.lox` | 5.8x | 0.056x | 0.008x |
+```sh
+uv sync --group bench
+uv run --group bench python -B benchmarks/plot.py benchmarks/results/new/final.json --control benchmarks/results/new/control.json --output benchmarks/graphs/new
+```
 
-## Conclusiones
+El perfil puede reproducirse por separado, sin ejecutar simultáneamente los
+benchmarks:
 
-1. **`mylox` vs `plox` (mismo lenguaje, mismo tipo de intérprete).** En los cinco programas `mylox` es entre **3.2x y 8.5x más rápido** que `plox`. Como ambos son tree-walk en Python, la diferencia no proviene del lenguaje sino de las decisiones de diseño: nodos `@dataclass(frozen=True, slots=True)` con un visitor propio y resolución estática integrada, frente al uso de `@singledispatchmethod` de la cátedra. El caso más extremo es `suma.lox` (8.5x), que es casi todo aritmética y dispatch: exactamente donde la indirección de `singledispatch` más se nota.
-2. **`mylox` vs `jlox` (Python vs Java, ambos tree-walk).** `jlox` es entre **18x y 26x más rápido** que `mylox`. La comparación contra `plox` (3.2x a 8.5x más lento que `mylox`) muestra que la mayor parte de esa brecha no es el algoritmo: `mylox` ya está en el mismo orden de magnitud que `plox`. Lo que le falta a `mylox` frente a `jlox` es el JIT de la JVM, el tipado estático y el costo de los objetos en Python, no el diseño del intérprete.
-3. **Tree-walk vs máquina virtual de bytecode (`clox`).** `clox` es entre **69x y 216x más rápido** que `mylox`, y la diferencia se mantiene en todos los programas. Es la conclusión más fuerte del benchmark y la más transferible: no es un detalle de implementación sino de arquitectura. Un tree-walk despacha por nodo del AST en cada operación; una VM de bytecode compila el programa a instrucciones y ejecuta un bucle de despacho sobre un array contiguo. Cuando el programa ejecuta millones de operaciones, esa diferencia se paga millones de veces.
-4. **El orden entre implementaciones no cambia nunca.** `clox` < `jlox` < `mylox` < `plox` en los cinco programas, aunque los perfiles de carga sean distintos (recursión, closures, loops). **La arquitectura del intérprete pesa más que el perfil del programa**: dos implementaciones del mismo estilo (mylox y plox) quedan juntas y muy lejos de las otras dos.
-5. **La diferencia `mylox`/`plox` es mayor en programas con muchos loops** (`suma` 8.5x) que en los dominados por recursión (`fibonacci` 3.2x). En recursión profunda el costo lo domina la creación de entornos y el mantenimiento de la pila de llamadas, que es común a ambas implementaciones; en loops densos, el dispatch por nodo (que difiere entre visitor y `singledispatch`) domina la cuenta.
-6. **La diferencia entre tree-walk y bytecode VM se nota más en recursión.** La separación entre `jlox` y `clox` llega a 9.0x en `fibonacci.lox` (donde el árbol de llamadas se materializa en cuadros de llamada) contra 2.6x en `suma.lox` (aritmética pura). Compilar a bytecode evita por completo el árbol de llamadas recursivo: los frames de la VM son un array, no objetos en el heap.
-7. **El chequeo de equivalencia valida la medición.** Antes de medir, el harness confirmó que las cuatro implementaciones producen la misma salida normalizada en los cinco programas. Sin esa verificación, comparar tiempos sobre programas que no hacen lo mismo no significaría nada.
-8. **El resolver estático no es un costo dominante.** `mylox` incluye `BindingResolver` dentro de `Interpreter.interpret()`, igual que `plox` y `jlox` incluyen su resolver. La resolución es un recorrido lineal del AST, sin impacto apreciable en el tiempo total de la evaluación.
+```sh
+python3 -B benchmarks/profile_vm.py suma --before --output benchmarks/results/new/profile-before-suma.txt
+python3 -B benchmarks/profile_vm.py suma --snapshot benchmarks/baselines/optimized.json --output benchmarks/results/new/profile-after-suma.txt
+```
 
-## Limitaciones
+La verificación de esa etapa dio **416 tests aprobados**, más los **10 casos** de
+aceptación estricta de la cátedra: cinco programas en cada backend.
+Las dos corridas conservan 1.220 muestras con salidas verificadas.
 
-- **Cantidad de repeticiones:** la tabla usa `-n 10`. Con `-n 20` o más las cifras se estabilizan. La varianza observada (p95 contra min) es de ~2-3% en `mylox`, `jlox` y `clox`, pero llega a ~50% en `plox` (`closures.lox`): la recolección de basura de Python introduce ruido considerable, así que conviene comparar por mediana y no por promedio.
-- **Portabilidad deliberada:** los programas evitan `%` y clases para ser comparables con todas las implementaciones. Un benchmark que usara features no compartidas sería menos equitativo.
-- **Implementaciones externas:** `jlox` y `clox` dependen de una copia de [craftinginterpreters](https://github.com/munificent/craftinginterpreters) y de `javac`/`gcc`. `benchmarks/setup.sh` las prepara; si faltan, el benchmark corre igual con las que haya (mínimo garantizado: `mylox` vs `plox`).
-- **Carga de trabajo sintética:** son microbenchmarks que ejercitan features específicas, no un programa real de Lox. Las conclusiones son relativas entre estas implementaciones, no una afirmación general sobre ellas.
-- **Diferencias de implementación:** cada intérprete tiene decisiones propias (formato numérico, resolución, manejo de strings) que afectan el rendimiento más allá de la arquitectura pura.
-- **Sin profiling:** el benchmark mide tiempo total por fase agregada. Un perfil por función (cProfile para Python, `-XX:+UnlockDiagnosticVMOptions` para Java) daría un desglose más fino del costo por operación del visitor.
+- [Datos de la corrida general](../benchmarks/results/final.json) y [resumen CSV](../benchmarks/results/summary.csv).
+- [Datos del control de CPU](../benchmarks/results/control.json) y [resumen CSV](../benchmarks/results/control-cpu-summary.csv).
+- [Muestras de pared](../benchmarks/results/samples.csv) y [muestras del control, con ambos relojes](../benchmarks/results/control-samples.csv).
+- [Salida de las verificaciones](../benchmarks/results/verification.txt).
+- [Gráficos PNG y SVG](../benchmarks/graphs/).
+
+Los JSON guardan las muestras originales, versiones, hashes y registro de
+temporales. Los CSV son exportaciones para consultar muestras y estadísticas;
+se regeneran con `plot.py`. Los TXT contienen perfiles de cProfile o salidas
+de pruebas. El informe usa los perfiles para explicar el costo de la VM y
+las verificaciones para identificar qué versión se probó.
+
+## Correcciones de paridad y REPL
+
+Después corregimos diferencias en declaraciones, comparaciones e impresión
+de funciones, además del REPL y algunos errores de entrada. Comparamos las
+versiones antes y después con 20 muestras y 3 calentamientos por combinación:
+280 muestras nuevas, separadas de las anteriores.
+
+Medianas de tiempo de CPU, en milisegundos. Una variación negativa indica
+menos tiempo:
+
+| Programa | Antes de corregir | Después de corregir | Variación |
+|---|---:|---:|---:|
+| suma | 1084.792 | 1028.425 | −5,2% |
+| fibonacci | 382.609 | 386.879 | +1,1% |
+| closures | 868.623 | 892.653 | +2,8% |
+| primos | 229.242 | 215.953 | −5,8% |
+| fizzbuzz | 419.596 | 385.929 | −8,0% |
+| objetos | 438.807 | 436.998 | −0,4% |
+| listas | 343.757 | 332.759 | −3,2% |
+
+![CPU antes y después de las correcciones](../benchmarks/graphs/delivery/bytecode-cpu.png)
+
+Los opcodes de `<=` y `>=` corrigen el resultado con `NaN` y ahorran una
+instrucción por comparación. Bajan las medianas de suma, primos y fizzbuzz,
+pero la corrida incluye todas las correcciones: no aísla el efecto de cada una.
+
+Fibonacci y closures suben ligeramente; objetos queda casi igual. Los
+intervalos intercuartílicos se superponen en todas las cargas, así que las
+diferencias no son concluyentes. El [gráfico de pared](../benchmarks/graphs/delivery/bytecode-before-after.png)
+muestra los tiempos de esta misma corrida.
+
+Para repetir esta comparación con las fuentes medidas:
+
+```sh
+python3 -B benchmarks/compare.py --baseline benchmarks/baselines/optimized.json --snapshot benchmarks/baselines/delivery.json --only-vm --cpu 2 --repetitions 20 --warmup 3 --output benchmarks/results/new/delivery.json
+uv run --group bench python -B benchmarks/plot.py benchmarks/results/new/delivery.json --only-vm --control benchmarks/results/new/delivery.json --output benchmarks/graphs/new/delivery
+```
+
+Esta versión pasó 455 tests, los 10 casos de aceptación y las tres demos en
+ambos backends. También se comprobaron el lockfile y las referencias históricas.
+
+- [Datos, hashes y limpieza](../benchmarks/results/delivery/final.json).
+- [Resumen de CPU](../benchmarks/results/delivery/control-cpu-summary.csv) y [muestras con ambos relojes](../benchmarks/results/delivery/samples.csv).
+- [Salida de las verificaciones](../benchmarks/results/delivery/verification.txt).
+
+Luego corregimos los saltos mayores a 65535 bytes y el reemplazo de variables
+antes de validar una superclase. La [última verificación](../benchmarks/results/review-verification.txt)
+tiene 469 tests y los 10 casos de la cátedra aprobados. Los tiempos publicados
+corresponden a la versión anterior, conservada en
+[delivery.json](../benchmarks/baselines/delivery.json). Para medir el checkout
+actual se omite `--snapshot`.
