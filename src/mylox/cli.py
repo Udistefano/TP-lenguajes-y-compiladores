@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 from . import __version__
+from .bytecode.chunk import Chunk
 from .bytecode.compiler import Compiler
 from .bytecode.disassembler import disassemble, raw_bytes
 from .bytecode.vm import VM
@@ -54,6 +55,7 @@ def run_tree(source: str) -> int:
 
 def run_actions(
     source: str, backend: str = "tree-walk", debug: bool = False,
+    runtime: Interpreter | VM | None = None,
 ) -> int:
     try:
         tokens = Lexer(source).run()
@@ -62,11 +64,11 @@ def run_actions(
             if debug:
                 print(raw_bytes(chunk), end="")
                 print(disassemble(chunk), end="")
-            vm = VM(chunk)
+            vm = runtime if isinstance(runtime, VM) else VM(chunk)
             vm.main_chunk = chunk
             vm.run(trace=debug)
         else:
-            interpreter = Interpreter()
+            interpreter = runtime if isinstance(runtime, Interpreter) else Interpreter()
             interpreter.interpret(Parser(tokens).parse())
     except (ScanError, ParseError, CompileError, LoxRuntimeError, VMRuntimeError) as error:
         return report_error(error)
@@ -109,6 +111,7 @@ def report_error(error: Exception) -> int:
 
 def repl(backend: str = "tree-walk", debug: bool = False) -> int:
     """Bucle interactivo que lee líneas de la entrada estándar y las ejecuta."""
+    runtime = VM(Chunk()) if backend == "bytecode" else Interpreter()
     while True:
         try:
             source = input("> ")
@@ -119,7 +122,7 @@ def repl(backend: str = "tree-walk", debug: bool = False) -> int:
         if not source.strip():
             continue
 
-        run_actions(source, backend=backend, debug=debug)
+        run_actions(source, backend=backend, debug=debug, runtime=runtime)
 
 
 def main(argv: list[str] | None = None) -> int:

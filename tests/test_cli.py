@@ -129,8 +129,34 @@ def test_main_version(capsys):
     assert "mylox" in capsys.readouterr().out
 
 
+@pytest.mark.parametrize("backend", ['tree-walk', 'bytecode'])
+def test_repl_conserva_variables_funciones_clases_y_listas(backend, capsys, monkeypatch):
+    source = '''var n = 1; var a = [];
+fun f() { n = n + 1; return n; }
+class Box { init(value) { this.value = value; } }
+a.push(Box(f()));
+print a[0].value; print n;
+'''
+    monkeypatch.setattr(sys, 'stdin', io.StringIO(source))
+    assert main(['--backend', backend]) == EXIT_OK
+    output = capsys.readouterr()
+    assert output.out.replace('> ', '').strip() == '2\n2'
+    assert output.err == ''
 
 
+@pytest.mark.parametrize("backend", ['tree-walk', 'bytecode'])
+def test_repl_recupera_capturas_despues_de_un_error(backend, capsys, monkeypatch):
+    source = '''var saved; fun fail() { var n = 1; fun get() { return n; } saved = get; n = 2; 1 / 0; } fail();
+print saved();
+var broken = ;
+print saved();
+'''
+    monkeypatch.setattr(sys, 'stdin', io.StringIO(source))
+    assert main(['--backend', backend]) == EXIT_OK
+    output = capsys.readouterr()
+    assert output.out.replace('> ', '').strip() == '2\n2'
+    assert 'Division by zero' in output.err
+    assert 'Traceback' not in output.err
 
 
 @pytest.mark.parametrize("backend", ['tree-walk', 'bytecode'])

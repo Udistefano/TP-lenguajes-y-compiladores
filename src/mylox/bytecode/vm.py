@@ -125,10 +125,14 @@ class VM:
         self.frames.append(CallFrame(closure, base))
 
     def run(self, trace: bool = False) -> None:
+        self.stack.clear()
         try:
             self._run(trace)
         except ListError as error:
             raise VMRuntimeError(str(error), line=self.current_line) from None
+        finally:
+            self.close_upvalues(0)
+            self.frames.clear()
 
     def _run(self, trace: bool = False) -> None:
         """Consume instrucciones hasta OP_RETURN o el final del chunk."""
