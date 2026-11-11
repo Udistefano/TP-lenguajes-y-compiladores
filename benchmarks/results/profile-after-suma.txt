@@ -1,0 +1,31 @@
+         12600087 function calls in 3.493 seconds
+
+   Ordered by: internal time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    2.290    2.290    3.493    3.493 vm.py:133(_run)
+  1400008    0.222    0.000    0.359    0.000 vm.py:67(pop)
+  2400015    0.167    0.000    0.167    0.000 {built-in method builtins.len}
+  1400009    0.156    0.000    0.156    0.000 vm.py:80(read_byte)
+  1400009    0.137    0.000    0.137    0.000 {method 'pop' of 'list' objects}
+  1000002    0.136    0.000    0.199    0.000 values.py:50(is_number)
+  2100014    0.135    0.000    0.135    0.000 chunk.py:71(line_at)
+  1400009    0.106    0.000    0.106    0.000 {method 'append' of 'list' objects}
+  1000004    0.063    0.000    0.063    0.000 {built-in method builtins.isinstance}
+   300001    0.063    0.000    0.085    0.000 vm.py:73(peek)
+   200002    0.019    0.000    0.019    0.000 values.py:41(is_truthy)
+        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+        1    0.000    0.000    3.493    3.493 vm.py:127(run)
+        1    0.000    0.000    0.000    0.000 values.py:9(stringify)
+        1    0.000    0.000    0.000    0.000 {built-in method builtins.print}
+        1    0.000    0.000    0.000    0.000 chunk.py:84(code)
+        1    0.000    0.000    0.000    0.000 function.py:43(__init__)
+        1    0.000    0.000    0.000    0.000 function.py:27(__init__)
+        1    0.000    0.000    0.000    0.000 {method 'is_integer' of 'float' objects}
+        1    0.000    0.000    0.000    0.000 vm.py:61(close_upvalues)
+        1    0.000    0.000    0.000    0.000 {method 'toreadonly' of 'memoryview' objects}
+        1    0.000    0.000    0.000    0.000 chunk.py:17(__init__)
+        1    0.000    0.000    0.000    0.000 function.py:58(__init__)
+        1    0.000    0.000    0.000    0.000 chunk.py:79(constants)
+
+
