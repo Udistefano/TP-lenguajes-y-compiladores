@@ -1,0 +1,2262 @@
+--- a/src/mylox/bytecode/chunk.py
++++ b/src/mylox/bytecode/chunk.py
+@@ -5,7 +5,6 @@
+ from collections.abc import Sequence
+ 
+ from ..errors import CompileError
+-from ..tokens import LiteralValue
+ from .opcodes import MAX_CONSTANT_INDEX, OpCode, takes_operand
+ 
+ # Un byte de código no puede representar valores fuera de este rango.
+@@ -19,8 +18,8 @@
+         """Crea un chunk vacío, sin instrucciones ni constantes."""
+         self._bytes = bytearray()
+         self._lines: list[int] = []
+-        self._constants: list[LiteralValue] = []
+-        self._indices: dict[tuple[type, LiteralValue], int] = {}
++        self._constants: list[object] = []
++        self._indices: dict[tuple[type, object], int] = {}
+ 
+ 
+     #Escritura
+@@ -46,7 +45,7 @@
+         if operand is not None:
+             self.write_byte(operand, line)
+ 
+-    def add_constant(self, value: LiteralValue) -> int:
++    def add_constant(self, value: object) -> int:
+         """Guarda ``value`` en el pool y devuelve el índice que lo referencia."""
+         clave = (type(value), value)
+         existente = self._indices.get(clave)
+@@ -73,14 +72,18 @@
+         """Devuelve la línea de la fuente de la que salió el byte en offset"""
+         return self._lines[offset]
+ 
+-    def constant(self, index: int) -> LiteralValue:
++    def constant(self, index: int) -> object:
+         """Devuelve la constante del pool referenciada por index"""
+         return self._constants[index]
+ 
+     @property
+-    def constants(self) -> Sequence[LiteralValue]:
++    def constants(self) -> Sequence[object]:
+         """El pool completo, en sólo lectura, para el desensamblador."""
+         return tuple(self._constants)
++
++    @property
++    def code(self) -> memoryview:
++        return memoryview(self._bytes).toreadonly()
+ 
+     def patch(self, offset: int, byte: int) -> None:
+         """Sobrescribe el byte en ``offset`` con un nuevo valor.
+--- a/src/mylox/bytecode/compiler.py
++++ b/src/mylox/bytecode/compiler.py
+@@ -1,7 +1,7 @@
+ """Compilador de Lox a bytecode, de una sola pasada"""
+ from __future__ import annotations
+ 
+-from ..errors import ParseError
++from ..errors import CompileError, ParseError
+ from ..tokens import Token, TokenKind
+ from .chunk import Chunk
+ from .function import Function
+@@ -9,18 +9,11 @@
+ 
+ 
+ class Local:
+-    """Una variable local durante la compilación.
+-
+-    ``depth`` indica el nivel de anidación del scope que la declaró.
+-    ``initialized`` evita leer la variable en su propia inicialización.
+-    ``is_captured`` indica si algún closure capturó esta variable: al cerrar
+-    el scope se emite OP_CLOSE_UPVALUE en vez de OP_POP.
+-    """
++    """Un slot local y su ámbito; las capturas se cierran al salir del bloque."""
+ 
+     def __init__(self, name: str, depth: int) -> None:
+         self.name = name
+         self.depth = depth
+-        self.initialized = False
+         self.is_captured = False
+ 
+ 
+@@ -28,7 +21,7 @@
+     """Traduce una secuencia de tokens en un chunk de bytecode. No construye AST: parsea y emite instrucciones en el mismo recorrido
+     """
+ 
+-    def __init__(self, tokens: list[Token], start: int = 0, enclosing=None) -> None:
++    def __init__(self, tokens: list[Token], start: int = 0, enclosing: Compiler | None = None) -> None:
+         """Conserva la secuencia de tokens e inicia el cursor y el chunk."""
+         self.tokens = tokens
+         self.current = start
+@@ -36,10 +29,7 @@
+         self.scope_depth = 0
+         self.locals: list[Local] = []
+         self.in_function = False
+-        self.in_method = False
+-        self.in_class = False
+-        self.has_superclass = False
+-        self.current_class = None
++        self.class_has_superclass = enclosing.class_has_superclass if enclosing else None
+         self.enclosing = enclosing
+         self.upvalues: list[tuple[bool, int]] = []
+ 
+@@ -52,9 +42,7 @@
+     def end_scope(self) -> None:
+         """Sale del bloque actual y retira las variables locales del stack."""
+         self.scope_depth -= 1
+-        removed = 0
+         while self.locals and self.locals[-1].depth > self.scope_depth:
+-            removed += 1
+             local = self.locals.pop()
+             if local.is_captured:
+                 self.chunk.emit(OpCode.OP_CLOSE_UPVALUE, self.previous().line)
+@@ -63,29 +51,32 @@
+ 
+     def declare(self, name: str) -> None:
+         """Registra una variable local en el scope actual."""
+-        if self.scope_depth == 0:
+-            return
+-        for local in reversed(self.locals):
++        if len(self.locals) >= 256:
++            raise CompileError("Un ámbito de función admite hasta 256 slots", self.previous())
++        self.locals.append(Local(name, self.scope_depth))
++
++    def current_local(self, name: str) -> int | None:
++        for slot in range(len(self.locals) - 1, -1, -1):
++            local = self.locals[slot]
+             if local.depth < self.scope_depth:
+                 break
+             if local.name == name:
+-                raise ParseError(f"Variable {name} ya existe en este ámbito")
+-        self.locals.append(Local(name, self.scope_depth))
+-
+-    def mark_initialized(self) -> None:
+-        """Marca la última variable local declarada como inicializada."""
+-        if self.locals:
+-            self.locals[-1].initialized = True
++                return slot
++        return None
++
++    def define(self, name: Token) -> None:
++        if self.scope_depth == 0:
++            self.chunk.emit(OpCode.OP_DEFINE_GLOBAL, name.line, self.chunk.add_constant(name.lexeme))
++        elif (slot := self.current_local(name.lexeme)) is not None:
++            self.chunk.emit(OpCode.OP_SET_LOCAL, name.line, slot)
++            self.chunk.emit(OpCode.OP_POP, name.line)
++        else:
++            self.declare(name.lexeme)
+ 
+     def resolve_local(self, name: Token) -> int | None:
+         """Devuelve el slot de la variable local, o None si es global."""
+         for idx, local in enumerate(reversed(self.locals), 1):
+             if local.name == name.lexeme:
+-                if not local.initialized:
+-                    raise ParseError(
+-                        f"No se puede leer la variable local en su propia "
+-                        f"inicialización en la línea {name.line}, columna {name.column}"
+-                    )
+                 return len(self.locals) - idx
+         return None
+ 
+@@ -138,11 +129,6 @@
+     def var_declaration(self) -> None:
+         """Compila ``var nombre (= expresión)? ;``."""
+         name = self.consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de variable")
+-        is_local = self.scope_depth > 0
+-
+-        if is_local:
+-            self.declare(name.lexeme)
+-
+         if self.match(TokenKind.EQUAL):
+             self.expression()
+         else:
+@@ -150,11 +136,7 @@
+ 
+         self.consume(TokenKind.SEMICOLON, "Se esperaba ';' después de var")
+ 
+-        if is_local:
+-            self.mark_initialized()
+-        else:
+-            index = self.chunk.add_constant(name.lexeme)
+-            self.chunk.emit(OpCode.OP_DEFINE_GLOBAL, name.line, index)
++        self.define(name)
+ 
+     def if_statement(self) -> None:
+         """Compila ``if (condición) sentencia (else sentencia)?``."""
+@@ -242,173 +224,77 @@
+         self.end_scope()
+ 
+     def function_declaration(self) -> None:
+-        """Compila ``fun nombre ( params? ) { cuerpo }``."""
+         name = self.consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de función")
+-        is_local = self.scope_depth > 0
+-
+-        if is_local:
++        new_local = self.scope_depth > 0 and self.current_local(name.lexeme) is None
++        if new_local:
+             self.declare(name.lexeme)
+-            self.mark_initialized()
+-
++        self.function_body(name)
++        if not new_local:
++            self.define(name)
++
++    def function_body(self, name: Token, method: bool = False) -> None:
+         self.consume(TokenKind.LEFT_PAREN, "Se esperaba '(' después del nombre")
+-
+-        params: list[Token] = []
++        body = Compiler(self.tokens, start=self.current, enclosing=self)
++        body.in_function = True
++        body.begin_scope()
++        body.declare("this" if method else "")
++
++        arity = 0
+         if not self.check(TokenKind.RIGHT_PAREN):
+-            params.append(self.consume(TokenKind.IDENTIFIER, "Se esperaba un parámetro"))
+-            while self.match(TokenKind.COMMA):
+-                params.append(self.consume(TokenKind.IDENTIFIER, "Se esperaba un parámetro"))
+-
++            while True:
++                param = self.consume(TokenKind.IDENTIFIER, "Se esperaba un parámetro")
++                arity += 1
++                if arity > 255:
++                    raise CompileError("Una función admite hasta 255 parámetros", param)
++                body.declare(param.lexeme)
++                if not self.match(TokenKind.COMMA):
++                    break
+         self.consume(TokenKind.RIGHT_PAREN, "Se esperaba ')' después de los parámetros")
+         self.consume(TokenKind.LEFT_BRACE, "Se esperaba '{' antes del cuerpo")
+-
+-        body_compiler = Compiler(self.tokens, start=self.current, enclosing=self)
+-        body_compiler.in_function = True
+-        body_compiler.begin_scope()
+-
+-        # Slot 0: la función misma (normal) o this (método).
+-        if body_compiler.in_method:
+-            body_compiler.declare("this")
+-        else:
+-            body_compiler.declare("_")
+-        body_compiler.mark_initialized()
+-
+-        for param in params:
+-            body_compiler.declare(param.lexeme)
+-            body_compiler.mark_initialized()
+-
+-        while not body_compiler.is_at_end() and not body_compiler.check(TokenKind.RIGHT_BRACE):
+-            body_compiler.declaration()
+-
+-        body_compiler.consume(TokenKind.RIGHT_BRACE, "Se esperaba '}' después del cuerpo")
+-
+-        # Failsafe return
+-        body_compiler.chunk.emit(OpCode.OP_NIL, body_compiler.previous().line)
+-        body_compiler.chunk.emit(OpCode.OP_RETURN, body_compiler.previous().line)
+-
+-        self.current = body_compiler.current
++        body.current = self.current
++        body.block()
++        body.chunk.emit(OpCode.OP_NIL, body.previous().line)
++        body.chunk.emit(OpCode.OP_RETURN, body.previous().line)
++        self.current = body.current
+ 
+         function = Function(name.lexeme)
+-        function.chunk = body_compiler.chunk
+-        function.arity = len(params)
+-        function.upvalue_count = len(body_compiler.upvalues)
+-        index = self.chunk.add_constant(function)
+-        self.chunk.emit(OpCode.OP_CLOSURE, name.line, index)
+-
+-        # Emitir los upvalues capturados
+-        for is_local, slot in body_compiler.upvalues:
+-            self.chunk.write_byte(1 if is_local else 0, name.line)
++        function.chunk = body.chunk
++        function.arity = arity
++        function.upvalue_count = len(body.upvalues)
++        function.is_initializer = method and name.lexeme == "init"
++        self.chunk.emit(OpCode.OP_CLOSURE, name.line, self.chunk.add_constant(function))
++        for is_local, slot in body.upvalues:
++            self.chunk.write_byte(int(is_local), name.line)
+             self.chunk.write_byte(slot, name.line)
+ 
+-        if not is_local:
+-            name_index = self.chunk.add_constant(name.lexeme)
+-            self.chunk.emit(OpCode.OP_DEFINE_GLOBAL, name.line, name_index)
+-
+     def class_declaration(self) -> None:
+-        """Compila ``class nombre ( < superclase )? { métodos }``."""
+         name = self.consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de clase")
+-        is_local = self.scope_depth > 0
+-        has_superclass = False
+-
+-        if is_local:
+-            # El nombre queda declarado antes de compilar los métodos para
+-            # que puedan referirse a la propia clase (fábricas, recursion).
+-            self.declare(name.lexeme)
+-
+-        previous_class = self.current_class
+-        self.current_class = name
+-
+-        if self.match(TokenKind.LESS):
+-            has_superclass = True
+-            superclass_name = self.consume(TokenKind.IDENTIFIER, "Se esperaba nombre de superclase")
+-            slot = self.resolve_local(superclass_name)
+-            if slot is not None:
+-                self.chunk.emit(OpCode.OP_GET_LOCAL, superclass_name.line, slot)
+-            else:
+-                upvalue_index = self.resolve_upvalue(superclass_name)
+-                if upvalue_index is not None:
+-                    self.chunk.emit(OpCode.OP_GET_UPVALUE, superclass_name.line, upvalue_index)
+-                else:
+-                    index = self.chunk.add_constant(superclass_name.lexeme)
+-                    self.chunk.emit(OpCode.OP_GET_GLOBAL, superclass_name.line, index)
+-
+-        index = self.chunk.add_constant(name.lexeme)
+-        self.chunk.emit(OpCode.OP_CLASS, name.line, index)
+-
+-        if has_superclass:
++        self.chunk.emit(OpCode.OP_CLASS, name.line, self.chunk.add_constant(name.lexeme))
++        self.define(name)
++
++        previous_class = self.class_has_superclass
++        self.class_has_superclass = self.match(TokenKind.LESS)
++        if self.class_has_superclass:
++            superclass = self.consume(TokenKind.IDENTIFIER, "Se esperaba nombre de superclase")
++            if superclass.lexeme == name.lexeme:
++                raise CompileError("Una clase no puede heredarse a sí misma", superclass)
++            self.variable(superclass)
++            self.begin_scope()
++            self.declare("super")
++            self.variable(name)
+             self.chunk.emit(OpCode.OP_INHERIT, name.line)
+ 
++        self.variable(name)
+         self.consume(TokenKind.LEFT_BRACE, "Se esperaba '{' después del nombre")
+-
+         while not self.check(TokenKind.RIGHT_BRACE) and not self.is_at_end():
+-            self.method_declaration()
+-
++            method = self.consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de método")
++            self.function_body(method, method=True)
++            self.chunk.emit(OpCode.OP_METHOD, method.line, self.chunk.add_constant(method.lexeme))
+         self.consume(TokenKind.RIGHT_BRACE, "Se esperaba '}' después de la clase")
+-
+-        if is_local:
+-            self.mark_initialized()
+-        else:
+-            name_index = self.chunk.add_constant(name.lexeme)
+-            self.chunk.emit(OpCode.OP_DEFINE_GLOBAL, name.line, name_index)
+-
+-        self.current_class = previous_class
+-
+-    def method_declaration(self) -> None:
+-        """Compila un método de clase (sin keyword fun)."""
+-        name = self.consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de método")
+-        had_method = self.in_method
+-        self.in_method = True
+-
+-        self.consume(TokenKind.LEFT_PAREN, "Se esperaba '(' después del nombre")
+-
+-        params: list[Token] = []
+-        if not self.check(TokenKind.RIGHT_PAREN):
+-            params.append(self.consume(TokenKind.IDENTIFIER, "Se esperaba un parámetro"))
+-            while self.match(TokenKind.COMMA):
+-                params.append(self.consume(TokenKind.IDENTIFIER, "Se esperaba un parámetro"))
+-
+-        self.consume(TokenKind.RIGHT_PAREN, "Se esperaba ')' después de los parámetros")
+-        self.consume(TokenKind.LEFT_BRACE, "Se esperaba '{' antes del cuerpo")
+-
+-        body_compiler = Compiler(self.tokens, start=self.current, enclosing=self)
+-        body_compiler.in_function = True
+-        body_compiler.in_method = True
+-        body_compiler.begin_scope()
+-
+-        # this es slot 0
+-        body_compiler.declare("this")
+-        body_compiler.mark_initialized()
+-
+-        for param in params:
+-            body_compiler.declare(param.lexeme)
+-            body_compiler.mark_initialized()
+-
+-        while not body_compiler.is_at_end() and not body_compiler.check(TokenKind.RIGHT_BRACE):
+-            body_compiler.declaration()
+-
+-        body_compiler.consume(TokenKind.RIGHT_BRACE, "Se esperaba '}' después del cuerpo")
+-
+-        body_compiler.chunk.emit(OpCode.OP_NIL, body_compiler.previous().line)
+-        body_compiler.chunk.emit(OpCode.OP_RETURN, body_compiler.previous().line)
+-
+-        self.current = body_compiler.current
+-
+-        function = Function(name.lexeme)
+-        function.chunk = body_compiler.chunk
+-        function.arity = len(params)
+-        function.upvalue_count = len(body_compiler.upvalues)
+-        function.is_initializer = name.lexeme == "init"
+-        function.enclosing_class = self.current_class.lexeme if self.current_class is not None else None
+-        index = self.chunk.add_constant(function)
+-        self.chunk.emit(OpCode.OP_CLOSURE, name.line, index)
+-
+-        for is_local, slot in body_compiler.upvalues:
+-            self.chunk.write_byte(1 if is_local else 0, name.line)
+-            self.chunk.write_byte(slot, name.line)
+-
+-        name_index = self.chunk.add_constant(name.lexeme)
+-        self.chunk.emit(OpCode.OP_METHOD, name.line, name_index)
+-
+-        self.in_method = had_method
++        self.chunk.emit(OpCode.OP_POP, name.line)
++        if self.class_has_superclass:
++            self.end_scope()
++        self.class_has_superclass = previous_class
+ 
+     # Sentencias
+ 
+@@ -465,104 +351,31 @@
+         """expression → assignment"""
+         self.assignment()
+ 
+-    def _is_property_assignment_start(self) -> bool:
+-        """Indica si el token actual inicia una asignación a propiedad."""
+-        if self.is_at_end():
+-            return False
+-        first = self.peek()
+-        if first.kind not in (TokenKind.IDENTIFIER, TokenKind.THIS, TokenKind.SUPER):
+-            return False
+-        if self.current + 1 >= len(self.tokens):
+-            return False
+-        if self.tokens[self.current + 1].kind != TokenKind.DOT:
+-            return False
+-        if self.current + 2 >= len(self.tokens):
+-            return False
+-        if self.tokens[self.current + 2].kind != TokenKind.IDENTIFIER:
+-            return False
+-        if self.current + 3 >= len(self.tokens):
+-            return False
+-        return self.tokens[self.current + 3].kind == TokenKind.EQUAL
+-
+-    def _compile_property_assignment(self) -> None:
+-        """Compila ``obj.prop = val`` o ``this.prop = val``."""
+-        # Compilar el objeto
+-        if self.match(TokenKind.THIS):
+-            token = self.previous()
+-            slot = self.resolve_local(token)
++    def variable(self, name: Token, can_assign: bool = False) -> None:
++        slot = self.resolve_local(name)
++        if slot is not None:
++            read, write = OpCode.OP_GET_LOCAL, OpCode.OP_SET_LOCAL
++        else:
++            slot = self.resolve_upvalue(name)
+             if slot is not None:
+-                self.chunk.emit(OpCode.OP_GET_LOCAL, token.line, slot)
+-            else:
+-                upvalue_index = self.resolve_upvalue(token)
+-                if upvalue_index is not None:
+-                    self.chunk.emit(OpCode.OP_GET_UPVALUE, token.line, upvalue_index)
+-                else:
+-                    raise ParseError(
+-                        f"'this' solo es válido dentro de un método en la línea {token.line}, "
+-                        f"columna {token.column}"
+-                    )
+-        elif self.match(TokenKind.SUPER):
+-            raise ParseError("No se puede asignar a una propiedad de super")
+-        else:
+-            name = self.advance()
+-            slot = self.resolve_local(name)
+-            if slot is not None:
+-                self.chunk.emit(OpCode.OP_GET_LOCAL, name.line, slot)
+-            else:
+-                upvalue_index = self.resolve_upvalue(name)
+-                if upvalue_index is not None:
+-                    self.chunk.emit(OpCode.OP_GET_UPVALUE, name.line, upvalue_index)
+-                else:
+-                    index = self.chunk.add_constant(name.lexeme)
+-                    self.chunk.emit(OpCode.OP_GET_GLOBAL, name.line, index)
+-
+-        # Consumir .prop
+-        self.consume(TokenKind.DOT, "Se esperaba '.' después del objeto")
+-        prop_name = self.consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de propiedad")
+-        self.consume(TokenKind.EQUAL, "Se esperaba '=' después del nombre")
+-
+-        # Compilar el valor
+-        self.assignment()
+-
+-        # Emitir OP_SET_PROPERTY
+-        index = self.chunk.add_constant(prop_name.lexeme)
+-        self.chunk.emit(OpCode.OP_SET_PROPERTY, prop_name.line, index)
++                read, write = OpCode.OP_GET_UPVALUE, OpCode.OP_SET_UPVALUE
++            else:
++                slot = self.chunk.add_constant(name.lexeme)
++                read, write = OpCode.OP_GET_GLOBAL, OpCode.OP_SET_GLOBAL
++        if can_assign and self.match(TokenKind.EQUAL):
++            self.assignment()
++            self.chunk.emit(write, name.line, slot)
++        else:
++            self.chunk.emit(read, name.line, slot)
+ 
+     def assignment(self) -> None:
+-        """assignment → equality ( '=' assignment )?"""
+-        # Asignación a propiedad: obj.prop = val
+-        if self._is_property_assignment_start():
+-            self._compile_property_assignment()
+-            return
+-
+-        # Asignación a variable: ident = val
+-        if self.check(TokenKind.IDENTIFIER) and self._peek_next() == TokenKind.EQUAL:
+-            name = self.advance()
+-            self.consume(TokenKind.EQUAL, "Se esperaba '=' después del nombre")
+-            self.assignment()
+-            slot = self.resolve_local(name)
+-            if slot is not None:
+-                self.chunk.emit(OpCode.OP_SET_LOCAL, name.line, slot)
+-            else:
+-                upvalue_index = self.resolve_upvalue(name)
+-                if upvalue_index is not None:
+-                    self.chunk.emit(OpCode.OP_SET_UPVALUE, name.line, upvalue_index)
+-                else:
+-                    index = self.chunk.add_constant(name.lexeme)
+-                    self.chunk.emit(OpCode.OP_SET_GLOBAL, name.line, index)
+-            return
+-
+-        self.logical_or()
++        self.logical_or(can_assign=True)
+         if self.match(TokenKind.EQUAL):
+-            token = self.previous()
+-            raise ParseError(
+-                f"Destino inválido de asignación en la línea {token.line}, "
+-                f"columna {token.column}"
+-            )
+-
+-    def logical_or(self) -> None:
++            raise CompileError("Destino inválido de asignación", self.previous())
++
++    def logical_or(self, can_assign: bool = False) -> None:
+         """logical_or → logical_and ( 'or' logical_and )*"""
+-        self.logical_and()
++        self.logical_and(can_assign)
+         while self.match(TokenKind.OR):
+             else_jump = self.emit_jump(OpCode.OP_JUMP_IF_FALSE, self.previous().line)
+             end_jump = self.emit_jump(OpCode.OP_JUMP, self.previous().line)
+@@ -571,18 +384,18 @@
+             self.logical_and()
+             self.patch_jump(end_jump)
+ 
+-    def logical_and(self) -> None:
++    def logical_and(self, can_assign: bool = False) -> None:
+         """logical_and → equality ( 'and' equality )*"""
+-        self.equality()
++        self.equality(can_assign)
+         while self.match(TokenKind.AND):
+             end_jump = self.emit_jump(OpCode.OP_JUMP_IF_FALSE, self.previous().line)
+             self.chunk.emit(OpCode.OP_POP, self.previous().line)
+             self.equality()
+             self.patch_jump(end_jump)
+ 
+-    def equality(self) -> None:
++    def equality(self, can_assign: bool = False) -> None:
+         """equality → comparison ( ( '!=' | '==' ) comparison )*"""
+-        self.comparison()
++        self.comparison(can_assign)
+         while self.match(TokenKind.BANG_EQUAL, TokenKind.EQUAL_EQUAL):
+             operator = self.previous()
+             self.comparison()
+@@ -592,9 +405,9 @@
+             else:
+                 self.chunk.emit(OpCode.OP_EQUAL, operator.line)
+ 
+-    def comparison(self) -> None:
++    def comparison(self, can_assign: bool = False) -> None:
+         """comparison → term ( ( '>' | '>=' | '<' | '<=' ) term )*"""
+-        self.term()
++        self.term(can_assign)
+         while self.match(
+             TokenKind.GREATER, TokenKind.GREATER_EQUAL,
+             TokenKind.LESS, TokenKind.LESS_EQUAL,
+@@ -604,19 +417,15 @@
+             if operator.kind == TokenKind.GREATER:
+                 self.chunk.emit(OpCode.OP_GREATER, operator.line)
+             elif operator.kind == TokenKind.GREATER_EQUAL:
+-                # a >= b  ⇔  !(a < b)
+-                self.chunk.emit(OpCode.OP_LESS, operator.line)
+-                self.chunk.emit(OpCode.OP_NOT, operator.line)
++                self.chunk.emit(OpCode.OP_GREATER_EQUAL, operator.line)
+             elif operator.kind == TokenKind.LESS:
+                 self.chunk.emit(OpCode.OP_LESS, operator.line)
+-            else:  # LESS_EQUAL
+-                # a <= b  ⇔  !(a > b)
+-                self.chunk.emit(OpCode.OP_GREATER, operator.line)
+-                self.chunk.emit(OpCode.OP_NOT, operator.line)
+-
+-    def term(self) -> None:
++            else:
++                self.chunk.emit(OpCode.OP_LESS_EQUAL, operator.line)
++
++    def term(self, can_assign: bool = False) -> None:
+         """term → factor ( ( '-' | '+' ) factor )*"""
+-        self.factor()
++        self.factor(can_assign)
+         while self.match(TokenKind.MINUS, TokenKind.PLUS):
+             operator = self.previous()
+             self.factor()
+@@ -625,9 +434,9 @@
+             else:
+                 self.chunk.emit(OpCode.OP_ADD, operator.line)
+ 
+-    def factor(self) -> None:
++    def factor(self, can_assign: bool = False) -> None:
+         """factor → unary ( ( '/' | '*' | '%' ) unary )*"""
+-        self.unary()
++        self.unary(can_assign)
+         while self.match(TokenKind.SLASH, TokenKind.STAR, TokenKind.PERCENT):
+             operator = self.previous()
+             self.unary()
+@@ -638,7 +447,7 @@
+             else:
+                 self.chunk.emit(OpCode.OP_MULTIPLY, operator.line)
+ 
+-    def unary(self) -> None:
++    def unary(self, can_assign: bool = False) -> None:
+         """unary → ( '!' | '-' ) unary | primary"""
+         if self.match(TokenKind.BANG, TokenKind.MINUS):
+             operator = self.previous()
+@@ -648,121 +457,86 @@
+             else:
+                 self.chunk.emit(OpCode.OP_NEGATE, operator.line)
+         else:
+-            self.primary()
+-
+-    def primary(self) -> None:
+-        """primary → NUMBER | STRING | true | false | nil | '(' expression ')'"""
++            self.postfix(can_assign)
++
++    def postfix(self, can_assign: bool) -> None:
++        self.primary(can_assign)
++        while True:
++            if self.match(TokenKind.LEFT_PAREN):
++                paren = self.previous()
++                count = self.expression_list(TokenKind.RIGHT_PAREN)
++                if count > 255:
++                    raise CompileError("Una llamada admite hasta 255 argumentos", paren)
++                self.chunk.emit(OpCode.OP_CALL, paren.line, count)
++            elif self.match(TokenKind.DOT):
++                name = self.consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de propiedad")
++                index = self.chunk.add_constant(name.lexeme)
++                if can_assign and self.match(TokenKind.EQUAL):
++                    self.assignment()
++                    self.chunk.emit(OpCode.OP_SET_PROPERTY, name.line, index)
++                else:
++                    self.chunk.emit(OpCode.OP_GET_PROPERTY, name.line, index)
++            elif self.match(TokenKind.LEFT_BRACKET):
++                bracket = self.previous()
++                self.expression()
++                self.consume(TokenKind.RIGHT_BRACKET, "Se esperaba ']' después del índice")
++                if can_assign and self.match(TokenKind.EQUAL):
++                    self.assignment()
++                    self.chunk.emit(OpCode.OP_SET_INDEX, bracket.line)
++                else:
++                    self.chunk.emit(OpCode.OP_GET_INDEX, bracket.line)
++            else:
++                break
++
++    def expression_list(self, closing: TokenKind) -> int:
++        count = 0
++        if not self.check(closing):
++            while True:
++                self.expression()
++                count += 1
++                if not self.match(TokenKind.COMMA):
++                    break
++        self.consume(closing, "Se esperaba el cierre de la lista de expresiones")
++        return count
++
++    def primary(self, can_assign: bool) -> None:
+         if self.match(TokenKind.FALSE):
+             self.chunk.emit(OpCode.OP_FALSE, self.previous().line)
+-            return
+-        if self.match(TokenKind.TRUE):
++        elif self.match(TokenKind.TRUE):
+             self.chunk.emit(OpCode.OP_TRUE, self.previous().line)
+-            return
+-        if self.match(TokenKind.NIL):
++        elif self.match(TokenKind.NIL):
+             self.chunk.emit(OpCode.OP_NIL, self.previous().line)
+-            return
+-        if self.match(TokenKind.THIS):
++        elif self.match(TokenKind.THIS):
+             token = self.previous()
+-            slot = self.resolve_local(token)
+-            if slot is not None:
+-                self.chunk.emit(OpCode.OP_GET_LOCAL, token.line, slot)
+-            else:
+-                upvalue_index = self.resolve_upvalue(token)
+-                if upvalue_index is not None:
+-                    self.chunk.emit(OpCode.OP_GET_UPVALUE, token.line, upvalue_index)
+-                else:
+-                    raise ParseError(
+-                        f"'this' solo es válido dentro de un método en la línea {token.line}, "
+-                        f"columna {token.column}"
+-                    )
+-            # Postfix: property access and calls
+-            while True:
+-                if self.match(TokenKind.DOT):
+-                    name = self.consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de propiedad")
+-                    self.chunk.emit(OpCode.OP_GET_PROPERTY, name.line, self.chunk.add_constant(name.lexeme))
+-                elif self.match(TokenKind.LEFT_PAREN):
+-                    arg_count = 0
+-                    if not self.check(TokenKind.RIGHT_PAREN):
+-                        self.expression()
+-                        arg_count += 1
+-                        while self.match(TokenKind.COMMA):
+-                            self.expression()
+-                            arg_count += 1
+-                    self.consume(TokenKind.RIGHT_PAREN, "Se esperaba ')' después de los argumentos")
+-                    self.chunk.emit(OpCode.OP_CALL, self.previous().line, arg_count)
+-                else:
+-                    break
+-            return
+-        if self.match(TokenKind.SUPER):
++            if self.class_has_superclass is None:
++                raise CompileError("No se puede usar 'this' fuera de una clase", token)
++            self.variable(token)
++        elif self.match(TokenKind.SUPER):
+             token = self.previous()
++            if not self.class_has_superclass:
++                raise CompileError("No se puede usar 'super' sin superclase", token)
+             self.consume(TokenKind.DOT, "Se esperaba '.' después de super")
+             name = self.consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de método")
++            self.variable(Token(TokenKind.THIS, "this", line=token.line, column=token.column))
++            self.variable(token)
+             self.chunk.emit(OpCode.OP_GET_SUPER, token.line, self.chunk.add_constant(name.lexeme))
+-            # Postfix: calls
+-            while self.match(TokenKind.LEFT_PAREN):
+-                arg_count = 0
+-                if not self.check(TokenKind.RIGHT_PAREN):
+-                    self.expression()
+-                    arg_count += 1
+-                    while self.match(TokenKind.COMMA):
+-                        self.expression()
+-                        arg_count += 1
+-                self.consume(TokenKind.RIGHT_PAREN, "Se esperaba ')' después de los argumentos")
+-                self.chunk.emit(OpCode.OP_CALL, token.line, arg_count)
+-            return
+-        if self.match(TokenKind.NUMBER, TokenKind.STRING):
++        elif self.match(TokenKind.NUMBER, TokenKind.STRING):
+             token = self.previous()
+-            self.chunk.emit(
+-                OpCode.OP_CONSTANT, token.line, self.chunk.add_constant(token.literal)
+-            )
+-            return
+-        if self.match(TokenKind.IDENTIFIER):
+-            name = self.previous()
+-            slot = self.resolve_local(name)
+-            if slot is not None:
+-                self.chunk.emit(OpCode.OP_GET_LOCAL, name.line, slot)
+-            else:
+-                upvalue_index = self.resolve_upvalue(name)
+-                if upvalue_index is not None:
+-                    self.chunk.emit(OpCode.OP_GET_UPVALUE, name.line, upvalue_index)
+-                else:
+-                    index = self.chunk.add_constant(name.lexeme)
+-                    self.chunk.emit(OpCode.OP_GET_GLOBAL, name.line, index)
+-
+-            # Llamadas y acceso a propiedades: f(x), obj.prop, f(x).prop
+-            while True:
+-                if self.match(TokenKind.DOT):
+-                    prop_name = self.consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de propiedad")
+-                    self.chunk.emit(OpCode.OP_GET_PROPERTY, prop_name.line, self.chunk.add_constant(prop_name.lexeme))
+-                elif self.match(TokenKind.LEFT_PAREN):
+-                    arg_count = 0
+-                    if not self.check(TokenKind.RIGHT_PAREN):
+-                        self.expression()
+-                        arg_count += 1
+-                        while self.match(TokenKind.COMMA):
+-                            self.expression()
+-                            arg_count += 1
+-                    self.consume(TokenKind.RIGHT_PAREN, "Se esperaba ')' después de los argumentos")
+-                    self.chunk.emit(OpCode.OP_CALL, name.line, arg_count)
+-                else:
+-                    break
+-            return
+-        if self.match(TokenKind.LEFT_PAREN):
++            self.chunk.emit(OpCode.OP_CONSTANT, token.line, self.chunk.add_constant(token.literal))
++        elif self.match(TokenKind.IDENTIFIER):
++            self.variable(self.previous(), can_assign)
++        elif self.match(TokenKind.LEFT_PAREN):
+             self.expression()
+-            if not self.match(TokenKind.RIGHT_PAREN):
+-                token = self.peek()
+-                raise ParseError(
+-                    f"Se esperaba ')' después de la expresión, "
+-                    f"se encontró {token.lexeme!r} en la línea {token.line}, "
+-                    f"columna {token.column}"
+-                )
+-            return
+-
+-        token = self.peek()
+-        raise ParseError(
+-            f"Se esperaba una expresión, se encontró {token.lexeme!r} "
+-            f"en la línea {token.line}, columna {token.column}"
+-        )
++            self.consume(TokenKind.RIGHT_PAREN, "Se esperaba ')' después de la expresión")
++        elif self.match(TokenKind.LEFT_BRACKET):
++            bracket = self.previous()
++            count = self.expression_list(TokenKind.RIGHT_BRACKET)
++            if count > 255:
++                raise CompileError("Un literal de lista admite hasta 255 elementos", bracket)
++            self.chunk.emit(OpCode.OP_LIST, bracket.line, count)
++        else:
++            token = self.peek()
++            raise ParseError(f"Se esperaba una expresión en la línea {token.line}, columna {token.column}")
+ 
+     # ---------- Saltos ---------- #
+ 
+@@ -795,12 +569,6 @@
+     def peek(self) -> Token:
+         """Devuelve el token actual sin consumirlo."""
+         return self.tokens[self.current]
+-
+-    def _peek_next(self) -> TokenKind:
+-        """Devuelve el tipo del token siguiente al actual, sin consumirlo."""
+-        if self.current + 1 < len(self.tokens):
+-            return self.tokens[self.current + 1].kind
+-        return TokenKind.EOF
+ 
+     def previous(self) -> Token:
+         """Devuelve el último token consumido."""
+--- a/src/mylox/bytecode/disassembler.py
++++ b/src/mylox/bytecode/disassembler.py
+@@ -26,7 +26,7 @@
+         return f"{offset:04d}| {opcode.name}<+{target}>", offset + 3
+ 
+     # Funciones: OP_CALL lleva la cantidad de argumentos.
+-    if opcode == OpCode.OP_CALL:
++    if opcode in (OpCode.OP_CALL, OpCode.OP_LIST, OpCode.OP_GET_LOCAL, OpCode.OP_SET_LOCAL):
+         argc = chunk.read(offset + 1)
+         return f"{offset:04d}| {opcode.name}<{argc}>", offset + 2
+ 
+--- a/src/mylox/bytecode/function.py
++++ b/src/mylox/bytecode/function.py
+@@ -30,7 +30,6 @@
+         self.arity = 0
+         self.upvalue_count = 0
+         self.is_initializer = False
+-        self.enclosing_class: str | None = None
+ 
+     def __repr__(self) -> str:
+         if self.name is None:
+@@ -43,10 +42,15 @@
+ 
+     def __init__(self, function: Function) -> None:
+         self.function = function
++        self.code = function.chunk.code
++        self.constants = function.chunk.constants
+         self.upvalues: list = []
+ 
+     def __repr__(self) -> str:
+         return f"<cls {self.function.name}()>"
++
++    def __str__(self) -> str:
++        return f"<fn {self.function.name}>"
+ 
+ 
+ class CallFrame:
+@@ -56,6 +60,8 @@
+ 
+     def __init__(self, closure: Closure, stack_slot: int) -> None:
+         self.closure = closure
++        self.code = closure.code
++        self.constants = closure.constants
+         self.ip = 0
+         self.stack_slot = stack_slot
+ 
+@@ -84,3 +90,6 @@
+ 
+     def __repr__(self) -> str:
+         return f"<bound {self.method.function.name}>"
++
++    def __str__(self) -> str:
++        return str(self.method)
+--- a/src/mylox/bytecode/opcodes.py
++++ b/src/mylox/bytecode/opcodes.py
+@@ -2,12 +2,12 @@
+ from __future__ import annotations
+ 
+ from dataclasses import dataclass
+-from enum import Enum, auto
++from enum import IntEnum, auto
+ 
+ MAX_CONSTANT_INDEX = 255
+ 
+ 
+-class OpCode(Enum):
++class OpCode(IntEnum):
+     """instrucciones que la máquina virtual sabe ejecutar."""
+ 
+     # Carga de valores en la pila
+@@ -70,6 +70,12 @@
+     OP_JUMP_IF_FALSE = auto()
+     OP_LOOP = auto()
+ 
++    OP_LIST = auto()
++    OP_GET_INDEX = auto()
++    OP_SET_INDEX = auto()
++    OP_GREATER_EQUAL = auto()
++    OP_LESS_EQUAL = auto()
++
+ 
+ @dataclass(frozen=True, slots=True)
+ class Instruction:
+@@ -93,6 +99,8 @@
+     OpCode.OP_EQUAL: Instruction(stack_effect=-1, operand_size=0),
+     OpCode.OP_GREATER: Instruction(stack_effect=-1, operand_size=0),
+     OpCode.OP_LESS: Instruction(stack_effect=-1, operand_size=0),
++    OpCode.OP_GREATER_EQUAL: Instruction(stack_effect=-1, operand_size=0),
++    OpCode.OP_LESS_EQUAL: Instruction(stack_effect=-1, operand_size=0),
+     OpCode.OP_ADD: Instruction(stack_effect=-1, operand_size=0),
+     OpCode.OP_SUBTRACT: Instruction(stack_effect=-1, operand_size=0),
+     OpCode.OP_MULTIPLY: Instruction(stack_effect=-1, operand_size=0),
+@@ -100,7 +108,7 @@
+     OpCode.OP_MODULO: Instruction(stack_effect=-1, operand_size=0),
+     OpCode.OP_NOT: Instruction(stack_effect=0, operand_size=0),
+     OpCode.OP_NEGATE: Instruction(stack_effect=0, operand_size=0),
+-    OpCode.OP_CALL: Instruction(stack_effect=-1, operand_size=1),
++    OpCode.OP_CALL: Instruction(stack_effect=0, operand_size=1),
+     OpCode.OP_CLOSURE: Instruction(stack_effect=+1, operand_size=1),
+     OpCode.OP_GET_UPVALUE: Instruction(stack_effect=+1, operand_size=1),
+     OpCode.OP_SET_UPVALUE: Instruction(stack_effect=0, operand_size=1),
+@@ -110,12 +118,15 @@
+     OpCode.OP_SET_PROPERTY: Instruction(stack_effect=-1, operand_size=1),
+     OpCode.OP_METHOD: Instruction(stack_effect=-1, operand_size=1),
+     OpCode.OP_INHERIT: Instruction(stack_effect=-1, operand_size=0),
+-    OpCode.OP_GET_SUPER: Instruction(stack_effect=+1, operand_size=1),
++    OpCode.OP_GET_SUPER: Instruction(stack_effect=-1, operand_size=1),
+     OpCode.OP_INVOKE: Instruction(stack_effect=0, operand_size=2),
+     OpCode.OP_SUPER_INVOKE: Instruction(stack_effect=0, operand_size=2),
+     OpCode.OP_JUMP: Instruction(stack_effect=0, operand_size=2),
+     OpCode.OP_JUMP_IF_FALSE: Instruction(stack_effect=0, operand_size=2),
+     OpCode.OP_LOOP: Instruction(stack_effect=0, operand_size=2),
++    OpCode.OP_LIST: Instruction(stack_effect=+1, operand_size=1),
++    OpCode.OP_GET_INDEX: Instruction(stack_effect=-1, operand_size=0),
++    OpCode.OP_SET_INDEX: Instruction(stack_effect=-2, operand_size=0),
+ }
+ 
+ 
+@@ -129,6 +140,10 @@
+     return INSTRUCTIONS[opcode].operand_size
+ 
+ 
+-def stack_effect(opcode: OpCode) -> int:
++def stack_effect(opcode: OpCode, operand: int = 0) -> int:
+     """Devuelve cuánto cambia el tamaño de la pila al ejecutar ``opcode``."""
+-    return INSTRUCTIONS[opcode].stack_effect
+\ No newline at end of file
++    if opcode == OpCode.OP_LIST:
++        return 1 - operand
++    if opcode == OpCode.OP_CALL:
++        return -operand
++    return INSTRUCTIONS[opcode].stack_effect
+--- a/src/mylox/bytecode/vm.py
++++ b/src/mylox/bytecode/vm.py
+@@ -2,14 +2,15 @@
+ from __future__ import annotations
+ 
+ from ..errors import VMRuntimeError
++from ..lists import ListError, ListMethod, LoxList, require_list
+ from ..oop import LoxClass, LoxInstance
+-from ..tokens import LiteralValue
+ from ..values import is_equal, is_number, is_string, is_truthy, stringify
+ from .chunk import Chunk
+ from .disassembler import RUNTIME_HEADER
+ from .function import BoundMethod, CallFrame, Closure, Function, Upvalue
+ from .opcodes import OpCode
+ 
++MAX_CALL_FRAMES = 1024
+ 
+ class VM:
+     """Corre las instrucciones de un chunk sobre una pila de valores.
+@@ -29,7 +30,7 @@
+         self.frames: list[CallFrame] = []
+         self.stack: list[object] = []
+         self.globals: dict[str, object] = {}
+-        self.open_upvalues: list = []
++        self.open_upvalues: dict[int, Upvalue] = {}
+         self.current_line = 1
+ 
+     @property
+@@ -52,31 +53,16 @@
+         self.stack.append(value)
+ 
+     # Upvalues (closures)
+-    def capture_upvalue(self, stack_index: int):
+-        """Asegura que exista un upvalue abierto para stack_index."""
+-        for upvalue in self.open_upvalues:
+-            if upvalue.stack_index == stack_index:
+-                return upvalue
+-
+-        created = Upvalue(stack_index)
+-        insert_pos = len(self.open_upvalues)
+-        for i, upvalue in enumerate(self.open_upvalues):
+-            if upvalue.stack_index is None or upvalue.stack_index > stack_index:
+-                insert_pos = i
+-                break
+-        self.open_upvalues.insert(insert_pos, created)
+-        return created
+-
+-    def close_upvalues(self, last: int) -> None:
+-        """Cierra todos los upvalues que vivan en posiciones >= last."""
+-        while self.open_upvalues:
+-            upvalue = self.open_upvalues[0]
+-            if upvalue.stack_index is not None and upvalue.stack_index >= last:
+-                upvalue.closed_value = self.stack[upvalue.stack_index]
+-                upvalue.stack_index = None
+-                self.open_upvalues.pop(0)
+-            else:
+-                break
++    def capture_upvalue(self, stack_index: int) -> Upvalue:
++        if stack_index not in self.open_upvalues:
++            self.open_upvalues[stack_index] = Upvalue(stack_index)
++        return self.open_upvalues[stack_index]
++
++    def close_upvalues(self, first: int) -> None:
++        for slot in [slot for slot in self.open_upvalues if slot >= first]:
++            upvalue = self.open_upvalues.pop(slot)
++            upvalue.closed_value = self.stack[slot]
++            upvalue.stack_index = None
+ 
+     def pop(self) -> object:
+         """Devuelve el tope de la pila y lo retira."""
+@@ -93,15 +79,62 @@
+     # Lectura del chunk
+     def read_byte(self) -> int:
+         """Consume el byte en la posición actual y avanza el puntero."""
+-        byte = self.chunk.read(self.ip)
+-        self.ip += 1
++        frame = self.frames[-1]
++        byte = frame.code[frame.ip]
++        frame.ip += 1
+         return byte
+ 
+-    def read_constant(self) -> LiteralValue:
++    def read_constant(self) -> object:
+         """Consume un índice y devuelve la constante del pool que referencia."""
+-        return self.chunk.constant(self.read_byte())
++        return self.frames[-1].constants[self.read_byte()]
++
++    def call(self, callee: object, arg_count: int) -> None:
++        base = len(self.stack) - arg_count - 1
++        if isinstance(callee, ListMethod):
++            if arg_count != callee.arity:
++                raise VMRuntimeError(
++                    f"Expected {callee.arity} arguments, got {arg_count}", line=self.current_line
++                )
++            result = callee.invoke(self.stack[base + 1:])
++            del self.stack[base:]
++            self.push(result)
++            return
++        if isinstance(callee, LoxClass):
++            instance = LoxInstance(callee)
++            initializer = callee.find_method("init")
++            if initializer is None:
++                if arg_count != 0:
++                    raise VMRuntimeError(f"Expected 0 arguments, got {arg_count}", line=self.current_line)
++                self.stack[base] = instance
++                return
++            self.stack[base] = instance
++            closure = initializer
++        elif isinstance(callee, BoundMethod):
++            self.stack[base] = callee.instance
++            closure = callee.method
++        elif isinstance(callee, Closure):
++            closure = callee
++        else:
++            raise VMRuntimeError("Can only call functions and classes.", line=self.current_line)
++        if arg_count != closure.function.arity:
++            raise VMRuntimeError(
++                f"Expected {closure.function.arity} arguments, got {arg_count}", line=self.current_line
++            )
++        if len(self.frames) >= MAX_CALL_FRAMES:
++            raise VMRuntimeError("Call stack limit exceeded", line=self.current_line)
++        self.frames.append(CallFrame(closure, base))
+ 
+     def run(self, trace: bool = False) -> None:
++        self.stack.clear()
++        try:
++            self._run(trace)
++        except ListError as error:
++            raise VMRuntimeError(str(error), line=self.current_line) from None
++        finally:
++            self.close_upvalues(0)
++            self.frames.clear()
++
++    def _run(self, trace: bool = False) -> None:
+         """Consume instrucciones hasta OP_RETURN o el final del chunk."""
+         # Frame del script principal
+         main_function = Function(None)
+@@ -110,104 +143,116 @@
+         main_frame = CallFrame(main_closure, 0)
+         self.frames.append(main_frame)
+ 
++        push = self.stack.append
++        pop = self.pop
++        peek = self.peek
++        read_byte = self.read_byte
++
+         if trace:
+             print(RUNTIME_HEADER)
+ 
+         while self.frames:
+-            if self.ip >= len(self.chunk):
++            frame = self.frames[-1]
++            chunk = frame.closure.function.chunk
++            code = frame.code
++            constants = frame.constants
++            if frame.ip >= len(code):
+                 # Chunk agotado sin OP_RETURN: retorno implícito.
+                 finished_frame = self.frames.pop()
++                self.close_upvalues(finished_frame.stack_slot)
+                 if not self.frames:
+                     return
+-                self.stack = self.stack[: finished_frame.stack_slot - 1]
+-                self.push(None)
++                del self.stack[finished_frame.stack_slot:]
++                push(None)
+                 continue
+ 
+-            start = self.ip
+-            self.current_line = self.chunk.line_at(self.ip) if self.ip < len(self.chunk) else 1
+-
+-            match OpCode(self.read_byte()):
++            start = frame.ip
++            self.current_line = chunk.line_at(frame.ip)
++
++            opcode = code[frame.ip]
++            frame.ip += 1
++            match opcode:
+                 case OpCode.OP_CONSTANT:
+-                    self.push(self.read_constant())
++                    push(constants[read_byte()])
+                 case OpCode.OP_TRUE:
+-                    self.push(True)
++                    push(True)
+                 case OpCode.OP_FALSE:
+-                    self.push(False)
++                    push(False)
+                 case OpCode.OP_NIL:
+-                    self.push(None)
++                    push(None)
+                 case OpCode.OP_DEFINE_GLOBAL:
+-                    var_index = self.read_byte()
+-                    var_name = self.chunk.constant(var_index)
+-                    var_value = self.pop()
++                    var_index = read_byte()
++                    var_name = constants[var_index]
++                    var_value = pop()
+                     self.globals[str(var_name)] = var_value
+                 case OpCode.OP_SET_GLOBAL:
+-                    var_index = self.read_byte()
+-                    var_name = self.chunk.constant(var_index)
++                    var_index = read_byte()
++                    var_name = constants[var_index]
+                     if str(var_name) not in self.globals:
+                         raise VMRuntimeError(
+                             f"Undefined variable '{var_name}'", line=self.current_line
+                         )
+-                    self.globals[str(var_name)] = self.peek()
++                    self.globals[str(var_name)] = peek()
+                 case OpCode.OP_GET_GLOBAL:
+-                    var_index = self.read_byte()
+-                    var_name = self.chunk.constant(var_index)
++                    var_index = read_byte()
++                    var_name = constants[var_index]
+                     if str(var_name) not in self.globals:
+                         raise VMRuntimeError(
+                             f"Undefined variable '{var_name}'", line=self.current_line
+                         )
+-                    self.push(self.globals[str(var_name)])
++                    push(self.globals[str(var_name)])
+                 case OpCode.OP_GET_LOCAL:
+-                    slot = self.read_byte()
+-                    base = self.frames[-1].stack_slot
+-                    self.push(self.stack[base + slot])
++                    slot = read_byte()
++                    base = frame.stack_slot
++                    push(self.stack[base + slot])
+                 case OpCode.OP_SET_LOCAL:
+-                    slot = self.read_byte()
+-                    base = self.frames[-1].stack_slot
+-                    self.stack[base + slot] = self.peek()
++                    slot = read_byte()
++                    base = frame.stack_slot
++                    self.stack[base + slot] = peek()
+                 case OpCode.OP_POP:
+-                    self.pop()
++                    pop()
+                 case OpCode.OP_PRINT:
+-                    value = self.pop()
++                    value = pop()
+                     if trace:
+                         print(f"{start:04d}| SCREEN OUTPUT {stringify(value)}")
+                         continue
+                     print(stringify(value))
+                 case OpCode.OP_NEGATE:
+-                    value = self.pop()
++                    value = pop()
+                     if not is_number(value):
+                         raise VMRuntimeError(
+                             "Operand of - must be a number", line=self.current_line
+                         )
+-                    self.push(-value)
++                    push(-value)
+                 case OpCode.OP_NOT:
+-                    self.push(not is_truthy(self.pop()))
++                    push(not is_truthy(pop()))
+                 case OpCode.OP_ADD:
+-                    right, left = self.pop(), self.pop()
++                    right, left = pop(), pop()
+                     if is_number(left) and is_number(right):
+-                        self.push(left + right)
++                        push(left + right)
+                     elif is_string(left) and is_string(right):
+-                        self.push(left + right)
++                        push(left + right)
+                     else:
+                         raise VMRuntimeError(
+                             "Operands of + must be either numbers or strings",
+                             line=self.current_line,
+                         )
+                 case OpCode.OP_SUBTRACT:
+-                    right, left = self.pop(), self.pop()
++                    right, left = pop(), pop()
+                     if not (is_number(left) and is_number(right)):
+                         raise VMRuntimeError(
+                             "Operands of - must be numbers", line=self.current_line
+                         )
+-                    self.push(left - right)
++                    push(left - right)
+                 case OpCode.OP_MULTIPLY:
+-                    right, left = self.pop(), self.pop()
++                    right, left = pop(), pop()
+                     if not (is_number(left) and is_number(right)):
+                         raise VMRuntimeError(
+                             "Operands of * must be numbers", line=self.current_line
+                         )
+-                    self.push(left * right)
++                    push(left * right)
+                 case OpCode.OP_DIVIDE:
+-                    right, left = self.pop(), self.pop()
++                    right, left = pop(), pop()
+                     if not (is_number(left) and is_number(right)):
+                         raise VMRuntimeError(
+                             "Operands of / must be numbers", line=self.current_line
+@@ -216,9 +261,9 @@
+                         raise VMRuntimeError(
+                             "Division by zero is not allowed", line=self.current_line
+                         )
+-                    self.push(left / right)
++                    push(left / right)
+                 case OpCode.OP_MODULO:
+-                    right, left = self.pop(), self.pop()
++                    right, left = pop(), pop()
+                     if not (is_number(left) and is_number(right)):
+                         raise VMRuntimeError(
+                             "Operands of % must be numbers", line=self.current_line
+@@ -227,222 +272,164 @@
+                         raise VMRuntimeError(
+                             "Modulo by zero is not allowed", line=self.current_line
+                         )
+-                    self.push(left % right)
++                    push(left % right)
+                 case OpCode.OP_EQUAL:
+-                    right, left = self.pop(), self.pop()
+-                    self.push(is_equal(left, right))
++                    right, left = pop(), pop()
++                    push(is_equal(left, right))
+                 case OpCode.OP_GREATER:
+-                    right, left = self.pop(), self.pop()
++                    right, left = pop(), pop()
+                     if not (is_number(left) and is_number(right)):
+                         raise VMRuntimeError(
+                             "Operands of > must be numbers", line=self.current_line
+                         )
+-                    self.push(left > right)
++                    push(left > right)
+                 case OpCode.OP_LESS:
+-                    right, left = self.pop(), self.pop()
++                    right, left = pop(), pop()
+                     if not (is_number(left) and is_number(right)):
+                         raise VMRuntimeError(
+                             "Operands of < must be numbers", line=self.current_line
+                         )
+-                    self.push(left < right)
++                    push(left < right)
++                case OpCode.OP_GREATER_EQUAL | OpCode.OP_LESS_EQUAL:
++                    right, left = pop(), pop()
++                    if not (is_number(left) and is_number(right)):
++                        raise VMRuntimeError("Comparison operands must be numbers", line=self.current_line)
++                    push(left >= right if opcode == OpCode.OP_GREATER_EQUAL else left <= right)
+                 case OpCode.OP_JUMP:
+-                    offset = (self.read_byte() << 8) | self.read_byte()
+-                    self.ip += offset
++                    offset = (read_byte() << 8) | read_byte()
++                    frame.ip += offset
+                 case OpCode.OP_JUMP_IF_FALSE:
+-                    offset = (self.read_byte() << 8) | self.read_byte()
+-                    if not is_truthy(self.peek()):
+-                        self.ip += offset
++                    offset = (read_byte() << 8) | read_byte()
++                    if not is_truthy(peek()):
++                        frame.ip += offset
+                 case OpCode.OP_LOOP:
+-                    offset = (self.read_byte() << 8) | self.read_byte()
+-                    self.ip -= offset
++                    offset = (read_byte() << 8) | read_byte()
++                    frame.ip -= offset
+                 case OpCode.OP_CALL:
+-                    arg_count = self.read_byte()
+-                    callee = self.peek(arg_count)
+-                    if isinstance(callee, LoxClass):
+-                        # Instanciación: reemplaza la clase por la instancia
+-                        instance = LoxInstance(callee)
+-                        initializer = callee.find_method("init")
+-                        if isinstance(initializer, Closure):
+-                            if initializer.function.arity != arg_count:
+-                                raise VMRuntimeError(
+-                                    f"Expected {initializer.function.arity} arguments, "
+-                                    f"got {arg_count}",
+-                                    line=self.current_line,
+-                                )
+-                            self.stack[-arg_count - 1] = instance
+-                            self.frames[-1].ip = self.ip
+-                            self.frames.append(
+-                                CallFrame(initializer, len(self.stack) - arg_count - 1)
+-                            )
+-                            self.ip = 0
+-                            if trace:
+-                                print(
+-                                    f"{start:04d}| ENTERING CALLFRAME "
+-                                    f"{callee.name}.init()"
+-                                )
+-                            continue
+-                        if arg_count != 0:
+-                            raise VMRuntimeError(
+-                                f"Expected 0 arguments, got {arg_count} "
+-                                f"for class '{callee.name}'",
+-                                line=self.current_line,
+-                            )
+-                        self.stack[-arg_count - 1] = instance
+-                        if arg_count:
+-                            del self.stack[-arg_count:]
+-                        continue
+-                    if isinstance(callee, BoundMethod):
+-                        # El método ligado deja su instancia en el slot 0 del
+-                        # nuevo frame: ahí el compilador declaró ``this``.
+-                        closure = callee.method
+-                        self.stack[-arg_count - 1] = callee.instance
+-                    elif isinstance(callee, Closure):
+-                        closure = callee
+-                    else:
+-                        raise VMRuntimeError(
+-                            f"Cannot call non-callable object: {callee}",
+-                            line=self.current_line,
+-                        )
+-                    if closure.function.arity != arg_count:
+-                        raise VMRuntimeError(
+-                            f"Expected {closure.function.arity} arguments, got {arg_count}",
+-                            line=self.current_line,
+-                        )
+-                    self.frames[-1].ip = self.ip
+-                    fn_callframe = CallFrame(closure, len(self.stack) - arg_count - 1)
+-                    self.frames.append(fn_callframe)
+-                    self.ip = 0
++                    arg_count = read_byte()
++                    callee = peek(arg_count)
++                    self.call(callee, arg_count)
+                     if trace:
+-                        print(f"{start:04d}| ENTERING CALLFRAME {closure.function.name}()")
+-                        continue
++                        print(f"{start:04d}| CALL {callee}")
++                    continue
+                 case OpCode.OP_CLOSURE:
+-                    fun_index = self.read_byte()
+-                    function = self.chunk.constant(fun_index)
++                    fun_index = read_byte()
++                    function = constants[fun_index]
+                     closure = Closure(function)
+-                    self.push(closure)
++                    push(closure)
+                     for _ in range(function.upvalue_count):
+-                        is_local = self.read_byte() == 1
+-                        slot = self.read_byte()
++                        is_local = read_byte() == 1
++                        slot = read_byte()
+                         if is_local:
+-                            stack_index = self.frames[-1].stack_slot + slot
++                            stack_index = frame.stack_slot + slot
+                             upvalue = self.capture_upvalue(stack_index)
+                         else:
+-                            upvalue = self.frames[-1].closure.upvalues[slot]
++                            upvalue = frame.closure.upvalues[slot]
+                         closure.upvalues.append(upvalue)
+                 case OpCode.OP_GET_UPVALUE:
+-                    slot = self.read_byte()
+-                    upvalue = self.frames[-1].closure.upvalues[slot]
++                    slot = read_byte()
++                    upvalue = frame.closure.upvalues[slot]
+                     if upvalue.stack_index is None:
+-                        self.push(upvalue.closed_value)
++                        push(upvalue.closed_value)
+                     else:
+-                        self.push(self.stack[upvalue.stack_index])
++                        push(self.stack[upvalue.stack_index])
+                 case OpCode.OP_SET_UPVALUE:
+-                    slot = self.read_byte()
+-                    upvalue = self.frames[-1].closure.upvalues[slot]
++                    slot = read_byte()
++                    upvalue = frame.closure.upvalues[slot]
+                     if upvalue.stack_index is None:
+-                        upvalue.closed_value = self.peek()
++                        upvalue.closed_value = peek()
+                     else:
+-                        self.stack[upvalue.stack_index] = self.peek()
++                        self.stack[upvalue.stack_index] = peek()
+                 case OpCode.OP_CLOSE_UPVALUE:
+                     self.close_upvalues(len(self.stack) - 1)
+-                    self.pop()
++                    pop()
+                 case OpCode.OP_CLASS:
+-                    name = str(self.chunk.constant(self.read_byte()))
+-                    self.push(LoxClass(name, None, {}))
++                    name = str(constants[read_byte()])
++                    push(LoxClass(name, None, {}))
+                 case OpCode.OP_GET_PROPERTY:
+-                    name = str(self.chunk.constant(self.read_byte()))
+-                    obj = self.pop()
++                    name = str(constants[read_byte()])
++                    obj = pop()
++                    if isinstance(obj, LoxList):
++                        push(obj.get_property(name))
++                        continue
+                     if not isinstance(obj, LoxInstance):
+                         raise VMRuntimeError(
+                             "Only instances have properties", line=self.current_line
+                         )
+                     if name in obj.fields:
+-                        self.push(obj.fields[name])
++                        push(obj.fields[name])
+                     else:
+                         method = obj.klass.find_method(name)
+                         if isinstance(method, Closure):
+-                            self.push(BoundMethod(obj, method))
++                            push(BoundMethod(obj, method))
+                         else:
+                             raise VMRuntimeError(
+                                 f"Undefined property '{name}'.", line=self.current_line
+                             )
+                 case OpCode.OP_SET_PROPERTY:
+-                    name = str(self.chunk.constant(self.read_byte()))
+-                    value = self.pop()
+-                    obj = self.pop()
++                    name = str(constants[read_byte()])
++                    value = pop()
++                    obj = pop()
++                    if isinstance(obj, LoxList):
++                        raise VMRuntimeError("List properties are read-only.", line=self.current_line)
+                     if not isinstance(obj, LoxInstance):
+                         raise VMRuntimeError(
+                             "Only instances have fields", line=self.current_line
+                         )
+                     obj.fields[name] = value
+-                    self.push(value)
++                    push(value)
+                 case OpCode.OP_METHOD:
+-                    name = str(self.chunk.constant(self.read_byte()))
+-                    method = self.pop()
+-                    klass = self.peek()
++                    name = str(constants[read_byte()])
++                    method = pop()
++                    klass = peek()
+                     if not isinstance(klass, LoxClass) or not isinstance(method, Closure):
+                         raise VMRuntimeError(
+                             "Invalid method definition", line=self.current_line
+                         )
+                     klass.methods[name] = method
+                 case OpCode.OP_INHERIT:
+-                    # El stack tiene [superclass, subclass]: la subclase fue
+-                    # empujada despues por OP_CLASS.
+-                    subclass = self.pop()
+-                    superclass = self.pop()
++                    subclass = pop()
++                    superclass = peek()
+                     if not isinstance(superclass, LoxClass):
+-                        raise VMRuntimeError(
+-                            "Superclass must be a class", line=self.current_line
+-                        )
+-                    if not isinstance(subclass, LoxClass):
+-                        raise VMRuntimeError(
+-                            "Invalid inherit target", line=self.current_line
+-                        )
++                        raise VMRuntimeError("Superclass must be a class", line=self.current_line)
+                     subclass.superclass = superclass
+-                    self.push(subclass)
+                 case OpCode.OP_GET_SUPER:
+-                    name = str(self.chunk.constant(self.read_byte()))
+-                    this_value = self.stack[self.frames[-1].stack_slot]
+-                    if not isinstance(this_value, LoxInstance):
+-                        raise VMRuntimeError(
+-                            "super is only allowed inside a method",
+-                            line=self.current_line,
+-                        )
+-                    # La superclase se resuelve lexicamente respecto de la clase
+-                    # en la que el método está definido, no respecto de la clase
+-                    # real de la instancia (que puede ser una subclase).
+-                    defining_class_name = self.frames[-1].closure.function.enclosing_class
+-                    defining_class = this_value.klass
+-                    if defining_class_name is not None and defining_class_name in self.globals:
+-                        candidate = self.globals[defining_class_name]
+-                        if isinstance(candidate, LoxClass):
+-                            defining_class = candidate
+-                    superclass = defining_class.superclass
+-                    if not isinstance(superclass, LoxClass):
+-                        raise VMRuntimeError(
+-                            "No superclass to call super from",
+-                            line=self.current_line,
+-                        )
++                    name = str(constants[read_byte()])
++                    superclass = pop()
++                    instance = pop()
+                     method = superclass.find_method(name)
+-                    if not isinstance(method, Closure):
+-                        raise VMRuntimeError(
+-                            f"Undefined property '{name}'.", line=self.current_line
+-                        )
+-                    self.push(BoundMethod(this_value, method))
++                    if method is None:
++                        raise VMRuntimeError(f"Undefined property '{name}'.", line=self.current_line)
++                    push(BoundMethod(instance, method))
++                case OpCode.OP_LIST:
++                    count = read_byte()
++                    base = len(self.stack) - count
++                    items = self.stack[base:]
++                    del self.stack[base:]
++                    push(LoxList(items))
++                case OpCode.OP_GET_INDEX:
++                    index = pop()
++                    obj = require_list(pop())
++                    push(obj.get(index))
++                case OpCode.OP_SET_INDEX:
++                    value = pop()
++                    index = pop()
++                    obj = require_list(pop())
++                    push(obj.set(index, value))
+                 case OpCode.OP_RETURN:
+-                    result = self.pop()
++                    result = pop()
+                     finished_frame = self.frames.pop()
+                     if finished_frame.closure.function.is_initializer:
+                         # init descarta su valor y devuelve la instancia
+                         # (que ocupa el slot 0 del frame que termina).
+                         result = self.stack[finished_frame.stack_slot]
+-                    self.close_upvalues(finished_frame.stack_slot - 1)
++                    self.close_upvalues(finished_frame.stack_slot)
+                     if not self.frames:
+                         if trace:
+                             print(f"{start:04d}| THE END")
+                         return
+-                    self.stack = self.stack[: finished_frame.stack_slot]
+-                    self.push(result)
++                    del self.stack[finished_frame.stack_slot:]
++                    push(result)
+                     if trace:
+                         print(f"{start:04d}| EXITING CALLFRAME {finished_frame.closure.function.name}()")
+                         continue
+--- a/src/mylox/cli.py
++++ b/src/mylox/cli.py
+@@ -5,6 +5,7 @@
+ from pathlib import Path
+ 
+ from . import __version__
++from .bytecode.chunk import Chunk
+ from .bytecode.compiler import Compiler
+ from .bytecode.disassembler import disassemble, raw_bytes
+ from .bytecode.vm import VM
+@@ -42,45 +43,38 @@
+     """Modo ``--tree``: escanea y parsea la fuente, e imprime el AST."""
+     try:
+         tree = Parser(Lexer(source).run()).parse()
++        print(imprimir(tree))
+     except (ScanError, ParseError) as error:
+-        return report_error(error)
+-
+-    print(imprimir(tree))
+-    return EXIT_OK
+-
+-
+-def run_actions(
+-    source: str, backend: str = "tree-walk", debug: bool = False
+-) -> int:
+-    """Modo ejecución (default): escanea, parsea y evalúa la fuente."""
+-    if backend == "bytecode":
+-        try:
+-            tokens = Lexer(source).run()
+-            chunk = Compiler(tokens).compile()
+-        except (ScanError, ParseError, CompileError) as error:
+-            return report_error(error)
+-
+-        if debug:
+-            print(raw_bytes(chunk), end="")
+-            print(disassemble(chunk), end="")
+-
+-        try:
+-            VM(chunk).run(trace=debug)
+-        except VMRuntimeError as error:
+-            return report_error(error)
+-        return EXIT_OK
+-
+-    try:
+-        program = Parser(Lexer(source).run()).parse()
+-        Interpreter().interpret(program)
+-    except (ScanError, ParseError) as error:
+-        return report_error(error)
+-    except LoxRuntimeError as error:
+         return report_error(error)
+     except RecursionError:
+         print("[error] profundidad de recursión excedida", file=sys.stderr)
+         return EXIT_RUNTIME
+ 
++    return EXIT_OK
++
++
++def run_actions(
++    source: str, backend: str = "tree-walk", debug: bool = False,
++    runtime: Interpreter | VM | None = None,
++) -> int:
++    try:
++        tokens = Lexer(source).run()
++        if backend == "bytecode":
++            chunk = Compiler(tokens).compile()
++            if debug:
++                print(raw_bytes(chunk), end="")
++                print(disassemble(chunk), end="")
++            vm = runtime if isinstance(runtime, VM) else VM(chunk)
++            vm.main_chunk = chunk
++            vm.run(trace=debug)
++        else:
++            interpreter = runtime if isinstance(runtime, Interpreter) else Interpreter()
++            interpreter.interpret(Parser(tokens).parse())
++    except (ScanError, ParseError, CompileError, LoxRuntimeError, VMRuntimeError) as error:
++        return report_error(error)
++    except RecursionError:
++        print("[error] profundidad de recursión excedida", file=sys.stderr)
++        return EXIT_RUNTIME
+     return EXIT_OK
+ 
+ 
+@@ -117,6 +111,7 @@
+ 
+ def repl(backend: str = "tree-walk", debug: bool = False) -> int:
+     """Bucle interactivo que lee líneas de la entrada estándar y las ejecuta."""
++    runtime = VM(Chunk()) if backend == "bytecode" else Interpreter()
+     while True:
+         try:
+             source = input("> ")
+@@ -127,7 +122,7 @@
+         if not source.strip():
+             continue
+ 
+-        run_actions(source, backend=backend, debug=debug)
++        run_actions(source, backend=backend, debug=debug, runtime=runtime)
+ 
+ 
+ def main(argv: list[str] | None = None) -> int:
+@@ -151,7 +146,7 @@
+     if args.file is not None:
+         try:
+             source = args.file.read_text(encoding="utf-8")
+-        except OSError as error:
++        except (OSError, UnicodeError) as error:
+             print(f"[error] no se pudo leer el archivo: {error}", file=sys.stderr)
+             return EXIT_USAGE
+     else:
+--- a/src/mylox/function.py
++++ b/src/mylox/function.py
+@@ -20,7 +20,7 @@
+         super().__init__("función devolvió un valor")
+ 
+ 
+-@dataclass(frozen=True, slots=True)
++@dataclass(frozen=True, slots=True, eq=False)
+ class Function:
+     """
+     Representa una función de Lox ( como en la pag 92)
+--- a/src/mylox/interpreter.py
++++ b/src/mylox/interpreter.py
+@@ -10,9 +10,11 @@
+ from .env import Env
+ from .errors import LoxRuntimeError
+ from .function import Function, ReturnValue
++from .lists import ListError, ListMethod, LoxList, require_list
+ from .nodes import (
+     Assign, Binary, BlockStmt, Call, ClassDecl, ExprStmt, FunctionDecl, Get,
+-    Grouping, IfStmt, Literal, Logical, Node, PrintStmt, ReturnStmt, Set, Super,
++    Grouping, IfStmt, Index, IndexSet, ListLiteral, Literal, Logical, Node,
++    PrintStmt, ReturnStmt, Set, Super,
+     This, Unary, VarDecl, Variable, Visitor, WhileStmt,
+ )
+ from .oop import LoxClass, LoxFunction, LoxInstance
+@@ -200,11 +202,36 @@
+ 
+         self.environment.assign(statement.name, klass)
+ 
++    def visit_list(self, expression: ListLiteral) -> LoxList:
++        return LoxList([self.evaluate(element) for element in expression.elements])
++
++    def visit_index(self, expression: Index) -> object:
++        obj = self.evaluate(expression.object)
++        index = self.evaluate(expression.index)
++        try:
++            return require_list(obj).get(index)
++        except ListError as error:
++            raise LoxRuntimeError(expression.bracket, str(error)) from None
++
++    def visit_index_set(self, expression: IndexSet) -> object:
++        obj = self.evaluate(expression.object)
++        index = self.evaluate(expression.index)
++        value = self.evaluate(expression.value)
++        try:
++            return require_list(obj).set(index, value)
++        except ListError as error:
++            raise LoxRuntimeError(expression.bracket, str(error)) from None
++
+     def visit_get(self, expression: Get) -> object:
+         """Accede a una propiedad de un objeto."""
+         obj = self.evaluate(expression.object)
+         if isinstance(obj, LoxInstance):
+             return obj.get(expression.name)
++        if isinstance(obj, LoxList):
++            try:
++                return obj.get_property(expression.name.lexeme)
++            except ListError as error:
++                raise LoxRuntimeError(expression.name, str(error)) from None
+         raise LoxRuntimeError(
+             expression.name, "Only instances have properties."
+         )
+@@ -212,41 +239,25 @@
+     def visit_set(self, expression: Set) -> object:
+         """Asigna un valor a una propiedad de un objeto."""
+         obj = self.evaluate(expression.object)
++        value = self.evaluate(expression.value)
++        if isinstance(obj, LoxList):
++            raise LoxRuntimeError(expression.name, "List properties are read-only.")
+         if not isinstance(obj, LoxInstance):
+             raise LoxRuntimeError(
+                 expression.name, "Only instances have fields."
+             )
+-        value = self.evaluate(expression.value)
+         obj.set(expression.name, value)
+         return value
+ 
+     def visit_this(self, expression: This) -> object:
+-        """Devuelve la instancia actual."""
+-        env = self.environment
+-        while env is not None:
+-            if "this" in env.values:
+-                return env.values["this"]
+-            env = env.enclosing
+-        raise LoxRuntimeError(expression.keyword, "No se puede usar 'this' fuera de un método.")
++        _, distance = self.local_bindings[id(expression)]
++        return self.environment.get_local(expression.keyword, distance)
+ 
+     def visit_super(self, expression: Super) -> object:
+-        """Busca un método en la superclase del this actual."""
+-        env = self.environment
+-        superclass = None
+-        obj = None
+-        while env is not None:
+-            if "super" in env.values and superclass is None:
+-                superclass = env.values["super"]
+-            if "this" in env.values and obj is None:
+-                obj = env.values["this"]
+-            if superclass is not None and obj is not None:
+-                break
+-            env = env.enclosing
+-
+-        if not isinstance(superclass, LoxClass):
+-            raise LoxRuntimeError(expression.keyword, "Superclass must be a class.")
+-        if not isinstance(obj, LoxInstance):
+-            raise LoxRuntimeError(expression.keyword, "Super must be used inside a method.")
++        _, distance = self.local_bindings[id(expression)]
++        superclass = self.environment.get_local(expression.keyword, distance)
++        receiver = Token(TokenKind.THIS, "this", line=expression.keyword.line)
++        obj = self.environment.get_local(receiver, distance - 1)
+ 
+         method = superclass.find_method(expression.method.lexeme)
+         if method is None:
+@@ -405,7 +416,7 @@
+         callee = self.evaluate(expression.callee)
+         arguments = [self.evaluate(argument) for argument in expression.arguments]
+ 
+-        if not self.is_callable(callee):
++        if not (self.is_callable(callee) or isinstance(callee, ListMethod)):
+             raise LoxRuntimeError(
+                 expression.paren, "Can only call functions and classes."
+             )
+@@ -416,6 +427,11 @@
+                 "Expected " + str(callee.arity) + " arguments but got " + str(len(arguments)) + ".",
+             )
+ 
++        if isinstance(callee, ListMethod):
++            try:
++                return callee.invoke(arguments)
++            except ListError as error:
++                raise LoxRuntimeError(expression.paren, str(error)) from None
+         return callee.call(self, arguments)
+ 
+     def visit_logical(self, expression: Logical) -> object:
+--- /dev/null
++++ b/src/mylox/lists.py
+@@ -0,0 +1,60 @@
++from __future__ import annotations
++
++from dataclasses import dataclass
++
++
++class ListError(Exception):
++    pass
++
++
++def require_list(value: object) -> LoxList:
++    if not isinstance(value, LoxList):
++        raise ListError("Only lists can be indexed.")
++    return value
++
++
++@dataclass(eq=False, slots=True)
++class LoxList:
++    items: list[object]
++
++    def position(self, index: object) -> int:
++        if not isinstance(index, float) or not index.is_integer():
++            raise ListError("List index must be an integer.")
++        if not 0 <= index < len(self.items):
++            raise ListError("List index out of bounds.")
++        return int(index)
++
++    def get(self, index: object) -> object:
++        return self.items[self.position(index)]
++
++    def set(self, index: object, value: object) -> object:
++        self.items[self.position(index)] = value
++        return value
++
++    def get_property(self, name: str) -> object:
++        if name == "length":
++            return float(len(self.items))
++        if name in ("push", "pop"):
++            return ListMethod(self, name)
++        raise ListError(f"Undefined list property '{name}'.")
++
++
++@dataclass(eq=False, slots=True)
++class ListMethod:
++    receiver: LoxList
++    name: str
++
++    @property
++    def arity(self) -> int:
++        return 1 if self.name == "push" else 0
++
++    def invoke(self, arguments: list[object]) -> object:
++        if self.name == "push":
++            self.receiver.items.append(arguments[0])
++            return None
++        if not self.receiver.items:
++            raise ListError("Cannot pop an empty list.")
++        return self.receiver.items.pop()
++
++    def __str__(self) -> str:
++        return f"<list.{self.name}>"
+--- a/src/mylox/nodes.py
++++ b/src/mylox/nodes.py
+@@ -37,6 +37,15 @@
+     no fue implementada por el visitante usado.
+     """
+ 
++    def visit_list(self, expression: ListLiteral) -> object:
++        raise NotImplementedError()
++
++    def visit_index(self, expression: Index) -> object:
++        raise NotImplementedError()
++
++    def visit_index_set(self, expression: IndexSet) -> object:
++        raise NotImplementedError()
++
+     def visit_literal(self, expression: Literal) -> object:
+         """Define la operación del visitante sobre un valor literal del AST."""
+         raise NotImplementedError()
+@@ -120,6 +129,35 @@
+     def visit_super(self, expression: Super) -> object:
+         """Define la operación sobre el acceso a la superclase."""
+         raise NotImplementedError()
++
++
++@dataclass(frozen=True, slots=True)
++class ListLiteral(Node):
++    elements: list[Node]
++
++    def accept(self, visitor: Visitor) -> object:
++        return visitor.visit_list(self)
++
++
++@dataclass(frozen=True, slots=True)
++class Index(Node):
++    object: Node
++    index: Node
++    bracket: Token
++
++    def accept(self, visitor: Visitor) -> object:
++        return visitor.visit_index(self)
++
++
++@dataclass(frozen=True, slots=True)
++class IndexSet(Node):
++    object: Node
++    index: Node
++    value: Node
++    bracket: Token
++
++    def accept(self, visitor: Visitor) -> object:
++        return visitor.visit_index_set(self)
+ 
+ 
+ @dataclass(frozen=True, slots=True)
+--- a/src/mylox/oop.py
++++ b/src/mylox/oop.py
+@@ -13,7 +13,7 @@
+ from .errors import LoxRuntimeError
+ 
+ 
+-@dataclass
++@dataclass(eq=False)
+ class LoxInstance:
+     """Una instancia de una clase Lox.
+ 
+@@ -41,7 +41,7 @@
+         return f"{self.klass.name} instance"
+ 
+ 
+-@dataclass
++@dataclass(eq=False)
+ class LoxClass:
+     """Una clase Lox, con su superclase y sus métodos.
+ 
+@@ -85,7 +85,7 @@
+         return self.name
+ 
+ 
+-@dataclass
++@dataclass(eq=False)
+ class LoxFunction:
+     """Una función Lox, que puede ser un método o una función libre.
+ 
+@@ -133,4 +133,4 @@
+ 
+     def __str__(self) -> str:
+         """Muestra el nombre de Lox cuando print recibe esta función."""
+-        return f"<fn {self.declaration.name.lexeme}>"
+\ No newline at end of file
++        return f"<fn {self.declaration.name.lexeme}>"
+--- a/src/mylox/pipeline/lexer.py
++++ b/src/mylox/pipeline/lexer.py
+@@ -25,6 +25,8 @@
+         ")": TokenKind.RIGHT_PAREN,
+         "{": TokenKind.LEFT_BRACE,
+         "}": TokenKind.RIGHT_BRACE,
++        "[": TokenKind.LEFT_BRACKET,
++        "]": TokenKind.RIGHT_BRACKET,
+         ",": TokenKind.COMMA,
+         ".": TokenKind.DOT,
+         "+": TokenKind.PLUS,
+@@ -140,7 +142,7 @@
+             self._scan_string()    # primera comilla ya consumida por advance.
+             return
+ 
+-        if character.isdigit():
++        if "0" <= character <= "9":
+             self._scan_number()
+             return
+ 
+@@ -163,13 +165,13 @@
+     def _scan_number(self) -> None:
+         """Consume un número entero o decimal y agrega su token."""
+ 
+-        while self._peek().isdigit():
+-            self._advance()
+-
+-        if self._peek() == "." and self._peek_next().isdigit():  # '.' para decimal.
+-            self._advance()
+-
+-            while self._peek().isdigit():
++        while "0" <= self._peek() <= "9":
++            self._advance()
++
++        if self._peek() == "." and "0" <= self._peek_next() <= "9":
++            self._advance()
++
++            while "0" <= self._peek() <= "9":
+                 self._advance()
+ 
+         # conversión del literal. lexema "12.5" -> literal 12.5
+--- a/src/mylox/pipeline/parser.py
++++ b/src/mylox/pipeline/parser.py
+@@ -9,7 +9,8 @@
+ from ..errors import ParseError
+ from ..nodes import (
+     Assign, Binary, BlockStmt, Call, ClassDecl, ExprStmt, FunctionDecl, Get,
+-    Grouping, IfStmt, Literal, Logical, Node, PrintStmt, ReturnStmt, Set, Super,
++    Grouping, IfStmt, Index, IndexSet, ListLiteral, Literal, Logical, Node,
++    PrintStmt, ReturnStmt, Set, Super,
+     This, Unary, VarDecl, Variable, WhileStmt,
+ )
+ from ..tokens import Token, TokenKind
+@@ -230,13 +231,7 @@
+         return self._assignment()
+ 
+     def _assignment(self) -> Node:
+-        """Construye una asignación o devuelve la expresión sin asignación.
+-
+-        Primero lee or; si aparece ``=``, lee recursivamente la derecha.
+-        Así ``a = b = 3`` se agrupa como ``a = (b = 3)``. El destino debe ser
+-        un nodo Variable: cualquier otra forma produce ParseError en el ``=``.
+-        Devuelve Assign sin consultar ni modificar los ambientes de ejecución.
+-        """
++        """Construye asignaciones a variables, propiedades o índices."""
+         expression = self._or()
+         if self._match(TokenKind.EQUAL):
+             equals = self._previous()
+@@ -245,6 +240,8 @@
+                 return Assign(expression.name, value)
+             if isinstance(expression, Get):
+                 return Set(expression.object, expression.name, value)
++            if isinstance(expression, Index):
++                return IndexSet(expression.object, expression.index, value, expression.bracket)
+             raise ParseError(
+                 f"Destino inválido de asignación en la línea {equals.line}, "
+                 f"columna {equals.column}"
+@@ -372,12 +369,7 @@
+         return self._call()
+ 
+     def _call(self) -> Node:
+-        """Lee ``primary (( argumentos? ))*`` y construye llamadas encadenadas.
+-
+-        Los argumentos son expresiones completas separadas por comas.
+-        Cada paréntesis posterior envuelve el nodo anterior en Call, por
+-        lo que ``crear()(1)`` representa dos invocaciones sucesivas.
+-        """
++        """Encadena llamadas, propiedades e índices sobre una expresión."""
+ 
+         expression = self._primary()
+ 
+@@ -399,19 +391,30 @@
+             elif self._match(TokenKind.DOT):
+                 name = self._consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de propiedad")
+                 expression = Get(expression, name)
++            elif self._match(TokenKind.LEFT_BRACKET):
++                bracket = self._previous()
++                index = self._expression()
++                self._consume(TokenKind.RIGHT_BRACKET, "Se esperaba ']' después del índice")
++                expression = Index(expression, index, bracket)
+             else:
+                 break
+ 
+         return expression
+ 
+     def _primary(self) -> Node:
+-        """Construye un literal, una referencia a variable o una agrupación.
+-
+-        NUMBER y STRING usan el valor del token; true, false y nil se convierten
+-        en Literal con True, False y None. IDENTIFIER se convierte en Variable.
+-        Con ``(`` lee una expresión completa y exige ``)`` para crear Grouping.
+-        Si el token no puede iniciar ninguna de estas formas, lanza ParseError.
+-        """
++        """Lee un literal, una lista, un nombre o una expresión entre paréntesis."""
++
++        if self._match(TokenKind.LEFT_BRACKET):
++            elements: list[Node] = []
++            if not self._check(TokenKind.RIGHT_BRACKET):
++                elements.append(self._expression())
++                while self._match(TokenKind.COMMA):
++                    elements.append(self._expression())
++            if len(elements) > 255:
++                token = self._previous()
++                raise ParseError(f"Un literal de lista admite hasta 255 elementos (línea {token.line})")
++            self._consume(TokenKind.RIGHT_BRACKET, "Se esperaba ']' después de la lista")
++            return ListLiteral(elements)
+ 
+         if self._match(TokenKind.FALSE):
+             return Literal(False)
+--- a/src/mylox/printing.py
++++ b/src/mylox/printing.py
+@@ -8,7 +8,8 @@
+ 
+ from .nodes import (
+     Assign, Binary, BlockStmt, Call, ClassDecl, ExprStmt, FunctionDecl, Get,
+-    Grouping, IfStmt, Literal, Logical, Node, PrintStmt, ReturnStmt, Set, Super,
++    Grouping, IfStmt, Index, IndexSet, ListLiteral, Literal, Logical, Node,
++    PrintStmt, ReturnStmt, Set, Super,
+     This, Unary, VarDecl, Variable, Visitor, WhileStmt,
+ )
+ 
+@@ -20,6 +21,19 @@
+     valores literales usan la representación de Python para depurar el AST;
+     este texto no pretende ser la salida del programa ni código fuente Lox.
+     """
++
++    def visit_list(self, expression: ListLiteral) -> str:
++        elements = ", ".join(element.accept(self) for element in expression.elements)
++        return f"List([{elements}])"
++
++    def visit_index(self, expression: Index) -> str:
++        return f"Index({expression.object.accept(self)}, {expression.index.accept(self)})"
++
++    def visit_index_set(self, expression: IndexSet) -> str:
++        return (
++            f"IndexSet({expression.object.accept(self)}, "
++            f"{expression.index.accept(self)}, {expression.value.accept(self)})"
++        )
+ 
+     def visit_literal(self, expression: Literal) -> str:
+         """Describe el valor almacenado usando repr, por ejemplo Literal(1.0)."""
+--- a/src/mylox/resolver.py
++++ b/src/mylox/resolver.py
+@@ -10,7 +10,8 @@
+ from .errors import ParseError
+ from .nodes import (
+     Assign, Binary, BlockStmt, Call, ClassDecl, ExprStmt, FunctionDecl, Get,
+-    Grouping, IfStmt, Literal, Logical, Node, PrintStmt, ReturnStmt, Set, Super,
++    Grouping, IfStmt, Index, IndexSet, ListLiteral, Literal, Logical, Node,
++    PrintStmt, ReturnStmt, Set, Super,
+     This, Unary, VarDecl, Variable, Visitor, WhileStmt,
+ )
+ from .tokens import Token
+@@ -83,6 +84,19 @@
+     def visit_literal(self, expression: Literal) -> None:
+         """Los literales no contienen nombres que necesiten vincularse."""
+ 
++    def visit_list(self, expression: ListLiteral) -> None:
++        for element in expression.elements:
++            element.accept(self)
++
++    def visit_index(self, expression: Index) -> None:
++        expression.object.accept(self)
++        expression.index.accept(self)
++
++    def visit_index_set(self, expression: IndexSet) -> None:
++        expression.object.accept(self)
++        expression.index.accept(self)
++        expression.value.accept(self)
++
+     def visit_grouping(self, expression: Grouping) -> None:
+         """Recorre la expresión agrupada sin crear un ámbito de variables."""
+         expression.expression.accept(self)
+@@ -154,6 +168,8 @@
+ 
+     def visit_class_decl(self, statement: ClassDecl) -> None:
+         """Registra la clase y resuelve sus métodos con this y super."""
++        if statement.superclass and statement.superclass.name.lexeme == statement.name.lexeme:
++            raise ParseError(f"Una clase no puede heredarse a sí misma (línea {statement.name.line})")
+         self._register(statement.name)
+         had_superclass = self._current_class_has_superclass
+         self._inside_classes += 1
+@@ -164,34 +180,24 @@
+             else:
+                 self._current_class_has_superclass = False
+ 
+-            # Cada método se resuelve en un ámbito propio con this (y super).
+-            for method in statement.methods:
+-                self._resolve_method(method)
++            if statement.superclass is not None:
++                self._scope_names.append({"super"})
++            self._scope_names.append({"this"})
++            try:
++                for method in statement.methods:
++                    self._resolve_method(method)
++            finally:
++                self._scope_names.pop()
++                if statement.superclass is not None:
++                    self._scope_names.pop()
+         finally:
+             self._inside_classes -= 1
+             self._current_class_has_superclass = had_superclass
+ 
+     def _resolve_method(self, method: FunctionDecl) -> None:
+-        """Resuelve un método: this en el scope del método, super en el de la clase."""
+         self._inside_functions += 1
+         try:
+-            # Scope de clase (exterior): contiene "super" si hay superclase.
+-            class_scope: set[str] = set()
+-            if self._current_class_has_superclass:
+-                class_scope.add("super")
+-            self._scope_names.append(class_scope)
+-            try:
+-                # Scope de método (interior): contiene "this" + parámetros.
+-                method_scope: set[str] = {"this"}
+-                method_scope.update(p.lexeme for p in method.parameters)
+-                self._scope_names.append(method_scope)
+-                try:
+-                    for stmt in method.body:
+-                        stmt.accept(self)
+-                finally:
+-                    self._scope_names.pop()
+-            finally:
+-                self._scope_names.pop()
++            self._walk_scope(method.body, tuple(p.lexeme for p in method.parameters))
+         finally:
+             self._inside_functions -= 1
+ 
+--- a/src/mylox/tokens.py
++++ b/src/mylox/tokens.py
+@@ -16,6 +16,8 @@
+     RIGHT_PAREN = auto()
+     LEFT_BRACE = auto()
+     RIGHT_BRACE = auto()
++    LEFT_BRACKET = auto()
++    RIGHT_BRACKET = auto()
+     COMMA = auto()
+     DOT = auto()
+     PLUS = auto()
+--- a/src/mylox/values.py
++++ b/src/mylox/values.py
+@@ -1,14 +1,32 @@
+ """Semántica de valores de Lox, compartida por el tree-walk y la VM"""
+ from __future__ import annotations
+ 
++import json
+ 
+-def stringify(value: object) -> str:
++from .lists import LoxList
++
++
++def stringify(value: object, active: set[int] | None = None) -> str:
+     """Convierte un valor ya evaluado a su representación textual en Lox.
+ 
+     None se escribe ``nil`` y los booleanos en minúscula. Los números enteros
+     almacenados como float se muestran sin ``.0`` y las cadenas sin comillas.
+     Devuelve texto, sin imprimir ni agregar el salto de línea.
+     """
++    if isinstance(value, LoxList):
++        if active is None:
++            active = set()
++        if id(value) in active:
++            return "[...]"
++        active.add(id(value))
++        try:
++            return "[" + ", ".join(
++                json.dumps(item, ensure_ascii=False) if isinstance(item, str)
++                else stringify(item, active)
++                for item in value.items
++            ) + "]"
++        finally:
++            active.remove(id(value))
+     if value is None:
+         return "nil"
+     if value is True:
