@@ -1,14 +1,32 @@
 """Semántica de valores de Lox, compartida por el tree-walk y la VM"""
 from __future__ import annotations
 
+import json
 
-def stringify(value: object) -> str:
+from .lists import LoxList
+
+
+def stringify(value: object, active: set[int] | None = None) -> str:
     """Convierte un valor ya evaluado a su representación textual en Lox.
 
     None se escribe ``nil`` y los booleanos en minúscula. Los números enteros
     almacenados como float se muestran sin ``.0`` y las cadenas sin comillas.
     Devuelve texto, sin imprimir ni agregar el salto de línea.
     """
+    if isinstance(value, LoxList):
+        if active is None:
+            active = set()
+        if id(value) in active:
+            return "[...]"
+        active.add(id(value))
+        try:
+            return "[" + ", ".join(
+                json.dumps(item, ensure_ascii=False) if isinstance(item, str)
+                else stringify(item, active)
+                for item in value.items
+            ) + "]"
+        finally:
+            active.remove(id(value))
     if value is None:
         return "nil"
     if value is True:
