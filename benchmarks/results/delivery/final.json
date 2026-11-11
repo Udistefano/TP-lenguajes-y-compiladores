@@ -1,0 +1,2604 @@
+{
+  "started_utc": "2026-11-11T19:09:25.969401+00:00",
+  "machine": {
+    "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+    "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "cpu": "AMD Ryzen 7 9700X 8-Core Processor",
+    "logical_cpus": 8,
+    "affinity": [
+      2
+    ]
+  },
+  "repetitions": 20,
+  "warmup": 3,
+  "seed": 1111,
+  "gc": "enabled; collect before each Python sample, outside timer",
+  "base_commit": "341d6eb25caa286d54fe23c87fb62e03ccda370e",
+  "baseline_patch_sha256": "af78ae4a1b84612c3668f6206ad4335d9148a1ad721ccd5340bac85ba9ac78fe",
+  "partial_commit": "088a86c2c86816dea2bbd3d3bb5fe549855ccf6d",
+  "plox_commit": "734f4d2adaf708c503dc5d17e88315e273c2f0ab",
+  "current_sources_sha256": {
+    "mylox/__init__.py": "91447944015cec709e8aa7655f7e9d64e1e4508e7023a57fe3746911c0fc6fed",
+    "mylox/bytecode/chunk.py": "7b45a3b553a447c6e30a221ac82bda8e1680e6ae6c0dbc9a338c3cc16ecc278f",
+    "mylox/bytecode/compiler.py": "d3ab8c0ee36402da6a59cb181431d1c139a7044daad97ba47304452cf8c6956f",
+    "mylox/bytecode/disassembler.py": "13e9f984a37abe5ed2ade1225cfa2dc242194c7a1351608a37c2b8edb75154eb",
+    "mylox/bytecode/function.py": "12b175a4bfb75a61bae9277de7e91a682a6fa871894fae29709e9dae82dec189",
+    "mylox/bytecode/opcodes.py": "ff3c0422ae47e344b28a3dd3d3458aa462d64c5f3da4c95af555d2496d74e738",
+    "mylox/bytecode/vm.py": "e9cbc719b9bfbb7c87b0bb6601141f58f5f6fb81d41f04f54c4cfb7d5450cc07",
+    "mylox/cli.py": "32dc8c71c37d69a7687aaf389e1c3355fa72b61adf86e8c7118cfc28b5a44259",
+    "mylox/env.py": "ad8f8191784c07d8eb437bfefee5e40138e529e9d5d15a2e2d84edac134b6a8d",
+    "mylox/errors.py": "68e4af32fba269d5425614c0428f21b2eb3c52b603d19665085c903abba0006d",
+    "mylox/function.py": "85fce8139f794022dfbde68abd59e66d56fa9c850ab3d5f452a2b6b5d6ba02f2",
+    "mylox/interpreter.py": "b4a1f311e8b4254e70cbff8fecc887f37af38ac925b20d9b492f6be5e48fb0a2",
+    "mylox/lists.py": "083c429a55115bcfbb22d0d56232f698523062f96386db72ac13cb9fc6c0a6ab",
+    "mylox/nodes.py": "da2104bbad2947aceb09c6f6f76e8bbe74bb04a6872d811591a8818a50f32b2a",
+    "mylox/oop.py": "ac6b3886b1593b40a55fa42fca302e159217c87b718caa0bb815a110528bae64",
+    "mylox/pipeline/lexer.py": "cdb4cf0014d5bda744941f89306dec823c8f7cb8829e6548159b218372948f55",
+    "mylox/pipeline/parser.py": "d2c9f00dc846e09f65b8ee989ce6232a80abbea62591e91d68f435e7960ff977",
+    "mylox/printing.py": "e6a570e8e1838498f7fe46185cdd88d5fd418d9b6558de32d07fb5f90d1db137",
+    "mylox/resolver.py": "4b3b1e4a4c7364de304a65cdf84f50edfa82243943de8682ece05fb74374617a",
+    "mylox/tokens.py": "a855c67be1f3e658154379b4d286428b9ad2ecb0ac1b324bab1d3ecae525e981",
+    "mylox/values.py": "fc7a4064551be21bca7fcfa9589c6742640d50032d8b14f7891760147fdb6c92"
+  },
+  "programs": {
+    "suma": {
+      "sha256": "5b35f681fb070e225abcbcc572a5e6ebaa2b1992a847a957a108e6c840594dd0",
+      "expected": "5000050000"
+    },
+    "fibonacci": {
+      "sha256": "8230452026c8fa31c4bd2e241c99268a933b4137d559bcedf21a438a5f962aef",
+      "expected": "17710"
+    },
+    "closures": {
+      "sha256": "aa0ccd087540e41363775d5a036d76022a281b771b2d093e2251da9ebb2f6ceb",
+      "expected": "450135000"
+    },
+    "primos": {
+      "sha256": "274ecfcd34b968dd3e1f0d1f53517b6e92248dd906eb23e604751f5a4a8150c7",
+      "expected": "62"
+    },
+    "fizzbuzz": {
+      "sha256": "820c1eafe8b05efc38e47b31a8d6e5025d332167a107885ef1e95b7c08993aff",
+      "expected": "..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz"
+    },
+    "objetos": {
+      "sha256": "d006be86f3a2d39d6540126afdd66051611fe199fe2e3b83b638098d50841913",
+      "expected": "200030000"
+    },
+    "listas": {
+      "sha256": "2f3ea3f590d1188bef593eba9a2fcfa0e9f819a07fec17dbcf692fb95ee9844c",
+      "expected": "100010000"
+    }
+  },
+  "samples": [
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 0,
+      "frontend_ms": 0.303701,
+      "execution_ms": 1142.011432,
+      "total_ms": 1142.315133,
+      "cpu_ms": 1036.762724
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 0,
+      "frontend_ms": 0.263453,
+      "execution_ms": 1699.054864,
+      "total_ms": 1699.318317,
+      "cpu_ms": 1378.203151
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 1,
+      "frontend_ms": 0.290664,
+      "execution_ms": 1331.973413,
+      "total_ms": 1332.264077,
+      "cpu_ms": 1120.709403
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 1,
+      "frontend_ms": 0.387074,
+      "execution_ms": 1070.686128,
+      "total_ms": 1071.073202,
+      "cpu_ms": 951.34358
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 2,
+      "frontend_ms": 0.271256,
+      "execution_ms": 1332.206879,
+      "total_ms": 1332.478135,
+      "cpu_ms": 1115.916063
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 2,
+      "frontend_ms": 0.325007,
+      "execution_ms": 1183.671059,
+      "total_ms": 1183.996066,
+      "cpu_ms": 1094.421063
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 3,
+      "frontend_ms": 0.292899,
+      "execution_ms": 1066.6849,
+      "total_ms": 1066.977799,
+      "cpu_ms": 973.039698
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 3,
+      "frontend_ms": 0.319381,
+      "execution_ms": 1079.609708,
+      "total_ms": 1079.929089,
+      "cpu_ms": 986.000857
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 4,
+      "frontend_ms": 0.331012,
+      "execution_ms": 968.570765,
+      "total_ms": 968.901777,
+      "cpu_ms": 880.061688
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 4,
+      "frontend_ms": 0.430643,
+      "execution_ms": 1118.270475,
+      "total_ms": 1118.701118,
+      "cpu_ms": 1007.428414
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 5,
+      "frontend_ms": 0.414778,
+      "execution_ms": 1165.268416,
+      "total_ms": 1165.683194,
+      "cpu_ms": 1031.469405
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 5,
+      "frontend_ms": 0.289875,
+      "execution_ms": 1396.460594,
+      "total_ms": 1396.750469,
+      "cpu_ms": 1226.926498
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 6,
+      "frontend_ms": 0.359838,
+      "execution_ms": 1391.495405,
+      "total_ms": 1391.855243,
+      "cpu_ms": 1207.259908
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 6,
+      "frontend_ms": 0.391146,
+      "execution_ms": 1422.41259,
+      "total_ms": 1422.803736,
+      "cpu_ms": 1212.124886
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 7,
+      "frontend_ms": 0.360423,
+      "execution_ms": 1621.162794,
+      "total_ms": 1621.523217,
+      "cpu_ms": 1366.548417
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 7,
+      "frontend_ms": 0.312372,
+      "execution_ms": 1277.019729,
+      "total_ms": 1277.332101,
+      "cpu_ms": 1134.830226
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 8,
+      "frontend_ms": 0.27857,
+      "execution_ms": 1212.947218,
+      "total_ms": 1213.225788,
+      "cpu_ms": 1081.569385
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 8,
+      "frontend_ms": 0.2299,
+      "execution_ms": 1022.66307,
+      "total_ms": 1022.89297,
+      "cpu_ms": 944.630216
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 9,
+      "frontend_ms": 0.227927,
+      "execution_ms": 1047.647592,
+      "total_ms": 1047.875519,
+      "cpu_ms": 934.802127
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 9,
+      "frontend_ms": 0.277323,
+      "execution_ms": 1206.791868,
+      "total_ms": 1207.069191,
+      "cpu_ms": 1038.097746
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 10,
+      "frontend_ms": 0.264847,
+      "execution_ms": 1116.143281,
+      "total_ms": 1116.408128,
+      "cpu_ms": 998.890251
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 10,
+      "frontend_ms": 0.33072,
+      "execution_ms": 1232.289545,
+      "total_ms": 1232.620265,
+      "cpu_ms": 1088.014214
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 11,
+      "frontend_ms": 0.434942,
+      "execution_ms": 1332.886897,
+      "total_ms": 1333.321839,
+      "cpu_ms": 1063.875627
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 11,
+      "frontend_ms": 0.312449,
+      "execution_ms": 1185.900779,
+      "total_ms": 1186.213228,
+      "cpu_ms": 1045.997224
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 12,
+      "frontend_ms": 1.195907,
+      "execution_ms": 1249.876809,
+      "total_ms": 1251.072716,
+      "cpu_ms": 1092.798032
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 12,
+      "frontend_ms": 0.314303,
+      "execution_ms": 1195.823424,
+      "total_ms": 1196.137727,
+      "cpu_ms": 1045.513623
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 13,
+      "frontend_ms": 0.286146,
+      "execution_ms": 1168.335849,
+      "total_ms": 1168.621995,
+      "cpu_ms": 1049.969438
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 13,
+      "frontend_ms": 0.319682,
+      "execution_ms": 1182.592859,
+      "total_ms": 1182.912541,
+      "cpu_ms": 1023.831411
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 14,
+      "frontend_ms": 0.22456,
+      "execution_ms": 1292.887034,
+      "total_ms": 1293.111594,
+      "cpu_ms": 1072.84113
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 14,
+      "frontend_ms": 0.372678,
+      "execution_ms": 1345.248329,
+      "total_ms": 1345.621007,
+      "cpu_ms": 1172.753175
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 15,
+      "frontend_ms": 0.333569,
+      "execution_ms": 1237.698389,
+      "total_ms": 1238.031958,
+      "cpu_ms": 1071.736891
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 15,
+      "frontend_ms": 0.221968,
+      "execution_ms": 1116.010835,
+      "total_ms": 1116.232803,
+      "cpu_ms": 1025.380661
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 16,
+      "frontend_ms": 0.377457,
+      "execution_ms": 1336.240249,
+      "total_ms": 1336.617706,
+      "cpu_ms": 1185.483003
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 16,
+      "frontend_ms": 0.313554,
+      "execution_ms": 1348.289977,
+      "total_ms": 1348.603531,
+      "cpu_ms": 1122.166585
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 17,
+      "frontend_ms": 0.314369,
+      "execution_ms": 1267.37899,
+      "total_ms": 1267.693359,
+      "cpu_ms": 1092.389217
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 17,
+      "frontend_ms": 0.32821,
+      "execution_ms": 1160.839949,
+      "total_ms": 1161.168159,
+      "cpu_ms": 1060.75207
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 18,
+      "frontend_ms": 0.349161,
+      "execution_ms": 1104.911051,
+      "total_ms": 1105.260212,
+      "cpu_ms": 1008.423293
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 18,
+      "frontend_ms": 0.311631,
+      "execution_ms": 1372.678085,
+      "total_ms": 1372.989716,
+      "cpu_ms": 1173.73371
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 19,
+      "frontend_ms": 0.363171,
+      "execution_ms": 1106.950077,
+      "total_ms": 1107.313248,
+      "cpu_ms": 992.510362
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 19,
+      "frontend_ms": 0.220317,
+      "execution_ms": 1074.97756,
+      "total_ms": 1075.197877,
+      "cpu_ms": 967.34737
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 0,
+      "frontend_ms": 0.50306,
+      "execution_ms": 492.296797,
+      "total_ms": 492.799857,
+      "cpu_ms": 451.76132
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 0,
+      "frontend_ms": 0.527931,
+      "execution_ms": 504.903055,
+      "total_ms": 505.430986,
+      "cpu_ms": 434.65259
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 1,
+      "frontend_ms": 0.55667,
+      "execution_ms": 925.611675,
+      "total_ms": 926.168345,
+      "cpu_ms": 452.000618
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 1,
+      "frontend_ms": 0.46127,
+      "execution_ms": 641.255148,
+      "total_ms": 641.716418,
+      "cpu_ms": 494.955139
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 2,
+      "frontend_ms": 0.514618,
+      "execution_ms": 549.675025,
+      "total_ms": 550.189643,
+      "cpu_ms": 455.690913
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 2,
+      "frontend_ms": 0.581705,
+      "execution_ms": 1349.765445,
+      "total_ms": 1350.34715,
+      "cpu_ms": 587.15779
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 3,
+      "frontend_ms": 0.58091,
+      "execution_ms": 842.275008,
+      "total_ms": 842.855918,
+      "cpu_ms": 568.180136
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 3,
+      "frontend_ms": 0.442395,
+      "execution_ms": 564.761527,
+      "total_ms": 565.203922,
+      "cpu_ms": 469.155412
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 4,
+      "frontend_ms": 0.472197,
+      "execution_ms": 626.543827,
+      "total_ms": 627.016024,
+      "cpu_ms": 424.501251
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 4,
+      "frontend_ms": 0.438866,
+      "execution_ms": 448.927622,
+      "total_ms": 449.366488,
+      "cpu_ms": 403.103369
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 5,
+      "frontend_ms": 0.509301,
+      "execution_ms": 543.098478,
+      "total_ms": 543.607779,
+      "cpu_ms": 384.649194
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 5,
+      "frontend_ms": 0.459494,
+      "execution_ms": 411.179955,
+      "total_ms": 411.639449,
+      "cpu_ms": 368.952852
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 6,
+      "frontend_ms": 0.503941,
+      "execution_ms": 432.858866,
+      "total_ms": 433.362807,
+      "cpu_ms": 395.523471
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 6,
+      "frontend_ms": 0.412263,
+      "execution_ms": 420.579688,
+      "total_ms": 420.991951,
+      "cpu_ms": 381.00991
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 7,
+      "frontend_ms": 0.393103,
+      "execution_ms": 462.456676,
+      "total_ms": 462.849779,
+      "cpu_ms": 421.526317
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 7,
+      "frontend_ms": 0.50474,
+      "execution_ms": 420.237564,
+      "total_ms": 420.742304,
+      "cpu_ms": 384.208558
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 8,
+      "frontend_ms": 0.447853,
+      "execution_ms": 367.443611,
+      "total_ms": 367.891464,
+      "cpu_ms": 336.25072
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 8,
+      "frontend_ms": 0.482534,
+      "execution_ms": 393.233661,
+      "total_ms": 393.716195,
+      "cpu_ms": 356.190366
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 9,
+      "frontend_ms": 0.41918,
+      "execution_ms": 422.533928,
+      "total_ms": 422.953108,
+      "cpu_ms": 378.234752
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 9,
+      "frontend_ms": 0.460962,
+      "execution_ms": 385.468277,
+      "total_ms": 385.929239,
+      "cpu_ms": 352.712467
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 10,
+      "frontend_ms": 0.439545,
+      "execution_ms": 446.191006,
+      "total_ms": 446.630551,
+      "cpu_ms": 397.772778
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 10,
+      "frontend_ms": 0.447076,
+      "execution_ms": 461.088829,
+      "total_ms": 461.535905,
+      "cpu_ms": 404.35445
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 11,
+      "frontend_ms": 0.397806,
+      "execution_ms": 493.882765,
+      "total_ms": 494.280571,
+      "cpu_ms": 452.074086
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 11,
+      "frontend_ms": 0.305484,
+      "execution_ms": 477.684111,
+      "total_ms": 477.989595,
+      "cpu_ms": 424.0813
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 12,
+      "frontend_ms": 0.442552,
+      "execution_ms": 656.322269,
+      "total_ms": 656.764821,
+      "cpu_ms": 611.036657
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 12,
+      "frontend_ms": 0.52306,
+      "execution_ms": 655.785801,
+      "total_ms": 656.308861,
+      "cpu_ms": 534.486227
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 13,
+      "frontend_ms": 1.048462,
+      "execution_ms": 408.246484,
+      "total_ms": 409.294946,
+      "cpu_ms": 352.086792
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 13,
+      "frontend_ms": 0.594797,
+      "execution_ms": 376.430887,
+      "total_ms": 377.025684,
+      "cpu_ms": 337.424233
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 14,
+      "frontend_ms": 0.904996,
+      "execution_ms": 360.045095,
+      "total_ms": 360.950091,
+      "cpu_ms": 335.684719
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 14,
+      "frontend_ms": 0.414607,
+      "execution_ms": 365.806406,
+      "total_ms": 366.221013,
+      "cpu_ms": 340.649837
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 15,
+      "frontend_ms": 0.758839,
+      "execution_ms": 393.877954,
+      "total_ms": 394.636793,
+      "cpu_ms": 353.04234
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 15,
+      "frontend_ms": 0.322234,
+      "execution_ms": 379.232603,
+      "total_ms": 379.554837,
+      "cpu_ms": 352.267066
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 16,
+      "frontend_ms": 0.382653,
+      "execution_ms": 370.151082,
+      "total_ms": 370.533735,
+      "cpu_ms": 344.697094
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 16,
+      "frontend_ms": 0.334608,
+      "execution_ms": 354.118901,
+      "total_ms": 354.453509,
+      "cpu_ms": 326.738444
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 17,
+      "frontend_ms": 0.499204,
+      "execution_ms": 359.008723,
+      "total_ms": 359.507927,
+      "cpu_ms": 334.096595
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 17,
+      "frontend_ms": 0.386142,
+      "execution_ms": 392.695457,
+      "total_ms": 393.081599,
+      "cpu_ms": 358.074912
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 18,
+      "frontend_ms": 0.411646,
+      "execution_ms": 402.791499,
+      "total_ms": 403.203145,
+      "cpu_ms": 373.909654
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 18,
+      "frontend_ms": 0.44905,
+      "execution_ms": 351.242676,
+      "total_ms": 351.691726,
+      "cpu_ms": 327.167113
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 19,
+      "frontend_ms": 0.529704,
+      "execution_ms": 371.649219,
+      "total_ms": 372.178923,
+      "cpu_ms": 346.225504
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 19,
+      "frontend_ms": 0.304388,
+      "execution_ms": 400.210913,
+      "total_ms": 400.515301,
+      "cpu_ms": 369.986992
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 0,
+      "frontend_ms": 0.570267,
+      "execution_ms": 1007.372301,
+      "total_ms": 1007.942568,
+      "cpu_ms": 946.622001
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 0,
+      "frontend_ms": 0.674171,
+      "execution_ms": 1074.150105,
+      "total_ms": 1074.824276,
+      "cpu_ms": 1011.932545
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 1,
+      "frontend_ms": 1.692025,
+      "execution_ms": 1036.591795,
+      "total_ms": 1038.28382,
+      "cpu_ms": 975.436942
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 1,
+      "frontend_ms": 0.533426,
+      "execution_ms": 990.033887,
+      "total_ms": 990.567313,
+      "cpu_ms": 932.565935
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 2,
+      "frontend_ms": 0.76771,
+      "execution_ms": 990.57377,
+      "total_ms": 991.34148,
+      "cpu_ms": 933.283598
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 2,
+      "frontend_ms": 0.503811,
+      "execution_ms": 917.97139,
+      "total_ms": 918.475201,
+      "cpu_ms": 842.95805
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 3,
+      "frontend_ms": 0.523777,
+      "execution_ms": 944.063096,
+      "total_ms": 944.586873,
+      "cpu_ms": 855.535326
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 3,
+      "frontend_ms": 0.501459,
+      "execution_ms": 951.432063,
+      "total_ms": 951.933522,
+      "cpu_ms": 865.373668
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 4,
+      "frontend_ms": 0.877663,
+      "execution_ms": 893.482181,
+      "total_ms": 894.359844,
+      "cpu_ms": 813.056053
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 4,
+      "frontend_ms": 0.683688,
+      "execution_ms": 1001.632459,
+      "total_ms": 1002.316147,
+      "cpu_ms": 894.838541
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 5,
+      "frontend_ms": 1.849344,
+      "execution_ms": 899.257397,
+      "total_ms": 901.106741,
+      "cpu_ms": 815.860213
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 5,
+      "frontend_ms": 0.584975,
+      "execution_ms": 1047.862907,
+      "total_ms": 1048.447882,
+      "cpu_ms": 944.88297
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 6,
+      "frontend_ms": 0.577888,
+      "execution_ms": 1019.324031,
+      "total_ms": 1019.901919,
+      "cpu_ms": 910.563516
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 6,
+      "frontend_ms": 0.941935,
+      "execution_ms": 969.956049,
+      "total_ms": 970.897984,
+      "cpu_ms": 881.71101
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 7,
+      "frontend_ms": 0.897945,
+      "execution_ms": 971.771233,
+      "total_ms": 972.669178,
+      "cpu_ms": 884.105861
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 7,
+      "frontend_ms": 1.927815,
+      "execution_ms": 1040.304238,
+      "total_ms": 1042.232053,
+      "cpu_ms": 938.553912
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 8,
+      "frontend_ms": 0.729613,
+      "execution_ms": 998.582464,
+      "total_ms": 999.312077,
+      "cpu_ms": 908.307989
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 8,
+      "frontend_ms": 0.561026,
+      "execution_ms": 981.651815,
+      "total_ms": 982.212841,
+      "cpu_ms": 892.865269
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 9,
+      "frontend_ms": 0.672944,
+      "execution_ms": 940.838994,
+      "total_ms": 941.511938,
+      "cpu_ms": 854.291888
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 9,
+      "frontend_ms": 0.511367,
+      "execution_ms": 856.344308,
+      "total_ms": 856.855675,
+      "cpu_ms": 778.099044
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 10,
+      "frontend_ms": 1.298789,
+      "execution_ms": 980.641071,
+      "total_ms": 981.93986,
+      "cpu_ms": 876.44859
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 10,
+      "frontend_ms": 1.216169,
+      "execution_ms": 953.710129,
+      "total_ms": 954.926298,
+      "cpu_ms": 885.155492
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 11,
+      "frontend_ms": 1.023795,
+      "execution_ms": 916.373912,
+      "total_ms": 917.397707,
+      "cpu_ms": 852.262016
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 11,
+      "frontend_ms": 1.06342,
+      "execution_ms": 953.432158,
+      "total_ms": 954.495578,
+      "cpu_ms": 882.878789
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 12,
+      "frontend_ms": 0.534607,
+      "execution_ms": 907.590504,
+      "total_ms": 908.125111,
+      "cpu_ms": 843.276615
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 12,
+      "frontend_ms": 0.774624,
+      "execution_ms": 1040.289647,
+      "total_ms": 1041.064271,
+      "cpu_ms": 965.764745
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 13,
+      "frontend_ms": 0.523944,
+      "execution_ms": 991.479952,
+      "total_ms": 992.003896,
+      "cpu_ms": 921.173127
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 13,
+      "frontend_ms": 0.496329,
+      "execution_ms": 1083.27752,
+      "total_ms": 1083.773849,
+      "cpu_ms": 976.416697
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 14,
+      "frontend_ms": 0.690008,
+      "execution_ms": 1002.298417,
+      "total_ms": 1002.988425,
+      "cpu_ms": 902.426807
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 14,
+      "frontend_ms": 0.683912,
+      "execution_ms": 916.096769,
+      "total_ms": 916.780681,
+      "cpu_ms": 852.694949
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 15,
+      "frontend_ms": 0.675607,
+      "execution_ms": 805.888966,
+      "total_ms": 806.564573,
+      "cpu_ms": 750.152749
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 15,
+      "frontend_ms": 0.958529,
+      "execution_ms": 773.600646,
+      "total_ms": 774.559175,
+      "cpu_ms": 720.499376
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 16,
+      "frontend_ms": 0.69605,
+      "execution_ms": 929.746334,
+      "total_ms": 930.442384,
+      "cpu_ms": 861.646415
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 16,
+      "frontend_ms": 0.507484,
+      "execution_ms": 733.270736,
+      "total_ms": 733.77822,
+      "cpu_ms": 677.176647
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 17,
+      "frontend_ms": 0.474515,
+      "execution_ms": 796.269232,
+      "total_ms": 796.743747,
+      "cpu_ms": 726.786643
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 17,
+      "frontend_ms": 0.638067,
+      "execution_ms": 906.136243,
+      "total_ms": 906.77431,
+      "cpu_ms": 833.721389
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 18,
+      "frontend_ms": 0.484296,
+      "execution_ms": 987.647067,
+      "total_ms": 988.131363,
+      "cpu_ms": 852.756046
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 18,
+      "frontend_ms": 0.68402,
+      "execution_ms": 1034.224316,
+      "total_ms": 1034.908336,
+      "cpu_ms": 951.870059
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 19,
+      "frontend_ms": 0.755494,
+      "execution_ms": 1013.364012,
+      "total_ms": 1014.119506,
+      "cpu_ms": 935.512341
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 19,
+      "frontend_ms": 0.681577,
+      "execution_ms": 824.660298,
+      "total_ms": 825.341875,
+      "cpu_ms": 761.715092
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 0,
+      "frontend_ms": 0.482056,
+      "execution_ms": 254.458123,
+      "total_ms": 254.940179,
+      "cpu_ms": 231.885959
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 0,
+      "frontend_ms": 0.652083,
+      "execution_ms": 253.010629,
+      "total_ms": 253.662712,
+      "cpu_ms": 230.782179
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 1,
+      "frontend_ms": 0.457699,
+      "execution_ms": 241.184034,
+      "total_ms": 241.641733,
+      "cpu_ms": 219.868074
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 1,
+      "frontend_ms": 0.465516,
+      "execution_ms": 219.441186,
+      "total_ms": 219.906702,
+      "cpu_ms": 200.076231
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 2,
+      "frontend_ms": 0.511473,
+      "execution_ms": 257.643334,
+      "total_ms": 258.154807,
+      "cpu_ms": 234.423545
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 2,
+      "frontend_ms": 0.468181,
+      "execution_ms": 254.321757,
+      "total_ms": 254.789938,
+      "cpu_ms": 231.792411
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 3,
+      "frontend_ms": 0.4441,
+      "execution_ms": 231.612087,
+      "total_ms": 232.056187,
+      "cpu_ms": 211.106571
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 3,
+      "frontend_ms": 0.513829,
+      "execution_ms": 283.070293,
+      "total_ms": 283.584122,
+      "cpu_ms": 257.911034
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 4,
+      "frontend_ms": 0.726828,
+      "execution_ms": 288.22676,
+      "total_ms": 288.953588,
+      "cpu_ms": 255.746101
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 4,
+      "frontend_ms": 0.437097,
+      "execution_ms": 232.362487,
+      "total_ms": 232.799584,
+      "cpu_ms": 211.742771
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 5,
+      "frontend_ms": 0.54067,
+      "execution_ms": 210.192306,
+      "total_ms": 210.732976,
+      "cpu_ms": 191.74511
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 5,
+      "frontend_ms": 0.454208,
+      "execution_ms": 208.822147,
+      "total_ms": 209.276355,
+      "cpu_ms": 190.409154
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 6,
+      "frontend_ms": 0.446533,
+      "execution_ms": 249.884404,
+      "total_ms": 250.330937,
+      "cpu_ms": 227.764334
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 6,
+      "frontend_ms": 0.446159,
+      "execution_ms": 237.003425,
+      "total_ms": 237.449584,
+      "cpu_ms": 216.054929
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 7,
+      "frontend_ms": 0.463413,
+      "execution_ms": 222.870593,
+      "total_ms": 223.334006,
+      "cpu_ms": 203.183728
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 7,
+      "frontend_ms": 0.491074,
+      "execution_ms": 236.762072,
+      "total_ms": 237.253146,
+      "cpu_ms": 215.851509
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 8,
+      "frontend_ms": 0.698264,
+      "execution_ms": 233.614706,
+      "total_ms": 234.31297,
+      "cpu_ms": 213.200872
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 8,
+      "frontend_ms": 0.462038,
+      "execution_ms": 263.771594,
+      "total_ms": 264.233632,
+      "cpu_ms": 240.411412
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 9,
+      "frontend_ms": 0.606694,
+      "execution_ms": 254.084686,
+      "total_ms": 254.69138,
+      "cpu_ms": 227.114734
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 9,
+      "frontend_ms": 0.435753,
+      "execution_ms": 211.987947,
+      "total_ms": 212.4237,
+      "cpu_ms": 193.276751
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 10,
+      "frontend_ms": 0.931343,
+      "execution_ms": 204.68808,
+      "total_ms": 205.619423,
+      "cpu_ms": 187.093334
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 10,
+      "frontend_ms": 0.522072,
+      "execution_ms": 241.301793,
+      "total_ms": 241.823865,
+      "cpu_ms": 220.008907
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 11,
+      "frontend_ms": 0.653437,
+      "execution_ms": 219.667214,
+      "total_ms": 220.320651,
+      "cpu_ms": 200.46966
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 11,
+      "frontend_ms": 0.710267,
+      "execution_ms": 258.271935,
+      "total_ms": 258.982202,
+      "cpu_ms": 235.632742
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 12,
+      "frontend_ms": 0.456411,
+      "execution_ms": 217.677418,
+      "total_ms": 218.133829,
+      "cpu_ms": 198.452903
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 12,
+      "frontend_ms": 0.577404,
+      "execution_ms": 239.8886,
+      "total_ms": 240.466004,
+      "cpu_ms": 218.759301
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 13,
+      "frontend_ms": 0.617562,
+      "execution_ms": 246.564755,
+      "total_ms": 247.182317,
+      "cpu_ms": 230.719426
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 13,
+      "frontend_ms": 0.488064,
+      "execution_ms": 250.999893,
+      "total_ms": 251.487957,
+      "cpu_ms": 237.128129
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 14,
+      "frontend_ms": 0.428741,
+      "execution_ms": 199.477742,
+      "total_ms": 199.906483,
+      "cpu_ms": 188.532084
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 14,
+      "frontend_ms": 0.424099,
+      "execution_ms": 211.780997,
+      "total_ms": 212.205096,
+      "cpu_ms": 200.102973
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 15,
+      "frontend_ms": 0.492525,
+      "execution_ms": 207.049859,
+      "total_ms": 207.542384,
+      "cpu_ms": 195.692393
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 15,
+      "frontend_ms": 0.436826,
+      "execution_ms": 239.92241,
+      "total_ms": 240.359236,
+      "cpu_ms": 222.352618
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 16,
+      "frontend_ms": 0.448169,
+      "execution_ms": 298.128414,
+      "total_ms": 298.576583,
+      "cpu_ms": 275.826735
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 16,
+      "frontend_ms": 0.57816,
+      "execution_ms": 270.849755,
+      "total_ms": 271.427915,
+      "cpu_ms": 250.701007
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 17,
+      "frontend_ms": 0.754974,
+      "execution_ms": 386.890779,
+      "total_ms": 387.645753,
+      "cpu_ms": 356.574034
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 17,
+      "frontend_ms": 0.946623,
+      "execution_ms": 308.628424,
+      "total_ms": 309.575047,
+      "cpu_ms": 285.489835
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 18,
+      "frontend_ms": 0.749422,
+      "execution_ms": 408.385397,
+      "total_ms": 409.134819,
+      "cpu_ms": 378.008294
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 18,
+      "frontend_ms": 0.883478,
+      "execution_ms": 290.911048,
+      "total_ms": 291.794526,
+      "cpu_ms": 269.545463
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 19,
+      "frontend_ms": 0.454275,
+      "execution_ms": 335.180775,
+      "total_ms": 335.63505,
+      "cpu_ms": 310.079404
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 19,
+      "frontend_ms": 0.774211,
+      "execution_ms": 340.576087,
+      "total_ms": 341.350298,
+      "cpu_ms": 315.367108
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 0,
+      "frontend_ms": 0.761893,
+      "execution_ms": 404.102192,
+      "total_ms": 404.864085,
+      "cpu_ms": 373.991275
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 0,
+      "frontend_ms": 0.583907,
+      "execution_ms": 353.330387,
+      "total_ms": 353.914294,
+      "cpu_ms": 305.314501
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 1,
+      "frontend_ms": 0.517009,
+      "execution_ms": 315.568896,
+      "total_ms": 316.085905,
+      "cpu_ms": 292.023836
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 1,
+      "frontend_ms": 0.47553,
+      "execution_ms": 366.282993,
+      "total_ms": 366.758523,
+      "cpu_ms": 338.828613
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 2,
+      "frontend_ms": 0.744304,
+      "execution_ms": 474.367608,
+      "total_ms": 475.111912,
+      "cpu_ms": 438.770312
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 2,
+      "frontend_ms": 0.911337,
+      "execution_ms": 565.967933,
+      "total_ms": 566.87927,
+      "cpu_ms": 511.695837
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 3,
+      "frontend_ms": 1.046283,
+      "execution_ms": 415.85852,
+      "total_ms": 416.904803,
+      "cpu_ms": 385.150853
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 3,
+      "frontend_ms": 0.784156,
+      "execution_ms": 440.642147,
+      "total_ms": 441.426303,
+      "cpu_ms": 407.840585
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 4,
+      "frontend_ms": 0.617382,
+      "execution_ms": 461.646322,
+      "total_ms": 462.263704,
+      "cpu_ms": 427.017987
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 4,
+      "frontend_ms": 0.758238,
+      "execution_ms": 378.684194,
+      "total_ms": 379.442432,
+      "cpu_ms": 350.529192
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 5,
+      "frontend_ms": 0.797245,
+      "execution_ms": 367.861198,
+      "total_ms": 368.658443,
+      "cpu_ms": 340.546526
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 5,
+      "frontend_ms": 0.608708,
+      "execution_ms": 390.481165,
+      "total_ms": 391.089873,
+      "cpu_ms": 362.160224
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 6,
+      "frontend_ms": 0.53383,
+      "execution_ms": 382.202115,
+      "total_ms": 382.735945,
+      "cpu_ms": 355.457152
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 6,
+      "frontend_ms": 0.799225,
+      "execution_ms": 468.198361,
+      "total_ms": 468.997586,
+      "cpu_ms": 437.104261
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 7,
+      "frontend_ms": 0.541685,
+      "execution_ms": 450.43565,
+      "total_ms": 450.977335,
+      "cpu_ms": 418.920586
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 7,
+      "frontend_ms": 0.872825,
+      "execution_ms": 414.300519,
+      "total_ms": 415.173344,
+      "cpu_ms": 387.046829
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 8,
+      "frontend_ms": 0.511371,
+      "execution_ms": 445.133829,
+      "total_ms": 445.6452,
+      "cpu_ms": 415.47511
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 8,
+      "frontend_ms": 1.76647,
+      "execution_ms": 573.736765,
+      "total_ms": 575.503235,
+      "cpu_ms": 536.59086
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 9,
+      "frontend_ms": 0.87793,
+      "execution_ms": 452.168604,
+      "total_ms": 453.046534,
+      "cpu_ms": 420.272389
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 9,
+      "frontend_ms": 0.865045,
+      "execution_ms": 411.872255,
+      "total_ms": 412.7373,
+      "cpu_ms": 384.810435
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 10,
+      "frontend_ms": 1.113461,
+      "execution_ms": 410.461731,
+      "total_ms": 411.575192,
+      "cpu_ms": 378.321637
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 10,
+      "frontend_ms": 1.764224,
+      "execution_ms": 385.577422,
+      "total_ms": 387.341646,
+      "cpu_ms": 361.09888
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 11,
+      "frontend_ms": 0.797587,
+      "execution_ms": 418.225583,
+      "total_ms": 419.02317,
+      "cpu_ms": 390.626857
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 11,
+      "frontend_ms": 0.64604,
+      "execution_ms": 443.142156,
+      "total_ms": 443.788196,
+      "cpu_ms": 413.541599
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 12,
+      "frontend_ms": 0.772973,
+      "execution_ms": 458.567603,
+      "total_ms": 459.340576,
+      "cpu_ms": 426.570752
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 12,
+      "frontend_ms": 1.123568,
+      "execution_ms": 360.576555,
+      "total_ms": 361.700123,
+      "cpu_ms": 335.437662
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 13,
+      "frontend_ms": 0.562254,
+      "execution_ms": 492.178302,
+      "total_ms": 492.740556,
+      "cpu_ms": 455.09305
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 13,
+      "frontend_ms": 0.69472,
+      "execution_ms": 430.380553,
+      "total_ms": 431.075273,
+      "cpu_ms": 401.843918
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 14,
+      "frontend_ms": 0.555258,
+      "execution_ms": 403.387432,
+      "total_ms": 403.94269,
+      "cpu_ms": 375.259319
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 14,
+      "frontend_ms": 1.652207,
+      "execution_ms": 537.334533,
+      "total_ms": 538.98674,
+      "cpu_ms": 496.353474
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 15,
+      "frontend_ms": 0.827973,
+      "execution_ms": 645.105375,
+      "total_ms": 645.933348,
+      "cpu_ms": 586.678666
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 15,
+      "frontend_ms": 0.881582,
+      "execution_ms": 637.485588,
+      "total_ms": 638.36717,
+      "cpu_ms": 578.596792
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 16,
+      "frontend_ms": 0.830067,
+      "execution_ms": 603.886104,
+      "total_ms": 604.716171,
+      "cpu_ms": 543.790043
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 16,
+      "frontend_ms": 0.804499,
+      "execution_ms": 487.556036,
+      "total_ms": 488.360535,
+      "cpu_ms": 443.972738
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 17,
+      "frontend_ms": 0.80742,
+      "execution_ms": 538.971875,
+      "total_ms": 539.779295,
+      "cpu_ms": 490.706021
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 17,
+      "frontend_ms": 0.928881,
+      "execution_ms": 433.754416,
+      "total_ms": 434.683297,
+      "cpu_ms": 395.132813
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 18,
+      "frontend_ms": 0.546424,
+      "execution_ms": 374.220084,
+      "total_ms": 374.766508,
+      "cpu_ms": 337.463639
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 18,
+      "frontend_ms": 0.766246,
+      "execution_ms": 431.151802,
+      "total_ms": 431.918048,
+      "cpu_ms": 392.658785
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 19,
+      "frontend_ms": 0.805942,
+      "execution_ms": 384.317562,
+      "total_ms": 385.123504,
+      "cpu_ms": 350.119187
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 19,
+      "frontend_ms": 0.547107,
+      "execution_ms": 399.937807,
+      "total_ms": 400.484914,
+      "cpu_ms": 364.048794
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 0,
+      "frontend_ms": 0.42,
+      "execution_ms": 737.196747,
+      "total_ms": 737.616747,
+      "cpu_ms": 680.657053
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 0,
+      "frontend_ms": 0.732606,
+      "execution_ms": 521.857602,
+      "total_ms": 522.590208,
+      "cpu_ms": 482.190859
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 1,
+      "frontend_ms": 0.617732,
+      "execution_ms": 433.019544,
+      "total_ms": 433.637276,
+      "cpu_ms": 400.139234
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 1,
+      "frontend_ms": 0.668109,
+      "execution_ms": 422.332531,
+      "total_ms": 423.00064,
+      "cpu_ms": 390.304673
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 2,
+      "frontend_ms": 0.500582,
+      "execution_ms": 390.621866,
+      "total_ms": 391.122448,
+      "cpu_ms": 360.930513
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 2,
+      "frontend_ms": 0.354705,
+      "execution_ms": 444.362357,
+      "total_ms": 444.717062,
+      "cpu_ms": 410.386679
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 3,
+      "frontend_ms": 0.433691,
+      "execution_ms": 386.177345,
+      "total_ms": 386.611036,
+      "cpu_ms": 356.896315
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 3,
+      "frontend_ms": 0.44824,
+      "execution_ms": 381.952046,
+      "total_ms": 382.400286,
+      "cpu_ms": 352.838366
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 4,
+      "frontend_ms": 0.463049,
+      "execution_ms": 405.88165,
+      "total_ms": 406.344699,
+      "cpu_ms": 374.949641
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 4,
+      "frontend_ms": 0.354401,
+      "execution_ms": 373.38164,
+      "total_ms": 373.736041,
+      "cpu_ms": 344.88547
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 5,
+      "frontend_ms": 0.692549,
+      "execution_ms": 399.746369,
+      "total_ms": 400.438918,
+      "cpu_ms": 369.529096
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 5,
+      "frontend_ms": 0.408469,
+      "execution_ms": 421.433385,
+      "total_ms": 421.841854,
+      "cpu_ms": 389.277326
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 6,
+      "frontend_ms": 0.610001,
+      "execution_ms": 367.412047,
+      "total_ms": 368.022048,
+      "cpu_ms": 339.589186
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 6,
+      "frontend_ms": 0.354097,
+      "execution_ms": 566.415811,
+      "total_ms": 566.769908,
+      "cpu_ms": 519.110226
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 7,
+      "frontend_ms": 0.363846,
+      "execution_ms": 529.848769,
+      "total_ms": 530.212615,
+      "cpu_ms": 490.236624
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 7,
+      "frontend_ms": 0.710165,
+      "execution_ms": 513.31174,
+      "total_ms": 514.021905,
+      "cpu_ms": 479.941958
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 8,
+      "frontend_ms": 0.416157,
+      "execution_ms": 469.796257,
+      "total_ms": 470.212414,
+      "cpu_ms": 438.99982
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 8,
+      "frontend_ms": 0.68194,
+      "execution_ms": 522.23777,
+      "total_ms": 522.91971,
+      "cpu_ms": 488.24355
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 9,
+      "frontend_ms": 0.344406,
+      "execution_ms": 469.120207,
+      "total_ms": 469.464613,
+      "cpu_ms": 438.078118
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 9,
+      "frontend_ms": 1.236063,
+      "execution_ms": 441.195043,
+      "total_ms": 442.431106,
+      "cpu_ms": 411.987222
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 10,
+      "frontend_ms": 0.515128,
+      "execution_ms": 507.765913,
+      "total_ms": 508.281041,
+      "cpu_ms": 474.566312
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 10,
+      "frontend_ms": 0.506856,
+      "execution_ms": 551.824025,
+      "total_ms": 552.330881,
+      "cpu_ms": 513.344987
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 11,
+      "frontend_ms": 0.375533,
+      "execution_ms": 465.478338,
+      "total_ms": 465.853871,
+      "cpu_ms": 434.995709
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 11,
+      "frontend_ms": 1.000176,
+      "execution_ms": 458.926755,
+      "total_ms": 459.926931,
+      "cpu_ms": 420.719528
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 12,
+      "frontend_ms": 0.347517,
+      "execution_ms": 416.348003,
+      "total_ms": 416.69552,
+      "cpu_ms": 389.095657
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 12,
+      "frontend_ms": 0.501523,
+      "execution_ms": 534.847424,
+      "total_ms": 535.348947,
+      "cpu_ms": 499.772684
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 13,
+      "frontend_ms": 0.374481,
+      "execution_ms": 537.099089,
+      "total_ms": 537.47357,
+      "cpu_ms": 501.871784
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 13,
+      "frontend_ms": 0.712772,
+      "execution_ms": 462.077482,
+      "total_ms": 462.790254,
+      "cpu_ms": 432.126539
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 14,
+      "frontend_ms": 0.456077,
+      "execution_ms": 502.456175,
+      "total_ms": 502.912252,
+      "cpu_ms": 469.584965
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 14,
+      "frontend_ms": 0.524785,
+      "execution_ms": 470.237223,
+      "total_ms": 470.762008,
+      "cpu_ms": 439.535474
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 15,
+      "frontend_ms": 0.420201,
+      "execution_ms": 526.776182,
+      "total_ms": 527.196383,
+      "cpu_ms": 486.166557
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 15,
+      "frontend_ms": 0.631788,
+      "execution_ms": 609.197175,
+      "total_ms": 609.828963,
+      "cpu_ms": 568.680389
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 16,
+      "frontend_ms": 0.554034,
+      "execution_ms": 521.8624,
+      "total_ms": 522.416434,
+      "cpu_ms": 487.820746
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 16,
+      "frontend_ms": 0.536803,
+      "execution_ms": 496.527706,
+      "total_ms": 497.064509,
+      "cpu_ms": 464.032551
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 17,
+      "frontend_ms": 0.557479,
+      "execution_ms": 503.724489,
+      "total_ms": 504.281968,
+      "cpu_ms": 470.80937
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 17,
+      "frontend_ms": 0.343398,
+      "execution_ms": 461.856539,
+      "total_ms": 462.199937,
+      "cpu_ms": 423.912929
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 18,
+      "frontend_ms": 0.67826,
+      "execution_ms": 406.138954,
+      "total_ms": 406.817214,
+      "cpu_ms": 374.570578
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 18,
+      "frontend_ms": 0.492256,
+      "execution_ms": 511.909756,
+      "total_ms": 512.402012,
+      "cpu_ms": 471.703636
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 19,
+      "frontend_ms": 0.517839,
+      "execution_ms": 536.900771,
+      "total_ms": 537.41861,
+      "cpu_ms": 494.741911
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 19,
+      "frontend_ms": 0.570985,
+      "execution_ms": 472.642846,
+      "total_ms": 473.213831,
+      "cpu_ms": 428.104168
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 0,
+      "frontend_ms": 0.597676,
+      "execution_ms": 337.429538,
+      "total_ms": 338.027214,
+      "cpu_ms": 311.20273
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 0,
+      "frontend_ms": 0.471136,
+      "execution_ms": 302.570662,
+      "total_ms": 303.041798,
+      "cpu_ms": 279.016662
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 1,
+      "frontend_ms": 0.409949,
+      "execution_ms": 312.177054,
+      "total_ms": 312.587003,
+      "cpu_ms": 287.794133
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 1,
+      "frontend_ms": 0.403475,
+      "execution_ms": 425.46546,
+      "total_ms": 425.868935,
+      "cpu_ms": 392.084509
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 2,
+      "frontend_ms": 0.574227,
+      "execution_ms": 374.247174,
+      "total_ms": 374.821401,
+      "cpu_ms": 345.077108
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 2,
+      "frontend_ms": 0.437762,
+      "execution_ms": 358.916422,
+      "total_ms": 359.354184,
+      "cpu_ms": 330.874794
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 3,
+      "frontend_ms": 0.527127,
+      "execution_ms": 361.99592,
+      "total_ms": 362.523047,
+      "cpu_ms": 333.760665
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 3,
+      "frontend_ms": 0.56279,
+      "execution_ms": 300.832417,
+      "total_ms": 301.395207,
+      "cpu_ms": 277.497423
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 4,
+      "frontend_ms": 0.376282,
+      "execution_ms": 331.369701,
+      "total_ms": 331.745983,
+      "cpu_ms": 305.248354
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 4,
+      "frontend_ms": 0.376981,
+      "execution_ms": 387.914142,
+      "total_ms": 388.291123,
+      "cpu_ms": 356.37787
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 5,
+      "frontend_ms": 0.596861,
+      "execution_ms": 367.755143,
+      "total_ms": 368.352004,
+      "cpu_ms": 338.000286
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 5,
+      "frontend_ms": 0.447771,
+      "execution_ms": 318.647819,
+      "total_ms": 319.09559,
+      "cpu_ms": 292.881126
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 6,
+      "frontend_ms": 0.375213,
+      "execution_ms": 363.477457,
+      "total_ms": 363.85267,
+      "cpu_ms": 333.702166
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 6,
+      "frontend_ms": 0.623081,
+      "execution_ms": 384.152942,
+      "total_ms": 384.776023,
+      "cpu_ms": 353.147682
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 7,
+      "frontend_ms": 0.370421,
+      "execution_ms": 321.962149,
+      "total_ms": 322.33257,
+      "cpu_ms": 295.828693
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 7,
+      "frontend_ms": 0.362267,
+      "execution_ms": 394.04103,
+      "total_ms": 394.403297,
+      "cpu_ms": 341.120212
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 8,
+      "frontend_ms": 0.394524,
+      "execution_ms": 367.391062,
+      "total_ms": 367.785586,
+      "cpu_ms": 337.521051
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 8,
+      "frontend_ms": 0.423701,
+      "execution_ms": 408.608592,
+      "total_ms": 409.032293,
+      "cpu_ms": 375.356429
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 9,
+      "frontend_ms": 0.387384,
+      "execution_ms": 364.251833,
+      "total_ms": 364.639217,
+      "cpu_ms": 334.642934
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 9,
+      "frontend_ms": 0.626858,
+      "execution_ms": 320.187903,
+      "total_ms": 320.814761,
+      "cpu_ms": 294.446256
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 10,
+      "frontend_ms": 0.681176,
+      "execution_ms": 344.971303,
+      "total_ms": 345.652479,
+      "cpu_ms": 317.240991
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 10,
+      "frontend_ms": 0.388901,
+      "execution_ms": 424.733853,
+      "total_ms": 425.122754,
+      "cpu_ms": 390.059203
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 11,
+      "frontend_ms": 0.553001,
+      "execution_ms": 339.581573,
+      "total_ms": 340.134574,
+      "cpu_ms": 312.183925
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 11,
+      "frontend_ms": 0.376741,
+      "execution_ms": 371.228874,
+      "total_ms": 371.605615,
+      "cpu_ms": 341.063218
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 12,
+      "frontend_ms": 0.395364,
+      "execution_ms": 403.247497,
+      "total_ms": 403.642861,
+      "cpu_ms": 370.455717
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 12,
+      "frontend_ms": 0.650927,
+      "execution_ms": 418.972152,
+      "total_ms": 419.623079,
+      "cpu_ms": 385.038857
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 13,
+      "frontend_ms": 0.456842,
+      "execution_ms": 458.056431,
+      "total_ms": 458.513273,
+      "cpu_ms": 409.850041
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 13,
+      "frontend_ms": 0.562422,
+      "execution_ms": 382.712997,
+      "total_ms": 383.275419,
+      "cpu_ms": 351.766602
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 14,
+      "frontend_ms": 0.520973,
+      "execution_ms": 430.594215,
+      "total_ms": 431.115188,
+      "cpu_ms": 395.696733
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 14,
+      "frontend_ms": 0.568081,
+      "execution_ms": 487.883393,
+      "total_ms": 488.451474,
+      "cpu_ms": 453.009578
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 15,
+      "frontend_ms": 0.576643,
+      "execution_ms": 376.548461,
+      "total_ms": 377.125104,
+      "cpu_ms": 348.127666
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 15,
+      "frontend_ms": 0.584964,
+      "execution_ms": 366.45903,
+      "total_ms": 367.043994,
+      "cpu_ms": 338.933261
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 16,
+      "frontend_ms": 0.661325,
+      "execution_ms": 368.588033,
+      "total_ms": 369.249358,
+      "cpu_ms": 340.947208
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 16,
+      "frontend_ms": 0.378179,
+      "execution_ms": 371.082589,
+      "total_ms": 371.460768,
+      "cpu_ms": 343.021691
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 17,
+      "frontend_ms": 0.39262,
+      "execution_ms": 314.971913,
+      "total_ms": 315.364533,
+      "cpu_ms": 291.223812
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 17,
+      "frontend_ms": 0.571977,
+      "execution_ms": 369.419242,
+      "total_ms": 369.991219,
+      "cpu_ms": 341.591388
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 18,
+      "frontend_ms": 0.506727,
+      "execution_ms": 354.382857,
+      "total_ms": 354.889584,
+      "cpu_ms": 327.666213
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 18,
+      "frontend_ms": 0.623057,
+      "execution_ms": 372.449274,
+      "total_ms": 373.072331,
+      "cpu_ms": 344.491817
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 19,
+      "frontend_ms": 0.638198,
+      "execution_ms": 339.532557,
+      "total_ms": 340.170755,
+      "cpu_ms": 314.092923
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 19,
+      "frontend_ms": 0.60814,
+      "execution_ms": 461.681467,
+      "total_ms": 462.289607,
+      "cpu_ms": 426.866855
+    }
+  ],
+  "resources": [
+    {
+      "path": "/tmp/mylox-benchmark-glszl745",
+      "purpose": "fuentes 341d6eb25caa286d54fe23c87fb62e03ccda370e (src)",
+      "removed": true
+    }
+  ],
+  "complete": true,
+  "finished_utc": "2026-11-11T19:12:33.641612+00:00"
+}
