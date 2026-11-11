@@ -1,0 +1,28 @@
+{
+  "base_commit": "341d6eb25caa286d54fe23c87fb62e03ccda370e",
+  "description": "Versión optimizada medida, antes del cierre de paridad y REPL",
+  "patch_sha256": "af78ae4a1b84612c3668f6206ad4335d9148a1ad721ccd5340bac85ba9ac78fe",
+  "sources_sha256": {
+    "src/mylox/__init__.py": "91447944015cec709e8aa7655f7e9d64e1e4508e7023a57fe3746911c0fc6fed",
+    "src/mylox/bytecode/chunk.py": "7b45a3b553a447c6e30a221ac82bda8e1680e6ae6c0dbc9a338c3cc16ecc278f",
+    "src/mylox/bytecode/compiler.py": "65c65620cf8e599bc5ab9f5f74d03f7ccfba6b689e38177822998fac2ff3bc1f",
+    "src/mylox/bytecode/disassembler.py": "13e9f984a37abe5ed2ade1225cfa2dc242194c7a1351608a37c2b8edb75154eb",
+    "src/mylox/bytecode/function.py": "9cd1de2d86153ff0d07390dd9baee4afd43b89e3cbd37209a9df50c4cec0e8ee",
+    "src/mylox/bytecode/opcodes.py": "04142a0b004ef309dbaef321809870a7087fb9f4d79d5372c34a7247f86321ff",
+    "src/mylox/bytecode/vm.py": "c42aeda8b2e3c78042f5f83fe9367909ea6db7f589efb28b377575c10968a8bc",
+    "src/mylox/cli.py": "5f934da638fcade6c36cd685e33994e92c78f2c963fe116cac1dd6dcc89d0f23",
+    "src/mylox/env.py": "ad8f8191784c07d8eb437bfefee5e40138e529e9d5d15a2e2d84edac134b6a8d",
+    "src/mylox/errors.py": "68e4af32fba269d5425614c0428f21b2eb3c52b603d19665085c903abba0006d",
+    "src/mylox/function.py": "85fce8139f794022dfbde68abd59e66d56fa9c850ab3d5f452a2b6b5d6ba02f2",
+    "src/mylox/interpreter.py": "b4a1f311e8b4254e70cbff8fecc887f37af38ac925b20d9b492f6be5e48fb0a2",
+    "src/mylox/lists.py": "083c429a55115bcfbb22d0d56232f698523062f96386db72ac13cb9fc6c0a6ab",
+    "src/mylox/nodes.py": "da2104bbad2947aceb09c6f6f76e8bbe74bb04a6872d811591a8818a50f32b2a",
+    "src/mylox/oop.py": "ac6b3886b1593b40a55fa42fca302e159217c87b718caa0bb815a110528bae64",
+    "src/mylox/pipeline/lexer.py": "d30c003ab5fee5193b44c52b2b939e2e19a1d225a36672761c302ee1af1a9e6d",
+    "src/mylox/pipeline/parser.py": "d2c9f00dc846e09f65b8ee989ce6232a80abbea62591e91d68f435e7960ff977",
+    "src/mylox/printing.py": "e6a570e8e1838498f7fe46185cdd88d5fd418d9b6558de32d07fb5f90d1db137",
+    "src/mylox/resolver.py": "4b3b1e4a4c7364de304a65cdf84f50edfa82243943de8682ece05fb74374617a",
+    "src/mylox/tokens.py": "a855c67be1f3e658154379b4d286428b9ad2ecb0ac1b324bab1d3ecae525e981",
+    "src/mylox/values.py": "fc7a4064551be21bca7fcfa9589c6742640d50032d8b14f7891760147fdb6c92"
+  }
+}
