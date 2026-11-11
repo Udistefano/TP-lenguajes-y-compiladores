@@ -196,3 +196,19 @@ def test_limite_de_saltos(statement, padding, negations, expected, capsys):
         assert "línea 1" in output.err
 
 
+@pytest.mark.parametrize("backend", ["tree-walk", "bytecode"])
+@pytest.mark.parametrize("base, error", [
+    ("var Base = 1;", "Superclass must be a class"),
+    ("", "'Base'"),
+])
+@pytest.mark.parametrize("source", [
+    'var X = "antes";\nclass X < Base {}\nprint X;\n',
+    'var saved; { var X = "antes"; fun get() { return X; } saved = get; class X < Base {} }\nprint saved();\n',
+])
+def test_repl_conserva_variables_si_falla_herencia(backend, base, error, source, capsys, monkeypatch):
+    monkeypatch.setattr(sys, "stdin", io.StringIO(base + "\n" + source))
+    assert main(["--backend", backend]) == EXIT_OK
+    output = capsys.readouterr()
+    assert output.out.replace("> ", "").strip() == "antes"
+    assert error in output.err
+    assert "Traceback" not in output.err

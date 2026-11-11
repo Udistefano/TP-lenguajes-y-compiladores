@@ -270,7 +270,6 @@ class Compiler:
     def class_declaration(self) -> None:
         name = self.consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de clase")
         self.chunk.emit(OpCode.OP_CLASS, name.line, self.chunk.add_constant(name.lexeme))
-        self.define(name)
 
         previous_class = self.class_has_superclass
         self.class_has_superclass = self.match(TokenKind.LESS)
@@ -279,10 +278,13 @@ class Compiler:
             if superclass.lexeme == name.lexeme:
                 raise CompileError("Una clase no puede heredarse a sí misma", superclass)
             self.variable(superclass)
+            self.chunk.emit(OpCode.OP_INHERIT, name.line)
+
+        self.define(name)
+        if self.class_has_superclass:
+            self.variable(superclass)
             self.begin_scope()
             self.declare("super")
-            self.variable(name)
-            self.chunk.emit(OpCode.OP_INHERIT, name.line)
 
         self.variable(name)
         self.consume(TokenKind.LEFT_BRACE, "Se esperaba '{' después del nombre")

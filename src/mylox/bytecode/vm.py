@@ -388,8 +388,8 @@ class VM:
                         )
                     klass.methods[name] = method
                 case OpCode.OP_INHERIT:
-                    subclass = pop()
-                    superclass = peek()
+                    superclass = pop()
+                    subclass = peek()
                     if not isinstance(superclass, LoxClass):
                         raise VMRuntimeError("Superclass must be a class", line=self.current_line)
                     subclass.superclass = superclass
