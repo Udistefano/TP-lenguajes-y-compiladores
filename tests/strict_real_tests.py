@@ -1,6 +1,6 @@
 """Verifica salida, stderr y estado de los programas de aceptación de la cátedra.
 
-Uso: python tests/strict_real_tests.py [--case 1-flow.lox] [--test-dir RUTA]
+Uso: python tests/strict_real_tests.py [--backend bytecode] [--case 1-flow.lox] [--test-dir RUTA]
 """
 
 from __future__ import annotations
@@ -10,6 +10,7 @@ import difflib
 import os
 import subprocess
 import sys
+from itertools import product
 from pathlib import Path
 
 
@@ -47,22 +48,26 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--test-dir", type=Path, default=Path(__file__).resolve().parents[2] / "plox" / "real-tests")
     parser.add_argument("--case", action="append", choices=EXPECTED_LINES)
+    parser.add_argument("--backend", action="append", choices=("tree-walk", "bytecode"))
     args = parser.parse_args()
 
     failures = 0
-    for filename in args.case or EXPECTED_LINES:
+    backends = args.backend or ("tree-walk", "bytecode")
+    cases = args.case or EXPECTED_LINES
+    for backend, filename in product(backends, cases):
         path = args.test_dir / filename
         result = subprocess.run(
-            [sys.executable, "-m", "mylox.cli", str(path)],
+            [sys.executable, "-m", "mylox.cli", str(path), "--backend", backend],
             capture_output=True,
             text=True,
             encoding="utf-8",
             env={**os.environ, "PYTHONIOENCODING": "utf-8"},
             check=False,
+            timeout=30,
         )
         expected = "\n".join(EXPECTED_LINES[filename]) + "\n"
         good = result.returncode == 0 and result.stderr == "" and result.stdout == expected
-        print(f"{'OK' if good else 'FAIL'} {filename}: exit={result.returncode}")
+        print(f"{'OK' if good else 'FAIL'} {backend} {filename}: exit={result.returncode}")
         if good:
             continue
         failures += 1
