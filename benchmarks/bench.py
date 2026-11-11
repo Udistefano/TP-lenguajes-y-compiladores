@@ -35,7 +35,7 @@ from benchmarks.medidores import (  # noqa: E402
 )
 
 PROGRAMAS = RAIZ / "benchmarks" / "programas"
-IMPLEMENTACIONES = ["mylox", "plox", "jlox", "clox"]
+IMPLEMENTACIONES = ["mylox", "mylox-bytecode", "plox", "jlox", "clox"]
 EXIT_OK = 0
 EXIT_ERROR = 65
 
@@ -179,7 +179,7 @@ def formatear_tabla(resultado: Resultado) -> str:
     """Tabla de texto alineada, agrupada por programa."""
 
     lineas = []
-    encabezado = f"{'programa':<16} {'impl':<7} {'prom':>10} {'min':>10} {'p50':>10} {'p95':>10}"
+    encabezado = f"{'programa':<16} {'impl':<14} {'prom':>10} {'min':>10} {'p50':>10} {'p95':>10}"
     lineas.append(encabezado)
     lineas.append("-" * len(encabezado))
     for programa in resultado.programas:
@@ -188,7 +188,7 @@ def formatear_tabla(resultado: Resultado) -> str:
             if medicion is None:
                 continue
             lineas.append(
-                f"{programa:<16} {implementacion:<7} "
+                f"{programa:<16} {implementacion:<14} "
                 f"{medicion.promedio * 1000:>10.2f} {medicion.minimo * 1000:>10.2f} "
                 f"{medicion.percentil(0.50) * 1000:>10.2f} {medicion.percentil(0.95) * 1000:>10.2f}"
             )
@@ -310,6 +310,8 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     args = parser.parse_args(argv)
+    if args.repeticiones < 1:
+        parser.error("--repeticiones debe ser mayor que cero")
 
     pedidos = list(args.programa or [])
     if args.archivo is not None:
@@ -345,10 +347,11 @@ def main(argv: list[str] | None = None) -> int:
         else:
             activos[nombre] = medidor
 
-    if "mylox" not in activos:
-        print("[error] mylox debe estar disponible", file=sys.stderr)
+    if not {"mylox", "mylox-bytecode"}.intersection(activos):
+        print("[error] debe estar disponible un backend de mylox", file=sys.stderr)
         return EXIT_ERROR
 
+    fallos = False
     for archivo in programas:
         fuente = archivo.read_text(encoding="utf-8")
         print(f"[programa] {archivo.name}")
@@ -356,6 +359,7 @@ def main(argv: list[str] | None = None) -> int:
         if not args.sin_chequeo:
             if not verificar_equivalencia(fuente, activos, resultado):
                 print(f"[error] se omite {archivo.name} por salidas divergentes", file=sys.stderr)
+                fallos = True
                 continue
 
         for nombre, medidor in activos.items():
@@ -373,7 +377,7 @@ def main(argv: list[str] | None = None) -> int:
         for nombre, motivo in resultado.saltadas:
             print(f"  - {nombre}: {motivo}", file=sys.stderr)
 
-    return EXIT_OK
+    return EXIT_ERROR if fallos else EXIT_OK
 
 
 if __name__ == "__main__":

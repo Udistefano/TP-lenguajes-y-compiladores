@@ -25,6 +25,8 @@ import time
 from pathlib import Path
 
 from mylox.interpreter import Interpreter
+from mylox.bytecode.compiler import Compiler
+from mylox.bytecode.vm import VM
 from mylox.pipeline.lexer import Lexer
 from mylox.pipeline.parser import Parser
 
@@ -97,6 +99,21 @@ class MedidorMylox(Medidor):
         with contextlib.redirect_stdout(buffer):
             arbol = Parser(Lexer(fuente).run()).parse()
             Interpreter().interpret(arbol)
+        return time.perf_counter() - inicio, buffer.getvalue()
+
+
+class MedidorMyloxBytecode(Medidor):
+    nombre = "mylox-bytecode"
+
+    def disponible(self) -> None:
+        return
+
+    def correr(self, fuente: str) -> tuple[float, str]:
+        buffer = io.StringIO()
+        inicio = time.perf_counter()
+        with contextlib.redirect_stdout(buffer):
+            chunk = Compiler(Lexer(fuente).run()).compile()
+            VM(chunk).run()
         return time.perf_counter() - inicio, buffer.getvalue()
 
 
@@ -276,6 +293,7 @@ def construir_medidores(seleccion: list[str], ref_plox: str) -> dict[str, Medido
 
     disponibles: dict[str, Medidor] = {
         "mylox": MedidorMylox(),
+        "mylox-bytecode": MedidorMyloxBytecode(),
         "plox": MedidorPlox(REPO_HERMANO / "plox", ref_plox, CACHE / "plox-src"),
         "jlox": MedidorJlox(),
         "clox": MedidorClox(),

@@ -124,6 +124,13 @@ class TestMedidorMylox:
         _, salida = medidor.correr('print "hola";\n')
         assert salida == "hola\n"
 
+    def test_bytecode_ejecuta_listas_en_una_vm_nueva_por_muestra(self) -> None:
+        medidor = medidores.MedidorMyloxBytecode()
+        tiempos, salida = medidor.correr_varias("var a = [1]; a.push(2); print a;", 2)
+        assert len(tiempos) == 2
+        assert all(t > 0 for t in tiempos)
+        assert salida == "[1, 2]\n"
+
 
 class TestVerificarEquivalencia:
     """El chequeo compara salidas normalizadas entre implementaciones."""
