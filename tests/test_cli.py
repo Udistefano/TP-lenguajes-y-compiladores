@@ -180,5 +180,19 @@ def test_archivo_no_utf8_informa_error(capsys, tmp_path):
     assert 'no se pudo leer el archivo' in capsys.readouterr().err
 
 
+@pytest.mark.parametrize("statement, padding", [("if", 32764), ("while", 32762)])
+@pytest.mark.parametrize("negations, expected", [("!", EXIT_OK), ("!!", EXIT_SCAN_PARSE)])
+def test_limite_de_saltos(statement, padding, negations, expected, capsys):
+    body = "nil;" * padding + negations + "nil;"
+    source = f"{statement} (false) {{ {body} }} print 2;"
+    assert run_actions(source, "bytecode") == expected
+    output = capsys.readouterr()
+    if expected == EXIT_OK:
+        assert output.out == "2\n"
+        assert output.err == ""
+    else:
+        assert output.out == ""
+        assert "65535" in output.err
+        assert "línea 1" in output.err
 
 

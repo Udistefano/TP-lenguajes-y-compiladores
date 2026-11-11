@@ -550,6 +550,8 @@ class Compiler:
     def patch_jump(self, offset: int) -> None:
         """Emparcha un salto con el offset calculado desde la posición actual."""
         target = len(self.chunk) - offset - 2
+        if target > 65535:
+            raise CompileError("Un salto admite hasta 65535 bytes", self.previous())
         self.chunk.patch(offset, (target >> 8) & 0xFF)
         self.chunk.patch(offset + 1, target & 0xFF)
 
@@ -557,6 +559,8 @@ class Compiler:
         """Emite un salto hacia atrás hacia loop_start."""
         self.chunk.write_byte(OpCode.OP_LOOP.value, line)
         target = len(self.chunk) - loop_start + 2
+        if target > 65535:
+            raise CompileError("Un salto admite hasta 65535 bytes", self.previous())
         self.chunk.write_byte((target >> 8) & 0xFF, line)
         self.chunk.write_byte(target & 0xFF, line)
 
