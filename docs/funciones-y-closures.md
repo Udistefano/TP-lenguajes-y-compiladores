@@ -11,12 +11,9 @@ print doble(3);
 
 La salida es `6`.
 
-- **Lexer:** reconoce `fun`, `return`, nombres, paréntesis y llaves. Ya lo hacía.
-- **Parser:** `_function_declaration()` construye `FunctionDecl`; `_call()` construye `Call`; `_return_statement()` construye `ReturnStmt`.
-- **AST:** conserva nombre, parámetros, cuerpo y argumentos. Todos los nodos mantienen `accept()` y Visitor con double dispatch.
-- **Intérprete:** `visit_function_decl()` crea una `Function` y la guarda en el ámbito actual. El cuerpo se ejecuta al llamar.
-
-Referencias: [parser](../src/mylox/pipeline/parser.py), [nodos](../src/mylox/nodes.py), [intérprete](../src/mylox/interpreter.py).
+El [parser](../src/mylox/pipeline/parser.py) construye `FunctionDecl`, `Call`
+y `ReturnStmt`. `visit_function_decl()` crea una `Function` y la guarda en
+el ámbito actual; el cuerpo se ejecuta al llamar.
 
 `visit_call()` evalúa la función y sus argumentos de izquierda a derecha.
 Después verifica que sea invocable y que la cantidad de argumentos coincida
@@ -24,15 +21,14 @@ con `Function.arity`. Una llamada inválida produce `LoxRuntimeError`.
 
 ## El ámbito de cada invocación
 
-[Function.call()](../src/mylox/function.py) conserva la implementación de la
-rama de funciones. Crea `Env(enclosing=self.closure)`, define los parámetros
+[Function.call()](../src/mylox/function.py) crea `Env(enclosing=self.closure)`, define los parámetros
 y ejecuta el cuerpo con `execute_block()`.
 
 Cada llamada tiene variables locales propias. El padre es el ámbito donde
 la función fue declarada. Ese enlace permite acceder a variables capturadas
 y llamar recursivamente a la misma función.
 
-## Cómo sale return de un cuerpo anidado
+## Retorno
 
 `visit_return_stmt()` evalúa el valor y lanza `ReturnValue`. La excepción
 atraviesa bloques, `if` y bucles. Los `finally` de `execute_block()` restauran
@@ -41,7 +37,7 @@ los ambientes; `Function.call()` captura la excepción y devuelve su valor.
 `return;` y terminar el cuerpo sin return devuelven `nil`. Un return fuera
 de una función se detecta antes de ejecutar el programa.
 
-## Closure: conservar variables después de una llamada
+## Closures
 
 ```lox
 fun crear() {
@@ -61,7 +57,7 @@ La salida es `1` y después `2`. `siguiente` conserva una referencia al Env
 de `crear`; por eso `n` sigue existiendo y las llamadas comparten su valor.
 Otro `crear()` produce un contador independiente.
 
-## Por qué hace falta resolver los nombres antes
+## Resolución de nombres
 
 ```lox
 var a = "global";
