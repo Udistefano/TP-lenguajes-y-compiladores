@@ -1,0 +1,214 @@
+$ /usr/bin/python3 -B -m pytest -q -p no:cacheprovider --basetemp /tmp/mylox-review-fixes-u33podz1/pytest
+........................................................................ [ 15%]
+........................................................................ [ 30%]
+........................................................................ [ 46%]
+........................................................................ [ 61%]
+........................................................................ [ 76%]
+........................................................................ [ 92%]
+.....................................                                    [100%]
+469 passed in 2.88s
+
+
+$ /usr/bin/python3 -B tests/strict_real_tests.py
+OK tree-walk 0-simple.lox: exit=0
+OK tree-walk 1-flow.lox: exit=0
+OK tree-walk 2-functions.lox: exit=0
+OK tree-walk 3-minsky.lox: exit=0
+OK tree-walk 4-fizzbuzz.lox: exit=0
+OK bytecode 0-simple.lox: exit=0
+OK bytecode 1-flow.lox: exit=0
+OK bytecode 2-functions.lox: exit=0
+OK bytecode 3-minsky.lox: exit=0
+OK bytecode 4-fizzbuzz.lox: exit=0
+
+
+$ /usr/bin/python3 -B -m mylox.cli /mnt/c/Users/vitdr/repos/Facu/lox/TP-lenguajes-y-compiladores/examples/combate.lox --backend tree-walk
+Ada ataca a Luz
+Luz ataca a Sol
+Sol ataca a Ada
+Ada ataca a Luz
+Luz ataca a Sol
+Sol ataca a Ada
+Ada ataca a Luz
+Luz ataca a Sol
+Sol queda fuera
+Ada ataca a Luz
+Luz queda fuera
+Ganador: Ada
+
+
+$ /usr/bin/python3 -B -m mylox.cli /mnt/c/Users/vitdr/repos/Facu/lox/TP-lenguajes-y-compiladores/examples/combate.lox --backend bytecode
+Ada ataca a Luz
+Luz ataca a Sol
+Sol ataca a Ada
+Ada ataca a Luz
+Luz ataca a Sol
+Sol ataca a Ada
+Ada ataca a Luz
+Luz ataca a Sol
+Sol queda fuera
+Ada ataca a Luz
+Luz queda fuera
+Ganador: Ada
+
+
+Demo combate.lox: paridad de salida y exit 0.
+
+$ /usr/bin/python3 -B -m mylox.cli /mnt/c/Users/vitdr/repos/Facu/lox/TP-lenguajes-y-compiladores/examples/fibonacci_memo.lox --backend tree-walk
+0
+1
+1
+2
+3
+5
+8
+13
+21
+34
+55
+89
+144
+233
+377
+610
+987
+1597
+2584
+4181
+6765
+832040
+
+
+$ /usr/bin/python3 -B -m mylox.cli /mnt/c/Users/vitdr/repos/Facu/lox/TP-lenguajes-y-compiladores/examples/fibonacci_memo.lox --backend bytecode
+0
+1
+1
+2
+3
+5
+8
+13
+21
+34
+55
+89
+144
+233
+377
+610
+987
+1597
+2584
+4181
+6765
+832040
+
+
+Demo fibonacci_memo.lox: paridad de salida y exit 0.
+
+$ /usr/bin/python3 -B -m mylox.cli /mnt/c/Users/vitdr/repos/Facu/lox/TP-lenguajes-y-compiladores/examples/primos_hasta_100.lox --backend tree-walk
+2
+3
+5
+7
+11
+13
+17
+19
+23
+29
+31
+37
+41
+43
+47
+53
+59
+61
+67
+71
+73
+79
+83
+89
+97
+
+
+$ /usr/bin/python3 -B -m mylox.cli /mnt/c/Users/vitdr/repos/Facu/lox/TP-lenguajes-y-compiladores/examples/primos_hasta_100.lox --backend bytecode
+2
+3
+5
+7
+11
+13
+17
+19
+23
+29
+31
+37
+41
+43
+47
+53
+59
+61
+67
+71
+73
+79
+83
+89
+97
+
+
+Demo primos_hasta_100.lox: paridad de salida y exit 0.
+
+Los 21 hashes de la referencia delivery coinciden con las mediciones previas al reviewer.
+
+Archivos de runtime modificados: mylox/bytecode/compiler.py, mylox/bytecode/vm.py
+
+Hashes del runtime verificado:
+{
+  "mylox/__init__.py": "91447944015cec709e8aa7655f7e9d64e1e4508e7023a57fe3746911c0fc6fed",
+  "mylox/bytecode/chunk.py": "7b45a3b553a447c6e30a221ac82bda8e1680e6ae6c0dbc9a338c3cc16ecc278f",
+  "mylox/bytecode/compiler.py": "056a5f3fd46afac1c594aacea50377b7edbbba3bd340eea9cf1984e6b59c9cd6",
+  "mylox/bytecode/disassembler.py": "13e9f984a37abe5ed2ade1225cfa2dc242194c7a1351608a37c2b8edb75154eb",
+  "mylox/bytecode/function.py": "12b175a4bfb75a61bae9277de7e91a682a6fa871894fae29709e9dae82dec189",
+  "mylox/bytecode/opcodes.py": "ff3c0422ae47e344b28a3dd3d3458aa462d64c5f3da4c95af555d2496d74e738",
+  "mylox/bytecode/vm.py": "d5c32554e656430740ae1ba503b3566cc57c729e9c59c401abc4a0bff1322afb",
+  "mylox/cli.py": "32dc8c71c37d69a7687aaf389e1c3355fa72b61adf86e8c7118cfc28b5a44259",
+  "mylox/env.py": "ad8f8191784c07d8eb437bfefee5e40138e529e9d5d15a2e2d84edac134b6a8d",
+  "mylox/errors.py": "68e4af32fba269d5425614c0428f21b2eb3c52b603d19665085c903abba0006d",
+  "mylox/function.py": "85fce8139f794022dfbde68abd59e66d56fa9c850ab3d5f452a2b6b5d6ba02f2",
+  "mylox/interpreter.py": "b4a1f311e8b4254e70cbff8fecc887f37af38ac925b20d9b492f6be5e48fb0a2",
+  "mylox/lists.py": "083c429a55115bcfbb22d0d56232f698523062f96386db72ac13cb9fc6c0a6ab",
+  "mylox/nodes.py": "da2104bbad2947aceb09c6f6f76e8bbe74bb04a6872d811591a8818a50f32b2a",
+  "mylox/oop.py": "ac6b3886b1593b40a55fa42fca302e159217c87b718caa0bb815a110528bae64",
+  "mylox/pipeline/lexer.py": "cdb4cf0014d5bda744941f89306dec823c8f7cb8829e6548159b218372948f55",
+  "mylox/pipeline/parser.py": "d2c9f00dc846e09f65b8ee989ce6232a80abbea62591e91d68f435e7960ff977",
+  "mylox/printing.py": "e6a570e8e1838498f7fe46185cdd88d5fd418d9b6558de32d07fb5f90d1db137",
+  "mylox/resolver.py": "4b3b1e4a4c7364de304a65cdf84f50edfa82243943de8682ece05fb74374617a",
+  "mylox/tokens.py": "a855c67be1f3e658154379b4d286428b9ad2ecb0ac1b324bab1d3ecae525e981",
+  "mylox/values.py": "fc7a4064551be21bca7fcfa9589c6742640d50032d8b14f7891760147fdb6c92"
+}
+
+Recursos temporales de esta verificacion:
+[
+  {
+    "path": "/tmp/mylox-review-fixes-u33podz1",
+    "purpose": "pruebas de las correcciones del reviewer",
+    "removed": true
+  },
+  {
+    "path": "/tmp/mylox-benchmark-pzs6s4u5",
+    "purpose": "fuentes 341d6eb25caa286d54fe23c87fb62e03ccda370e (src)",
+    "removed": true
+  }
+]
+
+Prueba previa al arreglo: /tmp/mylox-review-fixes-red-djkqbw6e; eliminado: True
+
+Sin instalaciones de dependencias, contenedores, volumenes, worktrees ni escrituras en el indice o ramas de Git.
+
+Revision independiente posterior: ambos hallazgos corregidos; programas originales rechazados con error de compilacion; valor anterior conservado en REPL; pila de OP_INHERIT coherente; herencia local con superclass y nombre propio capturados verificada. Sin nuevos hallazgos en estos cambios.
