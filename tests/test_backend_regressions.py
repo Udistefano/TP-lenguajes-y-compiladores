@@ -45,6 +45,13 @@ def backend(request):
     ('class A {} var a = A(); var b = A(); a.self = a; b.self = b; print a == b;', 'false\n'),
     ('fun make() { class A {} return A; } print make() == make();', 'false\n'),
     ('fun make() { fun f() {} return f; } print make() == make();', 'false\n'),
+    ('var a = 1; { var a = a + 1; print a; } print a;', '2\n1\n'),
+    ('{ var a = 1; fun get() { return a; } var a = 2; print get(); }', '2\n'),
+    ('{ fun f() { return f; } var old = f; fun f() { return 7; } print old()(); }', '7\n'),
+    ('{ class A {} fun get() { return A; } class A { m() { return 3; } } print get()().m(); }', '3\n'),
+    ('{ var f = 1; fun f() { return 2; } print f(); var f = f() + 1; print f; }', '2\n3\n'),
+    ('fun f(a, a) { fun get() { return a; } var a = a + 1; return get; } print f(1, 2)();', '3\n'),
+    ('class A { m(a, a) { return a; } } print A().m(1, 2);', '2\n'),
 ])
 def test_regresiones(backend, capsys, source, expected):
     assert run_actions(source, backend) == 0
@@ -69,6 +76,9 @@ def test_errores_de_herencia_antes_de_ejecutar(backend, capsys, source):
 
 
 
+def test_inicializador_sin_nombre_anterior_falla_en_runtime(backend, capsys):
+    assert run_actions('{ var a = a; }', backend) == 70
+    assert "Traceback" not in capsys.readouterr().err
 
 
 

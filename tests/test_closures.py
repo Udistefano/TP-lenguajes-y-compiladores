@@ -122,7 +122,8 @@ def test_return_fuera_de_funcion_se_detecta_antes_de_ejecutar(source, capsys):
     assert "return fuera de una función" in captured.err
 
 
-def test_inicializadores_y_redeclaraciones_conservan_el_orden(capsys):
+@pytest.mark.parametrize("backend", ["tree-walk", "bytecode"])
+def test_inicializadores_y_redeclaraciones_conservan_el_orden(capsys, backend):
     source = "var n = 1; { var n = n + 1; var n = n + 1; print n; } print n;"
-    assert run_actions(source) == EXIT_OK
+    assert run_actions(source, backend) == EXIT_OK
     assert capsys.readouterr().out == "3\n1\n"

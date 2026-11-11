@@ -9,18 +9,11 @@ from .opcodes import OpCode
 
 
 class Local:
-    """Una variable local durante la compilación.
-
-    ``depth`` indica el nivel de anidación del scope que la declaró.
-    ``initialized`` evita leer la variable en su propia inicialización.
-    ``is_captured`` indica si algún closure capturó esta variable: al cerrar
-    el scope se emite OP_CLOSE_UPVALUE en vez de OP_POP.
-    """
+    """Un slot local y su ámbito; las capturas se cierran al salir del bloque."""
 
     def __init__(self, name: str, depth: int) -> None:
         self.name = name
         self.depth = depth
-        self.initialized = False
         self.is_captured = False
 
 
@@ -58,29 +51,32 @@ class Compiler:
 
     def declare(self, name: str) -> None:
         """Registra una variable local en el scope actual."""
-        if self.scope_depth == 0:
-            return
-        for local in reversed(self.locals):
+        if len(self.locals) >= 256:
+            raise CompileError("Un ámbito de función admite hasta 256 slots", self.previous())
+        self.locals.append(Local(name, self.scope_depth))
+
+    def current_local(self, name: str) -> int | None:
+        for slot in range(len(self.locals) - 1, -1, -1):
+            local = self.locals[slot]
             if local.depth < self.scope_depth:
                 break
             if local.name == name:
-                raise ParseError(f"Variable {name} ya existe en este ámbito")
-        self.locals.append(Local(name, self.scope_depth))
+                return slot
+        return None
 
-    def mark_initialized(self) -> None:
-        """Marca la última variable local declarada como inicializada."""
-        if self.locals:
-            self.locals[-1].initialized = True
+    def define(self, name: Token) -> None:
+        if self.scope_depth == 0:
+            self.chunk.emit(OpCode.OP_DEFINE_GLOBAL, name.line, self.chunk.add_constant(name.lexeme))
+        elif (slot := self.current_local(name.lexeme)) is not None:
+            self.chunk.emit(OpCode.OP_SET_LOCAL, name.line, slot)
+            self.chunk.emit(OpCode.OP_POP, name.line)
+        else:
+            self.declare(name.lexeme)
 
     def resolve_local(self, name: Token) -> int | None:
         """Devuelve el slot de la variable local, o None si es global."""
         for idx, local in enumerate(reversed(self.locals), 1):
             if local.name == name.lexeme:
-                if not local.initialized:
-                    raise ParseError(
-                        f"No se puede leer la variable local en su propia "
-                        f"inicialización en la línea {name.line}, columna {name.column}"
-                    )
                 return len(self.locals) - idx
         return None
 
@@ -133,11 +129,6 @@ class Compiler:
     def var_declaration(self) -> None:
         """Compila ``var nombre (= expresión)? ;``."""
         name = self.consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de variable")
-        is_local = self.scope_depth > 0
-
-        if is_local:
-            self.declare(name.lexeme)
-
         if self.match(TokenKind.EQUAL):
             self.expression()
         else:
@@ -145,11 +136,7 @@ class Compiler:
 
         self.consume(TokenKind.SEMICOLON, "Se esperaba ';' después de var")
 
-        if is_local:
-            self.mark_initialized()
-        else:
-            index = self.chunk.add_constant(name.lexeme)
-            self.chunk.emit(OpCode.OP_DEFINE_GLOBAL, name.line, index)
+        self.define(name)
 
     def if_statement(self) -> None:
         """Compila ``if (condición) sentencia (else sentencia)?``."""
@@ -238,13 +225,12 @@ class Compiler:
 
     def function_declaration(self) -> None:
         name = self.consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de función")
-        is_local = self.scope_depth > 0
-        if is_local:
+        new_local = self.scope_depth > 0 and self.current_local(name.lexeme) is None
+        if new_local:
             self.declare(name.lexeme)
-            self.mark_initialized()
         self.function_body(name)
-        if not is_local:
-            self.chunk.emit(OpCode.OP_DEFINE_GLOBAL, name.line, self.chunk.add_constant(name.lexeme))
+        if not new_local:
+            self.define(name)
 
     def function_body(self, name: Token, method: bool = False) -> None:
         self.consume(TokenKind.LEFT_PAREN, "Se esperaba '(' después del nombre")
@@ -252,7 +238,6 @@ class Compiler:
         body.in_function = True
         body.begin_scope()
         body.declare("this" if method else "")
-        body.mark_initialized()
 
         arity = 0
         if not self.check(TokenKind.RIGHT_PAREN):
@@ -262,7 +247,6 @@ class Compiler:
                 if arity > 255:
                     raise CompileError("Una función admite hasta 255 parámetros", param)
                 body.declare(param.lexeme)
-                body.mark_initialized()
                 if not self.match(TokenKind.COMMA):
                     break
         self.consume(TokenKind.RIGHT_PAREN, "Se esperaba ')' después de los parámetros")
@@ -285,14 +269,8 @@ class Compiler:
 
     def class_declaration(self) -> None:
         name = self.consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de clase")
-        is_local = self.scope_depth > 0
-        if is_local:
-            self.declare(name.lexeme)
         self.chunk.emit(OpCode.OP_CLASS, name.line, self.chunk.add_constant(name.lexeme))
-        if is_local:
-            self.mark_initialized()
-        else:
-            self.chunk.emit(OpCode.OP_DEFINE_GLOBAL, name.line, self.chunk.add_constant(name.lexeme))
+        self.define(name)
 
         previous_class = self.class_has_superclass
         self.class_has_superclass = self.match(TokenKind.LESS)
@@ -303,7 +281,6 @@ class Compiler:
             self.variable(superclass)
             self.begin_scope()
             self.declare("super")
-            self.mark_initialized()
             self.variable(name)
             self.chunk.emit(OpCode.OP_INHERIT, name.line)
 
