@@ -1,0 +1,23 @@
+         8826041 function calls (8138261 primitive calls) in 2.813 seconds
+
+   Ordered by: internal time
+   List reduced from 28 to 15 due to restriction <15>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    1.263    1.263    2.813    2.813 vm.py:133(_run)
+  1174985    0.318    0.000    0.418    0.000 vm.py:80(read_byte)
+1604788/917008    0.249    0.000    0.367    0.000 {built-in method builtins.len}
+   687780    0.118    0.000    0.176    0.000 chunk.py:96(__len__)
+   515753    0.113    0.000    0.175    0.000 vm.py:51(push)
+    57291    0.103    0.000    0.158    0.000 vm.py:91(call)
+  1174985    0.100    0.000    0.100    0.000 chunk.py:67(read)
+   401171    0.084    0.000    0.132    0.000 vm.py:67(pop)
+   573045    0.070    0.000    0.070    0.000 {method 'append' of 'list' objects}
+   687780    0.062    0.000    0.062    0.000 chunk.py:71(line_at)
+   114606    0.062    0.000    0.127    0.000 vm.py:87(read_constant)
+   515686    0.056    0.000    0.056    0.000 {built-in method builtins.isinstance}
+   458463    0.055    0.000    0.055    0.000 {method 'pop' of 'list' objects}
+   286520    0.055    0.000    0.081    0.000 values.py:50(is_number)
+   114646    0.033    0.000    0.047    0.000 vm.py:73(peek)
+
+
