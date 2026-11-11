@@ -37,6 +37,15 @@ class Visitor:
     no fue implementada por el visitante usado.
     """
 
+    def visit_list(self, expression: ListLiteral) -> object:
+        raise NotImplementedError()
+
+    def visit_index(self, expression: Index) -> object:
+        raise NotImplementedError()
+
+    def visit_index_set(self, expression: IndexSet) -> object:
+        raise NotImplementedError()
+
     def visit_literal(self, expression: Literal) -> object:
         """Define la operación del visitante sobre un valor literal del AST."""
         raise NotImplementedError()
@@ -120,6 +129,35 @@ class Visitor:
     def visit_super(self, expression: Super) -> object:
         """Define la operación sobre el acceso a la superclase."""
         raise NotImplementedError()
+
+
+@dataclass(frozen=True, slots=True)
+class ListLiteral(Node):
+    elements: list[Node]
+
+    def accept(self, visitor: Visitor) -> object:
+        return visitor.visit_list(self)
+
+
+@dataclass(frozen=True, slots=True)
+class Index(Node):
+    object: Node
+    index: Node
+    bracket: Token
+
+    def accept(self, visitor: Visitor) -> object:
+        return visitor.visit_index(self)
+
+
+@dataclass(frozen=True, slots=True)
+class IndexSet(Node):
+    object: Node
+    index: Node
+    value: Node
+    bracket: Token
+
+    def accept(self, visitor: Visitor) -> object:
+        return visitor.visit_index_set(self)
 
 
 @dataclass(frozen=True, slots=True)

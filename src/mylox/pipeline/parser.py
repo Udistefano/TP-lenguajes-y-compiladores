@@ -9,7 +9,8 @@ from __future__ import annotations
 from ..errors import ParseError
 from ..nodes import (
     Assign, Binary, BlockStmt, Call, ClassDecl, ExprStmt, FunctionDecl, Get,
-    Grouping, IfStmt, Literal, Logical, Node, PrintStmt, ReturnStmt, Set, Super,
+    Grouping, IfStmt, Index, IndexSet, ListLiteral, Literal, Logical, Node,
+    PrintStmt, ReturnStmt, Set, Super,
     This, Unary, VarDecl, Variable, WhileStmt,
 )
 from ..tokens import Token, TokenKind
@@ -230,13 +231,7 @@ class Parser:
         return self._assignment()
 
     def _assignment(self) -> Node:
-        """Construye una asignación o devuelve la expresión sin asignación.
-
-        Primero lee or; si aparece ``=``, lee recursivamente la derecha.
-        Así ``a = b = 3`` se agrupa como ``a = (b = 3)``. El destino debe ser
-        un nodo Variable: cualquier otra forma produce ParseError en el ``=``.
-        Devuelve Assign sin consultar ni modificar los ambientes de ejecución.
-        """
+        """Construye asignaciones a variables, propiedades o índices."""
         expression = self._or()
         if self._match(TokenKind.EQUAL):
             equals = self._previous()
@@ -245,6 +240,8 @@ class Parser:
                 return Assign(expression.name, value)
             if isinstance(expression, Get):
                 return Set(expression.object, expression.name, value)
+            if isinstance(expression, Index):
+                return IndexSet(expression.object, expression.index, value, expression.bracket)
             raise ParseError(
                 f"Destino inválido de asignación en la línea {equals.line}, "
                 f"columna {equals.column}"
@@ -372,12 +369,7 @@ class Parser:
         return self._call()
 
     def _call(self) -> Node:
-        """Lee ``primary (( argumentos? ))*`` y construye llamadas encadenadas.
-
-        Los argumentos son expresiones completas separadas por comas.
-        Cada paréntesis posterior envuelve el nodo anterior en Call, por
-        lo que ``crear()(1)`` representa dos invocaciones sucesivas.
-        """
+        """Encadena llamadas, propiedades e índices sobre una expresión."""
 
         expression = self._primary()
 
@@ -399,19 +391,30 @@ class Parser:
             elif self._match(TokenKind.DOT):
                 name = self._consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de propiedad")
                 expression = Get(expression, name)
+            elif self._match(TokenKind.LEFT_BRACKET):
+                bracket = self._previous()
+                index = self._expression()
+                self._consume(TokenKind.RIGHT_BRACKET, "Se esperaba ']' después del índice")
+                expression = Index(expression, index, bracket)
             else:
                 break
 
         return expression
 
     def _primary(self) -> Node:
-        """Construye un literal, una referencia a variable o una agrupación.
+        """Lee un literal, una lista, un nombre o una expresión entre paréntesis."""
 
-        NUMBER y STRING usan el valor del token; true, false y nil se convierten
-        en Literal con True, False y None. IDENTIFIER se convierte en Variable.
-        Con ``(`` lee una expresión completa y exige ``)`` para crear Grouping.
-        Si el token no puede iniciar ninguna de estas formas, lanza ParseError.
-        """
+        if self._match(TokenKind.LEFT_BRACKET):
+            elements: list[Node] = []
+            if not self._check(TokenKind.RIGHT_BRACKET):
+                elements.append(self._expression())
+                while self._match(TokenKind.COMMA):
+                    elements.append(self._expression())
+            if len(elements) > 255:
+                token = self._previous()
+                raise ParseError(f"Un literal de lista admite hasta 255 elementos (línea {token.line})")
+            self._consume(TokenKind.RIGHT_BRACKET, "Se esperaba ']' después de la lista")
+            return ListLiteral(elements)
 
         if self._match(TokenKind.FALSE):
             return Literal(False)

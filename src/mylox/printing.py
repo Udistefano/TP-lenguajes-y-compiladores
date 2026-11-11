@@ -8,7 +8,8 @@ from __future__ import annotations
 
 from .nodes import (
     Assign, Binary, BlockStmt, Call, ClassDecl, ExprStmt, FunctionDecl, Get,
-    Grouping, IfStmt, Literal, Logical, Node, PrintStmt, ReturnStmt, Set, Super,
+    Grouping, IfStmt, Index, IndexSet, ListLiteral, Literal, Logical, Node,
+    PrintStmt, ReturnStmt, Set, Super,
     This, Unary, VarDecl, Variable, Visitor, WhileStmt,
 )
 
@@ -20,6 +21,19 @@ class Impresor(Visitor):
     valores literales usan la representación de Python para depurar el AST;
     este texto no pretende ser la salida del programa ni código fuente Lox.
     """
+
+    def visit_list(self, expression: ListLiteral) -> str:
+        elements = ", ".join(element.accept(self) for element in expression.elements)
+        return f"List([{elements}])"
+
+    def visit_index(self, expression: Index) -> str:
+        return f"Index({expression.object.accept(self)}, {expression.index.accept(self)})"
+
+    def visit_index_set(self, expression: IndexSet) -> str:
+        return (
+            f"IndexSet({expression.object.accept(self)}, "
+            f"{expression.index.accept(self)}, {expression.value.accept(self)})"
+        )
 
     def visit_literal(self, expression: Literal) -> str:
         """Describe el valor almacenado usando repr, por ejemplo Literal(1.0)."""
