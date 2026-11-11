@@ -1,7 +1,6 @@
-# Programación orientada a objetos en mylox
+# Clases y herencia
 
-mylox implementa OOP (clases + herencia) en **ambos backends** (tree-walk y bytecode),
-con la misma sintaxis de Lox.
+Los dos backends implementan clases y herencia con la sintaxis de Lox.
 
 ## Sintaxis
 
@@ -20,16 +19,16 @@ class Estudiante < Persona {
 }
 ```
 
-- Métodos se declaran **sin** `fun`.
+- Los métodos se declaran sin `fun`.
 - `init` es el constructor (se ejecuta al instanciar).
 - `this` referencia la instancia actual.
 - `super` referencia la superclase (resolución léxica).
 - Propiedades con `.`: `obj.prop` y `obj.prop = valor`.
-- Métodos son "bound": `var m = obj.metodo; m();` funciona.
+- Los métodos quedan ligados al receptor: `var m = obj.metodo; m();`.
 
 ## Backend bytecode
 
-El compilador emite 8 opcodes OOP propios (no copiados de clox/ploxb):
+El compilador emite seis instrucciones OOP; otras dos permanecen reservadas:
 
 | Opcode | Operandos | Descripción |
 |--------|-----------|-------------|
@@ -38,21 +37,29 @@ El compilador emite 8 opcodes OOP propios (no copiados de clox/ploxb):
 | `OP_SET_PROPERTY` | 1 byte (nombre) | Asigna campo |
 | `OP_METHOD` | 1 byte (nombre) | Registra un método en la clase |
 | `OP_INHERIT` | 0 bytes | Establece la superclase |
-| `OP_GET_SUPER` | 1 byte (nombre) | Resuelve `super.metodo` lexicamente |
-| `OP_INVOKE` | 2 bytes (nombre, argc) | (reservado, no emitido aún) |
-| `OP_SUPER_INVOKE` | 2 bytes (nombre, argc) | (reservado, no emitido aún) |
+| `OP_GET_SUPER` | 1 byte (nombre) | Resuelve `super.metodo` léxicamente |
+| `OP_INVOKE` | 2 bytes (nombre, argc) | Reservado |
+| `OP_SUPER_INVOKE` | 2 bytes (nombre, argc) | Reservado |
 
-La resolución de `super` es léxica: se usa la clase donde el método está
-definido (`enclosing_class`), no la clase runtime de la instancia. Esto
-permite herencia de múltiples niveles correctamente.
+La resolución de `super` es léxica. Al declarar una subclase, el compilador
+guarda la superclase en un local que los métodos capturan como upvalue.
+Antes de definir la clase, `OP_INHERIT` retira y valida la superclase de la pila,
+dejando la clase nueva debajo. Si falla, conserva el valor anterior del nombre,
+incluso cuando está capturado por una función.
+`OP_GET_SUPER` recibe esa superclase y el receptor `this` en la pila. Esto
+funciona con clases locales, herencia de varios niveles y funciones anidadas
+en métodos, aunque cambie la variable que originalmente nombraba la clase.
+
+En tree-walk, el resolver conserva los ámbitos separados de `super`, `this` y
+los parámetros. El intérprete usa esas distancias; no busca la clase por su
+nombre en el entorno global.
+
+Las instancias y clases se comparan por identidad. Los constructores devuelven
+su instancia; en esta implementación se descarta el valor explícito de un
+`return` dentro de `init`.
 
 ## Verificación
 
 ```sh
-# Ambos backends deben dar la misma salida
-uv run mylox programa.lox --backend tree-walk
-uv run mylox programa.lox --backend bytecode
-
-# Tests
 uv run pytest tests/test_oop.py tests/test_oop_bytecode.py -q
 ```
