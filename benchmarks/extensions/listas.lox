@@ -1,0 +1,13 @@
+var values = [];
+for (var i = 0; i < 10000; i = i + 1) {
+  values.push(i);
+}
+var total = 0;
+for (var i = 0; i < values.length; i = i + 1) {
+  values[i] = values[i] + 1;
+  total = total + values[i];
+}
+while (values.length > 0) {
+  total = total + values.pop();
+}
+print total;
