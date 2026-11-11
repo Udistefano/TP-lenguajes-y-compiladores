@@ -42,45 +42,37 @@ def run_tree(source: str) -> int:
     """Modo ``--tree``: escanea y parsea la fuente, e imprime el AST."""
     try:
         tree = Parser(Lexer(source).run()).parse()
+        print(imprimir(tree))
     except (ScanError, ParseError) as error:
-        return report_error(error)
-
-    print(imprimir(tree))
-    return EXIT_OK
-
-
-def run_actions(
-    source: str, backend: str = "tree-walk", debug: bool = False
-) -> int:
-    """Modo ejecución (default): escanea, parsea y evalúa la fuente."""
-    if backend == "bytecode":
-        try:
-            tokens = Lexer(source).run()
-            chunk = Compiler(tokens).compile()
-        except (ScanError, ParseError, CompileError) as error:
-            return report_error(error)
-
-        if debug:
-            print(raw_bytes(chunk), end="")
-            print(disassemble(chunk), end="")
-
-        try:
-            VM(chunk).run(trace=debug)
-        except VMRuntimeError as error:
-            return report_error(error)
-        return EXIT_OK
-
-    try:
-        program = Parser(Lexer(source).run()).parse()
-        Interpreter().interpret(program)
-    except (ScanError, ParseError) as error:
-        return report_error(error)
-    except LoxRuntimeError as error:
         return report_error(error)
     except RecursionError:
         print("[error] profundidad de recursión excedida", file=sys.stderr)
         return EXIT_RUNTIME
 
+    return EXIT_OK
+
+
+def run_actions(
+    source: str, backend: str = "tree-walk", debug: bool = False,
+) -> int:
+    try:
+        tokens = Lexer(source).run()
+        if backend == "bytecode":
+            chunk = Compiler(tokens).compile()
+            if debug:
+                print(raw_bytes(chunk), end="")
+                print(disassemble(chunk), end="")
+            vm = VM(chunk)
+            vm.main_chunk = chunk
+            vm.run(trace=debug)
+        else:
+            interpreter = Interpreter()
+            interpreter.interpret(Parser(tokens).parse())
+    except (ScanError, ParseError, CompileError, LoxRuntimeError, VMRuntimeError) as error:
+        return report_error(error)
+    except RecursionError:
+        print("[error] profundidad de recursión excedida", file=sys.stderr)
+        return EXIT_RUNTIME
     return EXIT_OK
 
 
@@ -151,7 +143,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.file is not None:
         try:
             source = args.file.read_text(encoding="utf-8")
-        except OSError as error:
+        except (OSError, UnicodeError) as error:
             print(f"[error] no se pudo leer el archivo: {error}", file=sys.stderr)
             return EXIT_USAGE
     else:

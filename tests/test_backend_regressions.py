@@ -74,8 +74,20 @@ def test_errores_de_herencia_antes_de_ejecutar(backend, capsys, source):
     assert "Traceback" not in output.err
 
 
+def test_expresion_profunda_sin_traceback(backend, capsys):
+    source = "print " + "(" * 300 + "1" + ")" * 300 + ";"
+    assert run_actions(source, backend) == 70
+    output = capsys.readouterr()
+    assert "recursión excedida" in output.err
+    assert "Traceback" not in output.err
 
 
+def test_recursion_sin_limite_es_un_error_de_lox(backend, capsys):
+    assert run_actions("fun f() { f(); } f();", backend) == 70
+    output = capsys.readouterr()
+    assert output.out == ""
+    assert "[error]" in output.err
+    assert "Traceback" not in output.err
 
 
 def test_inicializador_sin_nombre_anterior_falla_en_runtime(backend, capsys):

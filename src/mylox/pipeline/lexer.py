@@ -142,7 +142,7 @@ class Lexer:
             self._scan_string()    # primera comilla ya consumida por advance.
             return
 
-        if character.isdigit():
+        if "0" <= character <= "9":
             self._scan_number()
             return
 
@@ -165,13 +165,13 @@ class Lexer:
     def _scan_number(self) -> None:
         """Consume un número entero o decimal y agrega su token."""
 
-        while self._peek().isdigit():
+        while "0" <= self._peek() <= "9":
             self._advance()
 
-        if self._peek() == "." and self._peek_next().isdigit():  # '.' para decimal.
+        if self._peek() == "." and "0" <= self._peek_next() <= "9":
             self._advance()
 
-            while self._peek().isdigit():
+            while "0" <= self._peek() <= "9":
                 self._advance()
 
         # conversión del literal. lexema "12.5" -> literal 12.5

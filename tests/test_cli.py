@@ -127,3 +127,32 @@ def test_main_version(capsys):
         main(["-v"])
     assert excinfo.value.code == 0
     assert "mylox" in capsys.readouterr().out
+
+
+
+
+
+
+@pytest.mark.parametrize("backend", ['tree-walk', 'bytecode'])
+@pytest.mark.parametrize("source", ['print ²;', 'print 1²;', 'print ٣;'])
+def test_digitos_fuera_de_ascii_son_error_de_escaneo(backend, source, capsys):
+    assert run_actions(source, backend) == EXIT_SCAN_PARSE
+    assert 'Carácter inesperado' in capsys.readouterr().err
+
+
+def test_arbol_profundo_no_muestra_traceback(capsys):
+    assert run_tree('print ' + ' + '.join(['1'] * 1500) + ';') == EXIT_RUNTIME
+    output = capsys.readouterr()
+    assert output.out == ''
+    assert 'recursión excedida' in output.err
+
+
+def test_archivo_no_utf8_informa_error(capsys, tmp_path):
+    path = tmp_path / 'invalid.lox'
+    path.write_bytes(b'\xff')
+    assert main([str(path)]) == 1
+    assert 'no se pudo leer el archivo' in capsys.readouterr().err
+
+
+
+
