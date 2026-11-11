@@ -11,6 +11,10 @@ mylox = "mylox.cli:main"
 dev = [
     "pytest>=8.0",
 ]
+bench = [
+    "matplotlib==3.10.1",
+    "numpy==2.2.4",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
