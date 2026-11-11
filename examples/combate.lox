@@ -1,0 +1,72 @@
+class Personaje {
+  init(nombre, vida, fuerza) {
+    this.nombre = nombre;
+    this.vida = vida;
+    this.fuerza = fuerza;
+  }
+
+  vivo() {
+    return this.vida > 0;
+  }
+
+  recibir(danio) {
+    this.vida = this.vida - danio;
+    if (this.vida < 0) this.vida = 0;
+  }
+
+  atacar(objetivo) {
+    objetivo.recibir(this.fuerza);
+  }
+}
+
+class Guerrero < Personaje {
+  init(nombre) {
+    super.init(nombre, 30, 7);
+  }
+
+  recibir(danio) {
+    super.recibir(danio - 2);
+  }
+}
+
+class Maga < Personaje {
+  init(nombre) {
+    super.init(nombre, 22, 5);
+    this.mana = 2;
+  }
+
+  atacar(objetivo) {
+    if (this.mana > 0) {
+      objetivo.recibir(this.fuerza * 2);
+      this.mana = this.mana - 1;
+    } else {
+      super.atacar(objetivo);
+    }
+  }
+}
+
+fun retirar(equipo, indice) {
+  var ultimo = equipo.pop();
+  if (indice < equipo.length) equipo[indice] = ultimo;
+}
+
+var equipo = [Guerrero("Ada"), Maga("Luz")];
+equipo.push(Personaje("Sol", 24, 6));
+var turno = 0;
+
+while (equipo.length > 1) {
+  var indice = turno % equipo.length;
+  var siguiente = (indice + 1) % equipo.length;
+  var atacante = equipo[indice];
+  var objetivo = equipo[siguiente];
+
+  print atacante.nombre + " ataca a " + objetivo.nombre;
+  atacante.atacar(objetivo);
+  if (!objetivo.vivo()) {
+    print objetivo.nombre + " queda fuera";
+    retirar(equipo, siguiente);
+  }
+  turno = turno + 1;
+}
+
+print "Ganador: " + equipo[0].nombre;

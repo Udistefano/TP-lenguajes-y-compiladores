@@ -121,6 +121,17 @@ def test_bytecode_de_listas_y_balance_de_pila(capsys):
     assert stack_effect(OpCode.OP_SET_INDEX) == -2
 
 
+def test_combate(backend, capsys):
+    source = (Path(__file__).resolve().parents[1] / "examples" / "combate.lox").read_text(encoding="utf-8")
+    assert run_actions(source, backend) == 0
+    output = capsys.readouterr()
+    assert output.err == ""
+    assert output.out.splitlines() == [
+        "Ada ataca a Luz", "Luz ataca a Sol", "Sol ataca a Ada",
+        "Ada ataca a Luz", "Luz ataca a Sol", "Sol ataca a Ada",
+        "Ada ataca a Luz", "Luz ataca a Sol", "Sol queda fuera",
+        "Ada ataca a Luz", "Luz queda fuera", "Ganador: Ada",
+    ]
 
 
 def test_reutilizar_bytecode_no_comparte_listas_entre_ejecuciones(capsys):
