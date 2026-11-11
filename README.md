@@ -1,206 +1,128 @@
 # mylox
 
-Intérprete de Lox en Python — Trabajo Práctico de Lenguajes y Compiladores I (FIUBA).
+Lox en Python para Lenguajes y Compiladores I (FIUBA). Incluye el intérprete
+tree-walk del parcial y un compilador a bytecode con VM, clases con herencia
+y listas mutables.
 
-Aún en construcción. Estructura e implementación propias (independiente del código de la cátedra).
+- Camilo Sassone Irrazabal — 111135
+- Ulises Distefano — 111883
 
-## Integrantes
+## Instalación y uso
 
-Camilo Sassone Irrazabal - 111135
-
-Ulises Distefano - 111883
-
-## Requisitos
-
-- Python 3.12 o superior.
-- [uv](https://docs.astral.sh/uv/) (gestor de dependencias y entornos).
-
-## Instalación
-
-Con uv se descargan las dependencias y se crea el entorno virtual:
+Requiere Python 3.12+ y [uv](https://docs.astral.sh/uv/).
 
 ```sh
 uv sync
+uv run mylox programa.lox
+uv run mylox programa.lox --backend bytecode
 ```
 
-## Uso
+Sin archivo abre el REPL. Conserva variables y funciones entre entradas;
+cada entrada debe ser una sentencia o declaración completa. Después de un
+error se puede seguir usando el estado anterior, incluidos los efectos que
+ocurrieron antes del error.
 
-Desde el entorno se puede invocar la CLI:
+`--tokens` muestra los tokens, `--tree` el AST y `--backend bytecode --debug`
+el código generado y su ejecución. Los errores salen por stderr: código 65
+para errores de sintaxis o compilación y 70 para errores de ejecución.
 
-```sh
-uv run mylox
-```
-
-## Tests
-
-La suite usa pytest y cubre el lexer, el parser, el intérprete, los ámbitos,
-el impresor del árbol y la CLI:
+## Pruebas
 
 ```sh
-# correr todos los tests
 uv run pytest
-
-# correr solo un archivo
-uv run pytest tests/test_parser.py
-
-# correr un test específico
-uv run pytest tests/test_parser.py::test_multiplicacion_antes_que_suma
-
-# ver detalle de cada test (verbose)
-uv run pytest -v
-```
-
-Para verificar los programas de la cátedra con comparación exacta de stdout,
-stderr y código de salida:
-
-```sh
-uv run python tests/strict_real_tests.py --case 1-flow.lox
+uv run pytest tests/test_lists.py
 uv run python tests/strict_real_tests.py
 ```
 
-El verificador busca `plox/real-tests/` como repositorio hermano; se puede
-indicar otra ubicación con `--test-dir`.
+El verificador estricto ejecuta los cinco programas de la cátedra en ambos
+backends y comprueba stdout exacto, stderr vacío y código de salida 0. Busca
+`../plox/real-tests/`; acepta otra ruta con `--test-dir` y permite filtrar con
+`--backend bytecode` o `--case 1-flow.lox`.
 
-La integración de statements, variables, flujo, funciones y closures pasa los
-cinco programas con stdout exacto, stderr vacío y código de salida 0. El script
-de la cátedra también pasa; por sí solo sólo comprueba que stdout no tenga
-la palabra `ERROR`.
-
-## Decisiones de diseño
-
-- **Hecho desde cero**. Mismo lenguaje, otra estructura, basandonos en el libro de Lox.
-- Arquitectura por responsabilidad (`lexer`, `parser`, `interpreter`, `resolver`, `env`) y usamos un Visitor con `accept()` para recorrer el AST, en vez del `@singledispatchmethod` que usa el plox.
-- Nodos con `@dataclass(frozen=True, slots=True)`: el AST solo guarda estructura, no datos ni ambientes.
-- `nil` = `None`, `true`/`false` = `True`/`False`. Solo `nil` y `false` son falsos.
-- Números siempre `float`, pero imprimen sin `.0` (`7`, no `7.0`).
-- `and`/`or` que devuelven los operandos, como el libro: `true and nil` es `nil`.
-- Se agregó `%` porque el fizzbuzz de la cátedra lo necesita.
-- `for` se transforma en `while` + bloque: nada de nodo extra.
-- Las llamadas evalúan los argumentos antes de validar la aridad, para no perder efectos.
-- Los closures guardan el entorno real de la definición; un resolver (`BindingResolver`) ata cada variable a su ámbito antes de ejecutar (un `return` fuera de función falla en parseo, no en runtime).
-- Errores como jerarquía propia (`ScanError`, `ParseError`, `LoxRuntimeError`); el `return` es una excepción interna, NO un error.
-- División y módulo por cero dan error de runtime con posición, no un traceback de Python.
-- CLI con códigos de salida estándar (0, 65, 70), errores en `stderr` con línea/columna, y modos `--tokens` y `--tree` para debug.
-- Tests propios que comparan stdout, stderr vacío y exit 0.
-- Benchmark propio que mide scan+parse+resolve+interpret contra plox, jlox y clox, con warmup y verificación de equivalencia de salida.
-
-## Guías del código
-
-- [Recorrido del intérprete y Visitor](docs/interpreter.md).
-- [Statements y print](docs/statements.md).
-- [Variables y ámbitos](docs/variables.md).
-- [Control de flujo](docs/control-de-flujo.md).
-- [Funciones, retornos y closures](docs/funciones-y-closures.md).
-- [Benchmarks: metodología, resultados y conclusiones](docs/benchmarks.md).
-- [Backend bytecode: compilador y VM](docs/bytecode.md).
-- [Programación orientada a objetos](docs/oop.md).
-
-## Integración con funciones
-
-La rama `functions-and-closures` incorpora el trabajo de `statements-flow`.
-`visit_function_decl()` guarda `interpreter.environment` en una `Function`.
-`Function.call()` ejecuta el cuerpo mediante
-`interpreter.execute_block(body, Env(enclosing=closure))`.
-`Env.define(name: str, value)`, `Env.get(name: Token)` y
-`Env.assign(name: Token, value)` son las operaciones de ámbito disponibles.
-`FunctionDecl` expone `name: Token`, `parameters: list[Token]` y `body: list[Node]`,
-que son los campos consumidos por `Function.call`. `BindingResolver` conserva
-los vínculos léxicos de las referencias; el intérprete usa `get_local()` y
-`assign_local()` para acceder al ámbito elegido.
-
-## Benchmark
-
-Comparación de rendimiento entre **mylox**, **plox** (cátedra), **jlox** (Java, tree-walk) y **clox** (C, bytecode VM). Se mide scan + parse + resolve + interpret, en proceso, con warmup y chequeo de equivalencia de salida entre implementaciones.
+Para preparar esa referencia en un checkout nuevo:
 
 ```sh
-# todos los programas e implementaciones disponibles
-uv run python benchmarks/bench.py -n 20
-
-# un programa en particular
-uv run python benchmarks/bench.py --programa fibonacci.lox -n 20
-
-# solo mylox vs plox
-uv run python benchmarks/bench.py --implementaciones mylox,plox -n 20
-
-# habilitar jlox y clox (requiere javac/gcc y el repo del libro)
-benchmarks/setup.sh
-uv run python benchmarks/bench.py -n 20
+git clone https://github.com/FdelMazo/plox.git ../plox
+git -C ../plox checkout --detach 734f4d2adaf708c503dc5d17e88315e273c2f0ab
 ```
 
-Los programas son portables (sin `%` ni clases) y el script verifica antes de medir que todas las implementaciones dan la misma salida normalizada. Si falta `javac`, `gcc` o el repo externo, las implementaciones correspondientes se omiten sin fallar; el mínimo garantizado es **mylox vs plox**.
+La última [verificación](benchmarks/results/review-verification.txt) tiene
+469 tests aprobados, los 10 casos de la cátedra y las tres demos con la misma
+salida en ambos backends.
 
-Metodología, resultados reales y conclusiones en [docs/benchmarks.md](docs/benchmarks.md).
+## Del parcial al bytecode
 
+Conservamos el tree-walk y compartimos lexer, operaciones sobre valores,
+clases y listas. El tree-walk construye un AST con dataclasses y lo recorre
+con Visitor y `accept()`, mientras que plox usa `singledispatchmethod`.
+El compilador lee tokens por descenso recursivo y emite bytecode en una
+pasada; el de la cátedra usa Pratt.
 
-## Backends de ejecución
+El tree-walk guarda variables en ambientes enlazados. La VM usa slots y
+upvalues para las capturas, además de frames propios para las llamadas.
+Python administra la memoria en ambos casos. Al mantener dos lectores de
+la gramática, necesitamos pruebas que comparen su comportamiento.
 
-mylox tiene dos backends seleccionables con ``--backend``:
+Los valores de Python requieren algunas adaptaciones: en Lox solo `nil` y
+`false` son falsos, y los booleanos no se aceptan como números. Usamos `float`
+para los números y omitimos `.0` al imprimir enteros. `and` y `or` devuelven
+operandos; división y módulo por cero producen errores de Lox.
 
-```sh
-# tree-walk (default): evalúa el AST directamente
-uv run mylox programa.lox
+Conservamos las reglas del parcial para inicializadores y redeclaraciones:
+el inicializador puede leer el nombre exterior y una redeclaración reemplaza
+la variable del mismo ámbito. Estas diferencias con el libro se explican en
+[variables](docs/variables.md).
 
-# bytecode: compila a bytecode y ejecuta en la VM propia
-uv run mylox programa.lox --backend bytecode
+## Extensiones y ejemplos
 
-# modo de depuración: muestra RAW BYTES, COMPILETIME y RUNTIME
-uv run mylox programa.lox --backend bytecode --debug
-```
-
-El backend bytecode reutiliza el lexer y las reglas de precedencia del parser, y agrega un compilador single-pass y una VM con pila. Las dos opciones producen la misma salida para todo programa que el backend bytecode soporte (hoy: expresiones, variables, control de flujo, funciones y clases con herencia).
-
-## Programación orientada a objetos
-
-mylox soporta clases, herencia y métodos (sin keyword `fun`), compatible con
-la sintaxis de Lox:
+Las clases tienen herencia, `this`, `super`, constructores y métodos ligados.
+Las [listas](docs/listas.md) son el extra de la final: permiten indexar,
+modificar, agregar y extraer elementos.
 
 ```lox
-class Persona {
-  init(nombre) { this.nombre = nombre; }
-  decir() { return "Soy " + this.nombre; }
-}
-
-class Estudiante < Persona {
-  init(nombre, carrera) {
-    super.init(nombre);
-    this.carrera = carrera;
-  }
-  decir() { return super.decir() + ", estudio " + this.carrera; }
-}
-
-var e = Estudiante("Ana", "Fisica");
-print e.decir();
+var equipo = ["Ada", "Luz"];
+equipo.push("Sol");
+equipo[0] = "Ana";
+print equipo.length;
+print equipo.pop();
 ```
 
-Características soportadas en **ambos backends** (tree-walk y bytecode):
-
-- Declaración de clases: `class Nombre { ... }`
-- Herencia: `class Nombre < Superclase { ... }`
-- Métodos (sin `fun`): `metodo(params) { ... }`
-- Constructor `init(...)` (se ejecuta al instanciar)
-- `this` y `super` (incluyendo `super.metodo()`)
-- Acceso a propiedades: `obj.prop` y asignación `obj.prop = valor`
-- Métodos ligados (bound methods): `var m = obj.metodo; m();`
-- Closures dentro de métodos que capturan `this`
-
-Opcodes OOP del backend bytecode (diseño propio, no copiado de clox):
-
-| Opcode | Operandos | Descripción |
-|--------|-----------|-------------|
-| `OP_CLASS` | 1 byte (nombre) | Crea una `LoxClass` |
-| `OP_GET_PROPERTY` | 1 byte (nombre) | Lee campo o método ligado |
-| `OP_SET_PROPERTY` | 1 byte (nombre) | Asigna campo |
-| `OP_METHOD` | 1 byte (nombre) | Registra un método en la clase |
-| `OP_INHERIT` | 0 bytes | Establece la superclase |
-| `OP_GET_SUPER` | 1 byte (nombre) | Resuelve `super.metodo` lexicamente |
-
-## Uso real del lenguaje
-
-El directorio `examples/` contiene programas concretos que demuestran la sintaxis y semántica de Lox:
+[combate.lox](examples/combate.lox) usa una lista de personajes, herencia y
+ataques polimórficos. Elimina a los derrotados y termina con `Ganador: Ada`.
+También hay ejemplos de Fibonacci con memoización y primos hasta 100.
 
 ```sh
+uv run mylox examples/combate.lox
+uv run mylox examples/combate.lox --backend bytecode
 uv run mylox examples/fibonacci_memo.lox
-uv run mylox examples/fibonacci_memo.lox --backend bytecode
+uv run mylox examples/primos_hasta_100.lox
 ```
 
+## Benchmarks
 
+El [informe](docs/benchmarks.md) compara el parcial, los dos backends, la VM
+antes y después de optimizar, plox, clox y los mismos algoritmos en Python y
+JavaScript. Incluye gráficos, datos y comandos para reproducir cada medición.
+
+Para comparar rápidamente los backends del checkout actual:
+
+```sh
+uv run python benchmarks/bench.py --implementaciones mylox,mylox-bytecode -n 20
+```
+
+Los gráficos usan el grupo opcional de dependencias `bench`:
+
+```sh
+uv sync --group bench
+```
+
+## Documentación
+
+- [Lexer, parser y Visitor](docs/interpreter.md).
+- [Sentencias y print](docs/statements.md).
+- [Variables y ámbitos](docs/variables.md).
+- [Control de flujo](docs/control-de-flujo.md).
+- [Funciones y closures](docs/funciones-y-closures.md).
+- [Compilador y VM](docs/bytecode.md).
+- [Clases y herencia](docs/oop.md).
+- [Listas](docs/listas.md).
