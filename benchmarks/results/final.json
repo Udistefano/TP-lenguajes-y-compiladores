@@ -1,0 +1,7419 @@
+{
+  "started_utc": "2026-11-11T15:58:01.356442+00:00",
+  "machine": {
+    "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+    "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "cpu": "AMD Ryzen 7 9700X 8-Core Processor",
+    "logical_cpus": 8,
+    "affinity": [
+      2
+    ]
+  },
+  "repetitions": 20,
+  "warmup": 3,
+  "seed": 1111,
+  "gc": "enabled; collect before each Python sample, outside timer",
+  "base_commit": "341d6eb25caa286d54fe23c87fb62e03ccda370e",
+  "baseline_patch_sha256": "0939821e71c66809a43139c9de81f84bb904cde7e6ceeb322cf827269d0249a2",
+  "partial_commit": "088a86c2c86816dea2bbd3d3bb5fe549855ccf6d",
+  "plox_commit": "734f4d2adaf708c503dc5d17e88315e273c2f0ab",
+  "current_sources_sha256": {
+    "mylox/__init__.py": "91447944015cec709e8aa7655f7e9d64e1e4508e7023a57fe3746911c0fc6fed",
+    "mylox/bytecode/chunk.py": "7b45a3b553a447c6e30a221ac82bda8e1680e6ae6c0dbc9a338c3cc16ecc278f",
+    "mylox/bytecode/compiler.py": "65c65620cf8e599bc5ab9f5f74d03f7ccfba6b689e38177822998fac2ff3bc1f",
+    "mylox/bytecode/disassembler.py": "13e9f984a37abe5ed2ade1225cfa2dc242194c7a1351608a37c2b8edb75154eb",
+    "mylox/bytecode/function.py": "9cd1de2d86153ff0d07390dd9baee4afd43b89e3cbd37209a9df50c4cec0e8ee",
+    "mylox/bytecode/opcodes.py": "04142a0b004ef309dbaef321809870a7087fb9f4d79d5372c34a7247f86321ff",
+    "mylox/bytecode/vm.py": "c42aeda8b2e3c78042f5f83fe9367909ea6db7f589efb28b377575c10968a8bc",
+    "mylox/cli.py": "5f934da638fcade6c36cd685e33994e92c78f2c963fe116cac1dd6dcc89d0f23",
+    "mylox/env.py": "ad8f8191784c07d8eb437bfefee5e40138e529e9d5d15a2e2d84edac134b6a8d",
+    "mylox/errors.py": "68e4af32fba269d5425614c0428f21b2eb3c52b603d19665085c903abba0006d",
+    "mylox/function.py": "85fce8139f794022dfbde68abd59e66d56fa9c850ab3d5f452a2b6b5d6ba02f2",
+    "mylox/interpreter.py": "b4a1f311e8b4254e70cbff8fecc887f37af38ac925b20d9b492f6be5e48fb0a2",
+    "mylox/lists.py": "083c429a55115bcfbb22d0d56232f698523062f96386db72ac13cb9fc6c0a6ab",
+    "mylox/nodes.py": "da2104bbad2947aceb09c6f6f76e8bbe74bb04a6872d811591a8818a50f32b2a",
+    "mylox/oop.py": "ac6b3886b1593b40a55fa42fca302e159217c87b718caa0bb815a110528bae64",
+    "mylox/pipeline/lexer.py": "d30c003ab5fee5193b44c52b2b939e2e19a1d225a36672761c302ee1af1a9e6d",
+    "mylox/pipeline/parser.py": "d2c9f00dc846e09f65b8ee989ce6232a80abbea62591e91d68f435e7960ff977",
+    "mylox/printing.py": "e6a570e8e1838498f7fe46185cdd88d5fd418d9b6558de32d07fb5f90d1db137",
+    "mylox/resolver.py": "4b3b1e4a4c7364de304a65cdf84f50edfa82243943de8682ece05fb74374617a",
+    "mylox/tokens.py": "a855c67be1f3e658154379b4d286428b9ad2ecb0ac1b324bab1d3ecae525e981",
+    "mylox/values.py": "fc7a4064551be21bca7fcfa9589c6742640d50032d8b14f7891760147fdb6c92"
+  },
+  "programs": {
+    "suma": {
+      "sha256": "5b35f681fb070e225abcbcc572a5e6ebaa2b1992a847a957a108e6c840594dd0",
+      "expected": "5000050000",
+      "python_sha256": "15b2ece81faf3f0c2df6e80c3ef05bd79985d5c941223f335d18b0d59193b96b",
+      "javascript_sha256": "9586be0db81fd7b8fa43bbabb4f41c2c81a1b0fc83886d9e4a0b14ca58fe46d5"
+    },
+    "fibonacci": {
+      "sha256": "8230452026c8fa31c4bd2e241c99268a933b4137d559bcedf21a438a5f962aef",
+      "expected": "17710",
+      "python_sha256": "b1ff129aa1483d9eb402c0ff5657cefa2b0ef67ff8755511852c20fd117ded5b",
+      "javascript_sha256": "bb762bd74702f743e91d8b6a57efa95e853b2fdd02e8c410c203b6e4d9ce8357"
+    },
+    "closures": {
+      "sha256": "aa0ccd087540e41363775d5a036d76022a281b771b2d093e2251da9ebb2f6ceb",
+      "expected": "450135000",
+      "python_sha256": "d3e58206e94b7eb4ce956da909c0980fd073cc3042b6e68dab4e66e1c470cc80",
+      "javascript_sha256": "7f53574875ead563b8617beba08840767abc49994fbd65e6e36b9c140574455a"
+    },
+    "primos": {
+      "sha256": "274ecfcd34b968dd3e1f0d1f53517b6e92248dd906eb23e604751f5a4a8150c7",
+      "expected": "62",
+      "python_sha256": "91b772c78ef1fb15e1b3a8f3d23f1daa17068c19d263c0f57e785a8b443e1fed",
+      "javascript_sha256": "f5bd2ece67b5d6df440b6868029df0840e0b120e68245af50e82cb74b91691bf"
+    },
+    "fizzbuzz": {
+      "sha256": "820c1eafe8b05efc38e47b31a8d6e5025d332167a107885ef1e95b7c08993aff",
+      "expected": "..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz.Fizz..FizzBuzz..Fizz.BuzzFizz..FizzBuzz",
+      "python_sha256": "4e06479631998c04859a33d294dd132d19df99791cac869c97c003854465a1cb",
+      "javascript_sha256": "17ba7ff7ea797376ad06a3f214bd75f0cdfbf023687fe3643de8d01527e6b4f2"
+    },
+    "objetos": {
+      "sha256": "d006be86f3a2d39d6540126afdd66051611fe199fe2e3b83b638098d50841913",
+      "expected": "200030000"
+    },
+    "listas": {
+      "sha256": "2f3ea3f590d1188bef593eba9a2fcfa0e9f819a07fec17dbcf692fb95ee9844c",
+      "expected": "100010000"
+    }
+  },
+  "samples": [
+    {
+      "program": "suma",
+      "variant": "tree-walk",
+      "round": 0,
+      "frontend_ms": 0.189074,
+      "execution_ms": 408.62167,
+      "total_ms": 408.810744
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 0,
+      "frontend_ms": 0.288567,
+      "execution_ms": 1424.153449,
+      "total_ms": 1424.442016
+    },
+    {
+      "program": "suma",
+      "variant": "python-native",
+      "round": 0,
+      "frontend_ms": 0.095813,
+      "execution_ms": 8.802865,
+      "total_ms": 8.898678
+    },
+    {
+      "program": "suma",
+      "variant": "plox",
+      "round": 0,
+      "frontend_ms": 0.322078,
+      "execution_ms": 4019.652332,
+      "total_ms": 4019.97441
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 0,
+      "frontend_ms": 0.513709,
+      "execution_ms": 1870.671179,
+      "total_ms": 1871.184888
+    },
+    {
+      "program": "suma",
+      "variant": "partial",
+      "round": 0,
+      "frontend_ms": 0.18436,
+      "execution_ms": 396.708501,
+      "total_ms": 396.892861
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 1,
+      "frontend_ms": 0.441907,
+      "execution_ms": 1345.691716,
+      "total_ms": 1346.133623
+    },
+    {
+      "program": "suma",
+      "variant": "plox",
+      "round": 1,
+      "frontend_ms": 0.379088,
+      "execution_ms": 5046.631129,
+      "total_ms": 5047.010217
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 1,
+      "frontend_ms": 0.313096,
+      "execution_ms": 2199.825016,
+      "total_ms": 2200.138112
+    },
+    {
+      "program": "suma",
+      "variant": "python-native",
+      "round": 1,
+      "frontend_ms": 0.180947,
+      "execution_ms": 19.754332,
+      "total_ms": 19.935279
+    },
+    {
+      "program": "suma",
+      "variant": "partial",
+      "round": 1,
+      "frontend_ms": 0.2833,
+      "execution_ms": 637.475116,
+      "total_ms": 637.758416
+    },
+    {
+      "program": "suma",
+      "variant": "tree-walk",
+      "round": 1,
+      "frontend_ms": 0.290938,
+      "execution_ms": 562.245026,
+      "total_ms": 562.535964
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 2,
+      "frontend_ms": 0.323181,
+      "execution_ms": 2125.077859,
+      "total_ms": 2125.40104
+    },
+    {
+      "program": "suma",
+      "variant": "tree-walk",
+      "round": 2,
+      "frontend_ms": 0.191434,
+      "execution_ms": 418.818698,
+      "total_ms": 419.010132
+    },
+    {
+      "program": "suma",
+      "variant": "plox",
+      "round": 2,
+      "frontend_ms": 0.211092,
+      "execution_ms": 3289.163579,
+      "total_ms": 3289.374671
+    },
+    {
+      "program": "suma",
+      "variant": "partial",
+      "round": 2,
+      "frontend_ms": 0.328827,
+      "execution_ms": 383.174821,
+      "total_ms": 383.503648
+    },
+    {
+      "program": "suma",
+      "variant": "python-native",
+      "round": 2,
+      "frontend_ms": 0.265639,
+      "execution_ms": 19.85493,
+      "total_ms": 20.120569
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 2,
+      "frontend_ms": 0.311113,
+      "execution_ms": 1259.331337,
+      "total_ms": 1259.64245
+    },
+    {
+      "program": "suma",
+      "variant": "tree-walk",
+      "round": 3,
+      "frontend_ms": 0.265082,
+      "execution_ms": 431.173512,
+      "total_ms": 431.438594
+    },
+    {
+      "program": "suma",
+      "variant": "plox",
+      "round": 3,
+      "frontend_ms": 0.324539,
+      "execution_ms": 2868.410797,
+      "total_ms": 2868.735336
+    },
+    {
+      "program": "suma",
+      "variant": "python-native",
+      "round": 3,
+      "frontend_ms": 0.08953,
+      "execution_ms": 6.550855,
+      "total_ms": 6.640385
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 3,
+      "frontend_ms": 0.202785,
+      "execution_ms": 877.743143,
+      "total_ms": 877.945928
+    },
+    {
+      "program": "suma",
+      "variant": "partial",
+      "round": 3,
+      "frontend_ms": 0.174159,
+      "execution_ms": 245.700389,
+      "total_ms": 245.874548
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 3,
+      "frontend_ms": 0.200292,
+      "execution_ms": 1086.686549,
+      "total_ms": 1086.886841
+    },
+    {
+      "program": "suma",
+      "variant": "python-native",
+      "round": 4,
+      "frontend_ms": 0.095922,
+      "execution_ms": 7.946121,
+      "total_ms": 8.042043
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 4,
+      "frontend_ms": 0.219255,
+      "execution_ms": 1503.284993,
+      "total_ms": 1503.504248
+    },
+    {
+      "program": "suma",
+      "variant": "partial",
+      "round": 4,
+      "frontend_ms": 0.231942,
+      "execution_ms": 334.018352,
+      "total_ms": 334.250294
+    },
+    {
+      "program": "suma",
+      "variant": "plox",
+      "round": 4,
+      "frontend_ms": 0.25099,
+      "execution_ms": 2475.468249,
+      "total_ms": 2475.719239
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 4,
+      "frontend_ms": 0.322005,
+      "execution_ms": 921.348908,
+      "total_ms": 921.670913
+    },
+    {
+      "program": "suma",
+      "variant": "tree-walk",
+      "round": 4,
+      "frontend_ms": 0.217795,
+      "execution_ms": 354.38519,
+      "total_ms": 354.602985
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 5,
+      "frontend_ms": 0.301934,
+      "execution_ms": 1102.254292,
+      "total_ms": 1102.556226
+    },
+    {
+      "program": "suma",
+      "variant": "tree-walk",
+      "round": 5,
+      "frontend_ms": 0.200949,
+      "execution_ms": 272.787698,
+      "total_ms": 272.988647
+    },
+    {
+      "program": "suma",
+      "variant": "partial",
+      "round": 5,
+      "frontend_ms": 0.172294,
+      "execution_ms": 269.99063,
+      "total_ms": 270.162924
+    },
+    {
+      "program": "suma",
+      "variant": "python-native",
+      "round": 5,
+      "frontend_ms": 0.101994,
+      "execution_ms": 6.150285,
+      "total_ms": 6.252279
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 5,
+      "frontend_ms": 0.213906,
+      "execution_ms": 1253.476003,
+      "total_ms": 1253.689909
+    },
+    {
+      "program": "suma",
+      "variant": "plox",
+      "round": 5,
+      "frontend_ms": 0.216137,
+      "execution_ms": 3352.115667,
+      "total_ms": 3352.331804
+    },
+    {
+      "program": "suma",
+      "variant": "plox",
+      "round": 6,
+      "frontend_ms": 0.316208,
+      "execution_ms": 2672.737112,
+      "total_ms": 2673.05332
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 6,
+      "frontend_ms": 0.220357,
+      "execution_ms": 1653.623261,
+      "total_ms": 1653.843618
+    },
+    {
+      "program": "suma",
+      "variant": "python-native",
+      "round": 6,
+      "frontend_ms": 0.124256,
+      "execution_ms": 10.62048,
+      "total_ms": 10.744736
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 6,
+      "frontend_ms": 0.29489,
+      "execution_ms": 1163.410626,
+      "total_ms": 1163.705516
+    },
+    {
+      "program": "suma",
+      "variant": "tree-walk",
+      "round": 6,
+      "frontend_ms": 0.293905,
+      "execution_ms": 310.023462,
+      "total_ms": 310.317367
+    },
+    {
+      "program": "suma",
+      "variant": "partial",
+      "round": 6,
+      "frontend_ms": 0.199541,
+      "execution_ms": 311.258257,
+      "total_ms": 311.457798
+    },
+    {
+      "program": "suma",
+      "variant": "partial",
+      "round": 7,
+      "frontend_ms": 0.184224,
+      "execution_ms": 296.015734,
+      "total_ms": 296.199958
+    },
+    {
+      "program": "suma",
+      "variant": "plox",
+      "round": 7,
+      "frontend_ms": 0.255494,
+      "execution_ms": 2637.588558,
+      "total_ms": 2637.844052
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 7,
+      "frontend_ms": 0.213938,
+      "execution_ms": 1080.322431,
+      "total_ms": 1080.536369
+    },
+    {
+      "program": "suma",
+      "variant": "tree-walk",
+      "round": 7,
+      "frontend_ms": 0.178462,
+      "execution_ms": 293.868592,
+      "total_ms": 294.047054
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 7,
+      "frontend_ms": 0.278651,
+      "execution_ms": 999.591905,
+      "total_ms": 999.870556
+    },
+    {
+      "program": "suma",
+      "variant": "python-native",
+      "round": 7,
+      "frontend_ms": 0.115909,
+      "execution_ms": 8.945942,
+      "total_ms": 9.061851
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 8,
+      "frontend_ms": 0.290516,
+      "execution_ms": 1159.73317,
+      "total_ms": 1160.023686
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 8,
+      "frontend_ms": 0.202427,
+      "execution_ms": 991.296373,
+      "total_ms": 991.4988
+    },
+    {
+      "program": "suma",
+      "variant": "tree-walk",
+      "round": 8,
+      "frontend_ms": 0.179615,
+      "execution_ms": 331.961653,
+      "total_ms": 332.141268
+    },
+    {
+      "program": "suma",
+      "variant": "plox",
+      "round": 8,
+      "frontend_ms": 0.393555,
+      "execution_ms": 3083.835704,
+      "total_ms": 3084.229259
+    },
+    {
+      "program": "suma",
+      "variant": "python-native",
+      "round": 8,
+      "frontend_ms": 0.114747,
+      "execution_ms": 9.134614,
+      "total_ms": 9.249361
+    },
+    {
+      "program": "suma",
+      "variant": "partial",
+      "round": 8,
+      "frontend_ms": 0.248898,
+      "execution_ms": 303.190198,
+      "total_ms": 303.439096
+    },
+    {
+      "program": "suma",
+      "variant": "plox",
+      "round": 9,
+      "frontend_ms": 0.32057,
+      "execution_ms": 3748.19421,
+      "total_ms": 3748.51478
+    },
+    {
+      "program": "suma",
+      "variant": "partial",
+      "round": 9,
+      "frontend_ms": 0.23284,
+      "execution_ms": 346.899067,
+      "total_ms": 347.131907
+    },
+    {
+      "program": "suma",
+      "variant": "python-native",
+      "round": 9,
+      "frontend_ms": 0.114475,
+      "execution_ms": 7.26184,
+      "total_ms": 7.376315
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 9,
+      "frontend_ms": 0.293617,
+      "execution_ms": 1440.761681,
+      "total_ms": 1441.055298
+    },
+    {
+      "program": "suma",
+      "variant": "tree-walk",
+      "round": 9,
+      "frontend_ms": 0.271565,
+      "execution_ms": 350.286477,
+      "total_ms": 350.558042
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 9,
+      "frontend_ms": 0.338824,
+      "execution_ms": 1095.595606,
+      "total_ms": 1095.93443
+    },
+    {
+      "program": "suma",
+      "variant": "tree-walk",
+      "round": 10,
+      "frontend_ms": 0.223902,
+      "execution_ms": 327.768179,
+      "total_ms": 327.992081
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 10,
+      "frontend_ms": 0.23168,
+      "execution_ms": 1170.192667,
+      "total_ms": 1170.424347
+    },
+    {
+      "program": "suma",
+      "variant": "plox",
+      "round": 10,
+      "frontend_ms": 0.26165,
+      "execution_ms": 2849.534752,
+      "total_ms": 2849.796402
+    },
+    {
+      "program": "suma",
+      "variant": "partial",
+      "round": 10,
+      "frontend_ms": 0.172063,
+      "execution_ms": 250.577091,
+      "total_ms": 250.749154
+    },
+    {
+      "program": "suma",
+      "variant": "python-native",
+      "round": 10,
+      "frontend_ms": 0.090148,
+      "execution_ms": 6.551473,
+      "total_ms": 6.641621
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 10,
+      "frontend_ms": 0.232841,
+      "execution_ms": 825.241479,
+      "total_ms": 825.47432
+    },
+    {
+      "program": "suma",
+      "variant": "partial",
+      "round": 11,
+      "frontend_ms": 0.162642,
+      "execution_ms": 276.328194,
+      "total_ms": 276.490836
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 11,
+      "frontend_ms": 0.276583,
+      "execution_ms": 1052.938241,
+      "total_ms": 1053.214824
+    },
+    {
+      "program": "suma",
+      "variant": "tree-walk",
+      "round": 11,
+      "frontend_ms": 0.250676,
+      "execution_ms": 290.620759,
+      "total_ms": 290.871435
+    },
+    {
+      "program": "suma",
+      "variant": "plox",
+      "round": 11,
+      "frontend_ms": 0.258727,
+      "execution_ms": 3014.297532,
+      "total_ms": 3014.556259
+    },
+    {
+      "program": "suma",
+      "variant": "python-native",
+      "round": 11,
+      "frontend_ms": 0.089192,
+      "execution_ms": 6.163345,
+      "total_ms": 6.252537
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 11,
+      "frontend_ms": 0.700299,
+      "execution_ms": 944.772121,
+      "total_ms": 945.47242
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 12,
+      "frontend_ms": 0.26288,
+      "execution_ms": 1406.934569,
+      "total_ms": 1407.197449
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 12,
+      "frontend_ms": 4.290803,
+      "execution_ms": 1182.966689,
+      "total_ms": 1187.257492
+    },
+    {
+      "program": "suma",
+      "variant": "partial",
+      "round": 12,
+      "frontend_ms": 0.273555,
+      "execution_ms": 409.509249,
+      "total_ms": 409.782804
+    },
+    {
+      "program": "suma",
+      "variant": "tree-walk",
+      "round": 12,
+      "frontend_ms": 0.268931,
+      "execution_ms": 423.558817,
+      "total_ms": 423.827748
+    },
+    {
+      "program": "suma",
+      "variant": "python-native",
+      "round": 12,
+      "frontend_ms": 0.233575,
+      "execution_ms": 8.941759,
+      "total_ms": 9.175334
+    },
+    {
+      "program": "suma",
+      "variant": "plox",
+      "round": 12,
+      "frontend_ms": 0.329444,
+      "execution_ms": 3504.044254,
+      "total_ms": 3504.373698
+    },
+    {
+      "program": "suma",
+      "variant": "tree-walk",
+      "round": 13,
+      "frontend_ms": 0.346443,
+      "execution_ms": 575.175398,
+      "total_ms": 575.521841
+    },
+    {
+      "program": "suma",
+      "variant": "python-native",
+      "round": 13,
+      "frontend_ms": 0.136092,
+      "execution_ms": 13.020347,
+      "total_ms": 13.156439
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 13,
+      "frontend_ms": 0.41683,
+      "execution_ms": 1894.792593,
+      "total_ms": 1895.209423
+    },
+    {
+      "program": "suma",
+      "variant": "partial",
+      "round": 13,
+      "frontend_ms": 0.188434,
+      "execution_ms": 308.146095,
+      "total_ms": 308.334529
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 13,
+      "frontend_ms": 0.356227,
+      "execution_ms": 1557.6376,
+      "total_ms": 1557.993827
+    },
+    {
+      "program": "suma",
+      "variant": "plox",
+      "round": 13,
+      "frontend_ms": 0.288397,
+      "execution_ms": 3846.998987,
+      "total_ms": 3847.287384
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 14,
+      "frontend_ms": 14.558009,
+      "execution_ms": 1296.052654,
+      "total_ms": 1310.610663
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 14,
+      "frontend_ms": 0.326886,
+      "execution_ms": 1963.998335,
+      "total_ms": 1964.325221
+    },
+    {
+      "program": "suma",
+      "variant": "python-native",
+      "round": 14,
+      "frontend_ms": 0.125708,
+      "execution_ms": 10.044343,
+      "total_ms": 10.170051
+    },
+    {
+      "program": "suma",
+      "variant": "partial",
+      "round": 14,
+      "frontend_ms": 0.273176,
+      "execution_ms": 336.30542,
+      "total_ms": 336.578596
+    },
+    {
+      "program": "suma",
+      "variant": "plox",
+      "round": 14,
+      "frontend_ms": 0.206417,
+      "execution_ms": 3274.711532,
+      "total_ms": 3274.917949
+    },
+    {
+      "program": "suma",
+      "variant": "tree-walk",
+      "round": 14,
+      "frontend_ms": 0.263435,
+      "execution_ms": 382.983471,
+      "total_ms": 383.246906
+    },
+    {
+      "program": "suma",
+      "variant": "partial",
+      "round": 15,
+      "frontend_ms": 1.162404,
+      "execution_ms": 393.903903,
+      "total_ms": 395.066307
+    },
+    {
+      "program": "suma",
+      "variant": "python-native",
+      "round": 15,
+      "frontend_ms": 0.112355,
+      "execution_ms": 9.527939,
+      "total_ms": 9.640294
+    },
+    {
+      "program": "suma",
+      "variant": "plox",
+      "round": 15,
+      "frontend_ms": 0.373046,
+      "execution_ms": 4529.034649,
+      "total_ms": 4529.407695
+    },
+    {
+      "program": "suma",
+      "variant": "tree-walk",
+      "round": 15,
+      "frontend_ms": 0.260223,
+      "execution_ms": 340.37717,
+      "total_ms": 340.637393
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 15,
+      "frontend_ms": 0.331344,
+      "execution_ms": 1033.072101,
+      "total_ms": 1033.403445
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 15,
+      "frontend_ms": 0.312433,
+      "execution_ms": 1488.463575,
+      "total_ms": 1488.776008
+    },
+    {
+      "program": "suma",
+      "variant": "partial",
+      "round": 16,
+      "frontend_ms": 0.173161,
+      "execution_ms": 295.676725,
+      "total_ms": 295.849886
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 16,
+      "frontend_ms": 0.308169,
+      "execution_ms": 1342.615193,
+      "total_ms": 1342.923362
+    },
+    {
+      "program": "suma",
+      "variant": "tree-walk",
+      "round": 16,
+      "frontend_ms": 0.17609,
+      "execution_ms": 283.140922,
+      "total_ms": 283.317012
+    },
+    {
+      "program": "suma",
+      "variant": "plox",
+      "round": 16,
+      "frontend_ms": 0.285723,
+      "execution_ms": 3172.023789,
+      "total_ms": 3172.309512
+    },
+    {
+      "program": "suma",
+      "variant": "python-native",
+      "round": 16,
+      "frontend_ms": 0.17349,
+      "execution_ms": 26.878088,
+      "total_ms": 27.051578
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 16,
+      "frontend_ms": 0.398995,
+      "execution_ms": 1704.356294,
+      "total_ms": 1704.755289
+    },
+    {
+      "program": "suma",
+      "variant": "plox",
+      "round": 17,
+      "frontend_ms": 1.009261,
+      "execution_ms": 4516.108029,
+      "total_ms": 4517.11729
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 17,
+      "frontend_ms": 0.372405,
+      "execution_ms": 1872.608836,
+      "total_ms": 1872.981241
+    },
+    {
+      "program": "suma",
+      "variant": "partial",
+      "round": 17,
+      "frontend_ms": 0.315297,
+      "execution_ms": 552.33425,
+      "total_ms": 552.649547
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 17,
+      "frontend_ms": 0.393655,
+      "execution_ms": 1460.877065,
+      "total_ms": 1461.27072
+    },
+    {
+      "program": "suma",
+      "variant": "tree-walk",
+      "round": 17,
+      "frontend_ms": 0.260317,
+      "execution_ms": 560.542692,
+      "total_ms": 560.803009
+    },
+    {
+      "program": "suma",
+      "variant": "python-native",
+      "round": 17,
+      "frontend_ms": 0.346717,
+      "execution_ms": 19.664879,
+      "total_ms": 20.011596
+    },
+    {
+      "program": "suma",
+      "variant": "partial",
+      "round": 18,
+      "frontend_ms": 0.289267,
+      "execution_ms": 752.666721,
+      "total_ms": 752.955988
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 18,
+      "frontend_ms": 0.45825,
+      "execution_ms": 2154.516604,
+      "total_ms": 2154.974854
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 18,
+      "frontend_ms": 0.38093,
+      "execution_ms": 1865.899923,
+      "total_ms": 1866.280853
+    },
+    {
+      "program": "suma",
+      "variant": "python-native",
+      "round": 18,
+      "frontend_ms": 0.134911,
+      "execution_ms": 11.83625,
+      "total_ms": 11.971161
+    },
+    {
+      "program": "suma",
+      "variant": "plox",
+      "round": 18,
+      "frontend_ms": 0.360688,
+      "execution_ms": 4422.33461,
+      "total_ms": 4422.695298
+    },
+    {
+      "program": "suma",
+      "variant": "tree-walk",
+      "round": 18,
+      "frontend_ms": 0.276673,
+      "execution_ms": 383.159966,
+      "total_ms": 383.436639
+    },
+    {
+      "program": "suma",
+      "variant": "partial",
+      "round": 19,
+      "frontend_ms": 0.190267,
+      "execution_ms": 410.332695,
+      "total_ms": 410.522962
+    },
+    {
+      "program": "suma",
+      "variant": "python-native",
+      "round": 19,
+      "frontend_ms": 0.464355,
+      "execution_ms": 14.942917,
+      "total_ms": 15.407272
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-before",
+      "round": 19,
+      "frontend_ms": 0.663368,
+      "execution_ms": 2082.434276,
+      "total_ms": 2083.097644
+    },
+    {
+      "program": "suma",
+      "variant": "plox",
+      "round": 19,
+      "frontend_ms": 0.353448,
+      "execution_ms": 4557.620856,
+      "total_ms": 4557.974304
+    },
+    {
+      "program": "suma",
+      "variant": "bytecode-after",
+      "round": 19,
+      "frontend_ms": 0.308516,
+      "execution_ms": 1179.188265,
+      "total_ms": 1179.496781
+    },
+    {
+      "program": "suma",
+      "variant": "tree-walk",
+      "round": 19,
+      "frontend_ms": 0.281315,
+      "execution_ms": 389.737014,
+      "total_ms": 390.018329
+    },
+    {
+      "program": "fibonacci",
+      "variant": "tree-walk",
+      "round": 0,
+      "frontend_ms": 0.266026,
+      "execution_ms": 815.18893,
+      "total_ms": 815.454956
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 0,
+      "frontend_ms": 0.490431,
+      "execution_ms": 485.179987,
+      "total_ms": 485.670418
+    },
+    {
+      "program": "fibonacci",
+      "variant": "python-native",
+      "round": 0,
+      "frontend_ms": 0.164058,
+      "execution_ms": 3.319471,
+      "total_ms": 3.483529
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 0,
+      "frontend_ms": 0.511943,
+      "execution_ms": 396.592248,
+      "total_ms": 397.104191
+    },
+    {
+      "program": "fibonacci",
+      "variant": "partial",
+      "round": 0,
+      "frontend_ms": 0.262945,
+      "execution_ms": 462.397521,
+      "total_ms": 462.660466
+    },
+    {
+      "program": "fibonacci",
+      "variant": "plox",
+      "round": 0,
+      "frontend_ms": 0.297045,
+      "execution_ms": 1752.471626,
+      "total_ms": 1752.768671
+    },
+    {
+      "program": "fibonacci",
+      "variant": "python-native",
+      "round": 1,
+      "frontend_ms": 0.141662,
+      "execution_ms": 2.145856,
+      "total_ms": 2.287518
+    },
+    {
+      "program": "fibonacci",
+      "variant": "partial",
+      "round": 1,
+      "frontend_ms": 0.365308,
+      "execution_ms": 612.910051,
+      "total_ms": 613.275359
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 1,
+      "frontend_ms": 0.522453,
+      "execution_ms": 523.874773,
+      "total_ms": 524.397226
+    },
+    {
+      "program": "fibonacci",
+      "variant": "tree-walk",
+      "round": 1,
+      "frontend_ms": 0.463658,
+      "execution_ms": 694.212939,
+      "total_ms": 694.676597
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 1,
+      "frontend_ms": 0.318392,
+      "execution_ms": 452.910372,
+      "total_ms": 453.228764
+    },
+    {
+      "program": "fibonacci",
+      "variant": "plox",
+      "round": 1,
+      "frontend_ms": 0.541178,
+      "execution_ms": 2006.130622,
+      "total_ms": 2006.6718
+    },
+    {
+      "program": "fibonacci",
+      "variant": "partial",
+      "round": 2,
+      "frontend_ms": 0.429747,
+      "execution_ms": 585.256925,
+      "total_ms": 585.686672
+    },
+    {
+      "program": "fibonacci",
+      "variant": "plox",
+      "round": 2,
+      "frontend_ms": 0.313455,
+      "execution_ms": 1743.872138,
+      "total_ms": 1744.185593
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 2,
+      "frontend_ms": 0.385639,
+      "execution_ms": 315.681544,
+      "total_ms": 316.067183
+    },
+    {
+      "program": "fibonacci",
+      "variant": "python-native",
+      "round": 2,
+      "frontend_ms": 0.122219,
+      "execution_ms": 2.031131,
+      "total_ms": 2.15335
+    },
+    {
+      "program": "fibonacci",
+      "variant": "tree-walk",
+      "round": 2,
+      "frontend_ms": 0.25136,
+      "execution_ms": 636.645582,
+      "total_ms": 636.896942
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 2,
+      "frontend_ms": 0.495206,
+      "execution_ms": 413.666837,
+      "total_ms": 414.162043
+    },
+    {
+      "program": "fibonacci",
+      "variant": "partial",
+      "round": 3,
+      "frontend_ms": 0.312952,
+      "execution_ms": 473.580595,
+      "total_ms": 473.893547
+    },
+    {
+      "program": "fibonacci",
+      "variant": "tree-walk",
+      "round": 3,
+      "frontend_ms": 0.25825,
+      "execution_ms": 626.086394,
+      "total_ms": 626.344644
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 3,
+      "frontend_ms": 0.316314,
+      "execution_ms": 294.335103,
+      "total_ms": 294.651417
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 3,
+      "frontend_ms": 0.342262,
+      "execution_ms": 465.542503,
+      "total_ms": 465.884765
+    },
+    {
+      "program": "fibonacci",
+      "variant": "plox",
+      "round": 3,
+      "frontend_ms": 0.306927,
+      "execution_ms": 1328.729676,
+      "total_ms": 1329.036603
+    },
+    {
+      "program": "fibonacci",
+      "variant": "python-native",
+      "round": 3,
+      "frontend_ms": 0.139416,
+      "execution_ms": 1.943712,
+      "total_ms": 2.083128
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 4,
+      "frontend_ms": 0.302042,
+      "execution_ms": 312.015954,
+      "total_ms": 312.317996
+    },
+    {
+      "program": "fibonacci",
+      "variant": "partial",
+      "round": 4,
+      "frontend_ms": 0.26951,
+      "execution_ms": 474.574126,
+      "total_ms": 474.843636
+    },
+    {
+      "program": "fibonacci",
+      "variant": "tree-walk",
+      "round": 4,
+      "frontend_ms": 0.399111,
+      "execution_ms": 603.132388,
+      "total_ms": 603.531499
+    },
+    {
+      "program": "fibonacci",
+      "variant": "python-native",
+      "round": 4,
+      "frontend_ms": 0.127531,
+      "execution_ms": 2.007188,
+      "total_ms": 2.134719
+    },
+    {
+      "program": "fibonacci",
+      "variant": "plox",
+      "round": 4,
+      "frontend_ms": 0.303794,
+      "execution_ms": 1421.299302,
+      "total_ms": 1421.603096
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 4,
+      "frontend_ms": 0.324459,
+      "execution_ms": 502.171539,
+      "total_ms": 502.495998
+    },
+    {
+      "program": "fibonacci",
+      "variant": "python-native",
+      "round": 5,
+      "frontend_ms": 0.307281,
+      "execution_ms": 2.567,
+      "total_ms": 2.874281
+    },
+    {
+      "program": "fibonacci",
+      "variant": "tree-walk",
+      "round": 5,
+      "frontend_ms": 0.401492,
+      "execution_ms": 843.879642,
+      "total_ms": 844.281134
+    },
+    {
+      "program": "fibonacci",
+      "variant": "plox",
+      "round": 5,
+      "frontend_ms": 0.313825,
+      "execution_ms": 1530.583362,
+      "total_ms": 1530.897187
+    },
+    {
+      "program": "fibonacci",
+      "variant": "partial",
+      "round": 5,
+      "frontend_ms": 0.613403,
+      "execution_ms": 439.443705,
+      "total_ms": 440.057108
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 5,
+      "frontend_ms": 0.334987,
+      "execution_ms": 360.521335,
+      "total_ms": 360.856322
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 5,
+      "frontend_ms": 0.379543,
+      "execution_ms": 407.42591,
+      "total_ms": 407.805453
+    },
+    {
+      "program": "fibonacci",
+      "variant": "tree-walk",
+      "round": 6,
+      "frontend_ms": 0.263638,
+      "execution_ms": 615.103563,
+      "total_ms": 615.367201
+    },
+    {
+      "program": "fibonacci",
+      "variant": "plox",
+      "round": 6,
+      "frontend_ms": 0.355088,
+      "execution_ms": 1708.212442,
+      "total_ms": 1708.56753
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 6,
+      "frontend_ms": 0.4718,
+      "execution_ms": 408.267485,
+      "total_ms": 408.739285
+    },
+    {
+      "program": "fibonacci",
+      "variant": "python-native",
+      "round": 6,
+      "frontend_ms": 0.24178,
+      "execution_ms": 1.972635,
+      "total_ms": 2.214415
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 6,
+      "frontend_ms": 0.317841,
+      "execution_ms": 432.460949,
+      "total_ms": 432.77879
+    },
+    {
+      "program": "fibonacci",
+      "variant": "partial",
+      "round": 6,
+      "frontend_ms": 0.247108,
+      "execution_ms": 420.643325,
+      "total_ms": 420.890433
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 7,
+      "frontend_ms": 0.309522,
+      "execution_ms": 409.834781,
+      "total_ms": 410.144303
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 7,
+      "frontend_ms": 0.404636,
+      "execution_ms": 314.524982,
+      "total_ms": 314.929618
+    },
+    {
+      "program": "fibonacci",
+      "variant": "partial",
+      "round": 7,
+      "frontend_ms": 0.235932,
+      "execution_ms": 492.313069,
+      "total_ms": 492.549001
+    },
+    {
+      "program": "fibonacci",
+      "variant": "plox",
+      "round": 7,
+      "frontend_ms": 0.289188,
+      "execution_ms": 1351.358816,
+      "total_ms": 1351.648004
+    },
+    {
+      "program": "fibonacci",
+      "variant": "tree-walk",
+      "round": 7,
+      "frontend_ms": 0.380558,
+      "execution_ms": 612.188718,
+      "total_ms": 612.569276
+    },
+    {
+      "program": "fibonacci",
+      "variant": "python-native",
+      "round": 7,
+      "frontend_ms": 0.135053,
+      "execution_ms": 2.014308,
+      "total_ms": 2.149361
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 8,
+      "frontend_ms": 0.312511,
+      "execution_ms": 436.971925,
+      "total_ms": 437.284436
+    },
+    {
+      "program": "fibonacci",
+      "variant": "plox",
+      "round": 8,
+      "frontend_ms": 0.419337,
+      "execution_ms": 1604.566464,
+      "total_ms": 1604.985801
+    },
+    {
+      "program": "fibonacci",
+      "variant": "tree-walk",
+      "round": 8,
+      "frontend_ms": 0.344429,
+      "execution_ms": 897.696983,
+      "total_ms": 898.041412
+    },
+    {
+      "program": "fibonacci",
+      "variant": "partial",
+      "round": 8,
+      "frontend_ms": 0.450393,
+      "execution_ms": 712.081301,
+      "total_ms": 712.531694
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 8,
+      "frontend_ms": 0.44048,
+      "execution_ms": 529.133556,
+      "total_ms": 529.574036
+    },
+    {
+      "program": "fibonacci",
+      "variant": "python-native",
+      "round": 8,
+      "frontend_ms": 0.172789,
+      "execution_ms": 3.072928,
+      "total_ms": 3.245717
+    },
+    {
+      "program": "fibonacci",
+      "variant": "partial",
+      "round": 9,
+      "frontend_ms": 0.342838,
+      "execution_ms": 534.744999,
+      "total_ms": 535.087837
+    },
+    {
+      "program": "fibonacci",
+      "variant": "tree-walk",
+      "round": 9,
+      "frontend_ms": 0.38911,
+      "execution_ms": 937.55917,
+      "total_ms": 937.94828
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 9,
+      "frontend_ms": 0.508778,
+      "execution_ms": 953.580681,
+      "total_ms": 954.089459
+    },
+    {
+      "program": "fibonacci",
+      "variant": "python-native",
+      "round": 9,
+      "frontend_ms": 0.180691,
+      "execution_ms": 3.497684,
+      "total_ms": 3.678375
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 9,
+      "frontend_ms": 0.378293,
+      "execution_ms": 454.487979,
+      "total_ms": 454.866272
+    },
+    {
+      "program": "fibonacci",
+      "variant": "plox",
+      "round": 9,
+      "frontend_ms": 0.417518,
+      "execution_ms": 2553.293841,
+      "total_ms": 2553.711359
+    },
+    {
+      "program": "fibonacci",
+      "variant": "python-native",
+      "round": 10,
+      "frontend_ms": 0.214727,
+      "execution_ms": 2.954774,
+      "total_ms": 3.169501
+    },
+    {
+      "program": "fibonacci",
+      "variant": "plox",
+      "round": 10,
+      "frontend_ms": 0.487305,
+      "execution_ms": 2875.399483,
+      "total_ms": 2875.886788
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 10,
+      "frontend_ms": 0.574239,
+      "execution_ms": 600.1157,
+      "total_ms": 600.689939
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 10,
+      "frontend_ms": 0.464044,
+      "execution_ms": 487.70491,
+      "total_ms": 488.168954
+    },
+    {
+      "program": "fibonacci",
+      "variant": "partial",
+      "round": 10,
+      "frontend_ms": 0.471887,
+      "execution_ms": 643.077588,
+      "total_ms": 643.549475
+    },
+    {
+      "program": "fibonacci",
+      "variant": "tree-walk",
+      "round": 10,
+      "frontend_ms": 0.47414,
+      "execution_ms": 949.062695,
+      "total_ms": 949.536835
+    },
+    {
+      "program": "fibonacci",
+      "variant": "python-native",
+      "round": 11,
+      "frontend_ms": 0.227266,
+      "execution_ms": 2.491215,
+      "total_ms": 2.718481
+    },
+    {
+      "program": "fibonacci",
+      "variant": "partial",
+      "round": 11,
+      "frontend_ms": 0.393072,
+      "execution_ms": 610.148419,
+      "total_ms": 610.541491
+    },
+    {
+      "program": "fibonacci",
+      "variant": "tree-walk",
+      "round": 11,
+      "frontend_ms": 0.274173,
+      "execution_ms": 721.219967,
+      "total_ms": 721.49414
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 11,
+      "frontend_ms": 0.495514,
+      "execution_ms": 444.098757,
+      "total_ms": 444.594271
+    },
+    {
+      "program": "fibonacci",
+      "variant": "plox",
+      "round": 11,
+      "frontend_ms": 0.28316,
+      "execution_ms": 1331.919449,
+      "total_ms": 1332.202609
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 11,
+      "frontend_ms": 0.476097,
+      "execution_ms": 340.380311,
+      "total_ms": 340.856408
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 12,
+      "frontend_ms": 0.504838,
+      "execution_ms": 449.520489,
+      "total_ms": 450.025327
+    },
+    {
+      "program": "fibonacci",
+      "variant": "partial",
+      "round": 12,
+      "frontend_ms": 0.446585,
+      "execution_ms": 598.127327,
+      "total_ms": 598.573912
+    },
+    {
+      "program": "fibonacci",
+      "variant": "tree-walk",
+      "round": 12,
+      "frontend_ms": 0.277583,
+      "execution_ms": 792.690516,
+      "total_ms": 792.968099
+    },
+    {
+      "program": "fibonacci",
+      "variant": "plox",
+      "round": 12,
+      "frontend_ms": 0.32433,
+      "execution_ms": 1523.79599,
+      "total_ms": 1524.12032
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 12,
+      "frontend_ms": 0.610171,
+      "execution_ms": 378.484732,
+      "total_ms": 379.094903
+    },
+    {
+      "program": "fibonacci",
+      "variant": "python-native",
+      "round": 12,
+      "frontend_ms": 0.164004,
+      "execution_ms": 2.047012,
+      "total_ms": 2.211016
+    },
+    {
+      "program": "fibonacci",
+      "variant": "python-native",
+      "round": 13,
+      "frontend_ms": 0.155554,
+      "execution_ms": 2.183229,
+      "total_ms": 2.338783
+    },
+    {
+      "program": "fibonacci",
+      "variant": "tree-walk",
+      "round": 13,
+      "frontend_ms": 0.29368,
+      "execution_ms": 637.095294,
+      "total_ms": 637.388974
+    },
+    {
+      "program": "fibonacci",
+      "variant": "plox",
+      "round": 13,
+      "frontend_ms": 0.374958,
+      "execution_ms": 1366.443645,
+      "total_ms": 1366.818603
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 13,
+      "frontend_ms": 0.303418,
+      "execution_ms": 317.943677,
+      "total_ms": 318.247095
+    },
+    {
+      "program": "fibonacci",
+      "variant": "partial",
+      "round": 13,
+      "frontend_ms": 0.325304,
+      "execution_ms": 463.583855,
+      "total_ms": 463.909159
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 13,
+      "frontend_ms": 0.439897,
+      "execution_ms": 393.317098,
+      "total_ms": 393.756995
+    },
+    {
+      "program": "fibonacci",
+      "variant": "partial",
+      "round": 14,
+      "frontend_ms": 0.272839,
+      "execution_ms": 433.654364,
+      "total_ms": 433.927203
+    },
+    {
+      "program": "fibonacci",
+      "variant": "plox",
+      "round": 14,
+      "frontend_ms": 0.274229,
+      "execution_ms": 2325.457954,
+      "total_ms": 2325.732183
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 14,
+      "frontend_ms": 0.300929,
+      "execution_ms": 413.207912,
+      "total_ms": 413.508841
+    },
+    {
+      "program": "fibonacci",
+      "variant": "tree-walk",
+      "round": 14,
+      "frontend_ms": 0.331925,
+      "execution_ms": 601.279914,
+      "total_ms": 601.611839
+    },
+    {
+      "program": "fibonacci",
+      "variant": "python-native",
+      "round": 14,
+      "frontend_ms": 0.136841,
+      "execution_ms": 2.231666,
+      "total_ms": 2.368507
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 14,
+      "frontend_ms": 0.305384,
+      "execution_ms": 410.484924,
+      "total_ms": 410.790308
+    },
+    {
+      "program": "fibonacci",
+      "variant": "partial",
+      "round": 15,
+      "frontend_ms": 0.251339,
+      "execution_ms": 564.982261,
+      "total_ms": 565.2336
+    },
+    {
+      "program": "fibonacci",
+      "variant": "tree-walk",
+      "round": 15,
+      "frontend_ms": 0.517044,
+      "execution_ms": 961.946643,
+      "total_ms": 962.463687
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 15,
+      "frontend_ms": 0.500933,
+      "execution_ms": 447.289838,
+      "total_ms": 447.790771
+    },
+    {
+      "program": "fibonacci",
+      "variant": "python-native",
+      "round": 15,
+      "frontend_ms": 0.457676,
+      "execution_ms": 2.796088,
+      "total_ms": 3.253764
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 15,
+      "frontend_ms": 0.518621,
+      "execution_ms": 479.436678,
+      "total_ms": 479.955299
+    },
+    {
+      "program": "fibonacci",
+      "variant": "plox",
+      "round": 15,
+      "frontend_ms": 0.452874,
+      "execution_ms": 1905.035578,
+      "total_ms": 1905.488452
+    },
+    {
+      "program": "fibonacci",
+      "variant": "plox",
+      "round": 16,
+      "frontend_ms": 0.452735,
+      "execution_ms": 1907.410861,
+      "total_ms": 1907.863596
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 16,
+      "frontend_ms": 0.914587,
+      "execution_ms": 438.955955,
+      "total_ms": 439.870542
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 16,
+      "frontend_ms": 0.406593,
+      "execution_ms": 695.1943,
+      "total_ms": 695.600893
+    },
+    {
+      "program": "fibonacci",
+      "variant": "tree-walk",
+      "round": 16,
+      "frontend_ms": 0.450041,
+      "execution_ms": 1352.535084,
+      "total_ms": 1352.985125
+    },
+    {
+      "program": "fibonacci",
+      "variant": "partial",
+      "round": 16,
+      "frontend_ms": 0.400725,
+      "execution_ms": 895.79656,
+      "total_ms": 896.197285
+    },
+    {
+      "program": "fibonacci",
+      "variant": "python-native",
+      "round": 16,
+      "frontend_ms": 0.189607,
+      "execution_ms": 2.827812,
+      "total_ms": 3.017419
+    },
+    {
+      "program": "fibonacci",
+      "variant": "plox",
+      "round": 17,
+      "frontend_ms": 0.742832,
+      "execution_ms": 2348.041487,
+      "total_ms": 2348.784319
+    },
+    {
+      "program": "fibonacci",
+      "variant": "partial",
+      "round": 17,
+      "frontend_ms": 0.684892,
+      "execution_ms": 640.202011,
+      "total_ms": 640.886903
+    },
+    {
+      "program": "fibonacci",
+      "variant": "tree-walk",
+      "round": 17,
+      "frontend_ms": 0.262626,
+      "execution_ms": 954.865429,
+      "total_ms": 955.128055
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 17,
+      "frontend_ms": 0.377414,
+      "execution_ms": 670.744027,
+      "total_ms": 671.121441
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 17,
+      "frontend_ms": 0.496716,
+      "execution_ms": 784.053345,
+      "total_ms": 784.550061
+    },
+    {
+      "program": "fibonacci",
+      "variant": "python-native",
+      "round": 17,
+      "frontend_ms": 0.22453,
+      "execution_ms": 3.143294,
+      "total_ms": 3.367824
+    },
+    {
+      "program": "fibonacci",
+      "variant": "tree-walk",
+      "round": 18,
+      "frontend_ms": 3.898895,
+      "execution_ms": 1070.615801,
+      "total_ms": 1074.514696
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 18,
+      "frontend_ms": 2.098237,
+      "execution_ms": 493.349661,
+      "total_ms": 495.447898
+    },
+    {
+      "program": "fibonacci",
+      "variant": "partial",
+      "round": 18,
+      "frontend_ms": 0.292807,
+      "execution_ms": 508.861232,
+      "total_ms": 509.154039
+    },
+    {
+      "program": "fibonacci",
+      "variant": "plox",
+      "round": 18,
+      "frontend_ms": 0.410548,
+      "execution_ms": 1432.779358,
+      "total_ms": 1433.189906
+    },
+    {
+      "program": "fibonacci",
+      "variant": "python-native",
+      "round": 18,
+      "frontend_ms": 0.122734,
+      "execution_ms": 2.687617,
+      "total_ms": 2.810351
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 18,
+      "frontend_ms": 0.34107,
+      "execution_ms": 319.897254,
+      "total_ms": 320.238324
+    },
+    {
+      "program": "fibonacci",
+      "variant": "python-native",
+      "round": 19,
+      "frontend_ms": 0.125634,
+      "execution_ms": 1.911608,
+      "total_ms": 2.037242
+    },
+    {
+      "program": "fibonacci",
+      "variant": "partial",
+      "round": 19,
+      "frontend_ms": 0.22624,
+      "execution_ms": 386.112357,
+      "total_ms": 386.338597
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-after",
+      "round": 19,
+      "frontend_ms": 0.350238,
+      "execution_ms": 273.683777,
+      "total_ms": 274.034015
+    },
+    {
+      "program": "fibonacci",
+      "variant": "tree-walk",
+      "round": 19,
+      "frontend_ms": 0.234016,
+      "execution_ms": 557.356148,
+      "total_ms": 557.590164
+    },
+    {
+      "program": "fibonacci",
+      "variant": "plox",
+      "round": 19,
+      "frontend_ms": 0.276099,
+      "execution_ms": 1218.993363,
+      "total_ms": 1219.269462
+    },
+    {
+      "program": "fibonacci",
+      "variant": "bytecode-before",
+      "round": 19,
+      "frontend_ms": 0.290216,
+      "execution_ms": 345.802489,
+      "total_ms": 346.092705
+    },
+    {
+      "program": "closures",
+      "variant": "tree-walk",
+      "round": 0,
+      "frontend_ms": 0.42607,
+      "execution_ms": 370.149573,
+      "total_ms": 370.575643
+    },
+    {
+      "program": "closures",
+      "variant": "plox",
+      "round": 0,
+      "frontend_ms": 0.394418,
+      "execution_ms": 1995.775102,
+      "total_ms": 1996.16952
+    },
+    {
+      "program": "closures",
+      "variant": "partial",
+      "round": 0,
+      "frontend_ms": 0.406872,
+      "execution_ms": 407.172989,
+      "total_ms": 407.579861
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 0,
+      "frontend_ms": 0.560534,
+      "execution_ms": 926.021252,
+      "total_ms": 926.581786
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 0,
+      "frontend_ms": 0.836561,
+      "execution_ms": 783.015617,
+      "total_ms": 783.852178
+    },
+    {
+      "program": "closures",
+      "variant": "python-native",
+      "round": 0,
+      "frontend_ms": 0.21538,
+      "execution_ms": 9.720726,
+      "total_ms": 9.936106
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 1,
+      "frontend_ms": 0.700398,
+      "execution_ms": 992.053715,
+      "total_ms": 992.754113
+    },
+    {
+      "program": "closures",
+      "variant": "python-native",
+      "round": 1,
+      "frontend_ms": 0.19461,
+      "execution_ms": 9.621102,
+      "total_ms": 9.815712
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 1,
+      "frontend_ms": 0.513866,
+      "execution_ms": 1208.348511,
+      "total_ms": 1208.862377
+    },
+    {
+      "program": "closures",
+      "variant": "plox",
+      "round": 1,
+      "frontend_ms": 0.616782,
+      "execution_ms": 2320.768622,
+      "total_ms": 2321.385404
+    },
+    {
+      "program": "closures",
+      "variant": "partial",
+      "round": 1,
+      "frontend_ms": 0.455233,
+      "execution_ms": 492.935115,
+      "total_ms": 493.390348
+    },
+    {
+      "program": "closures",
+      "variant": "tree-walk",
+      "round": 1,
+      "frontend_ms": 0.512722,
+      "execution_ms": 603.434688,
+      "total_ms": 603.94741
+    },
+    {
+      "program": "closures",
+      "variant": "python-native",
+      "round": 2,
+      "frontend_ms": 0.316109,
+      "execution_ms": 14.377775,
+      "total_ms": 14.693884
+    },
+    {
+      "program": "closures",
+      "variant": "tree-walk",
+      "round": 2,
+      "frontend_ms": 0.683514,
+      "execution_ms": 477.881127,
+      "total_ms": 478.564641
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 2,
+      "frontend_ms": 0.474185,
+      "execution_ms": 1011.18419,
+      "total_ms": 1011.658375
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 2,
+      "frontend_ms": 0.795322,
+      "execution_ms": 824.923864,
+      "total_ms": 825.719186
+    },
+    {
+      "program": "closures",
+      "variant": "plox",
+      "round": 2,
+      "frontend_ms": 0.796034,
+      "execution_ms": 2530.132796,
+      "total_ms": 2530.92883
+    },
+    {
+      "program": "closures",
+      "variant": "partial",
+      "round": 2,
+      "frontend_ms": 0.527987,
+      "execution_ms": 573.067093,
+      "total_ms": 573.59508
+    },
+    {
+      "program": "closures",
+      "variant": "partial",
+      "round": 3,
+      "frontend_ms": 0.533346,
+      "execution_ms": 659.143083,
+      "total_ms": 659.676429
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 3,
+      "frontend_ms": 0.497014,
+      "execution_ms": 1144.530938,
+      "total_ms": 1145.027952
+    },
+    {
+      "program": "closures",
+      "variant": "tree-walk",
+      "round": 3,
+      "frontend_ms": 2.028483,
+      "execution_ms": 607.416127,
+      "total_ms": 609.44461
+    },
+    {
+      "program": "closures",
+      "variant": "python-native",
+      "round": 3,
+      "frontend_ms": 0.264516,
+      "execution_ms": 10.36083,
+      "total_ms": 10.625346
+    },
+    {
+      "program": "closures",
+      "variant": "plox",
+      "round": 3,
+      "frontend_ms": 0.9155,
+      "execution_ms": 2825.195348,
+      "total_ms": 2826.110848
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 3,
+      "frontend_ms": 0.688336,
+      "execution_ms": 1187.381001,
+      "total_ms": 1188.069337
+    },
+    {
+      "program": "closures",
+      "variant": "python-native",
+      "round": 4,
+      "frontend_ms": 0.303065,
+      "execution_ms": 12.745254,
+      "total_ms": 13.048319
+    },
+    {
+      "program": "closures",
+      "variant": "partial",
+      "round": 4,
+      "frontend_ms": 0.554106,
+      "execution_ms": 547.003261,
+      "total_ms": 547.557367
+    },
+    {
+      "program": "closures",
+      "variant": "tree-walk",
+      "round": 4,
+      "frontend_ms": 0.667312,
+      "execution_ms": 579.49173,
+      "total_ms": 580.159042
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 4,
+      "frontend_ms": 0.606376,
+      "execution_ms": 953.092142,
+      "total_ms": 953.698518
+    },
+    {
+      "program": "closures",
+      "variant": "plox",
+      "round": 4,
+      "frontend_ms": 0.589881,
+      "execution_ms": 2397.380984,
+      "total_ms": 2397.970865
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 4,
+      "frontend_ms": 0.485481,
+      "execution_ms": 1093.458153,
+      "total_ms": 1093.943634
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 5,
+      "frontend_ms": 1.013469,
+      "execution_ms": 885.730294,
+      "total_ms": 886.743763
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 5,
+      "frontend_ms": 2.908415,
+      "execution_ms": 1080.093295,
+      "total_ms": 1083.00171
+    },
+    {
+      "program": "closures",
+      "variant": "partial",
+      "round": 5,
+      "frontend_ms": 0.466931,
+      "execution_ms": 401.664308,
+      "total_ms": 402.131239
+    },
+    {
+      "program": "closures",
+      "variant": "plox",
+      "round": 5,
+      "frontend_ms": 0.420103,
+      "execution_ms": 2275.127467,
+      "total_ms": 2275.54757
+    },
+    {
+      "program": "closures",
+      "variant": "python-native",
+      "round": 5,
+      "frontend_ms": 0.235614,
+      "execution_ms": 8.879962,
+      "total_ms": 9.115576
+    },
+    {
+      "program": "closures",
+      "variant": "tree-walk",
+      "round": 5,
+      "frontend_ms": 0.584369,
+      "execution_ms": 451.755388,
+      "total_ms": 452.339757
+    },
+    {
+      "program": "closures",
+      "variant": "python-native",
+      "round": 6,
+      "frontend_ms": 0.189559,
+      "execution_ms": 7.699376,
+      "total_ms": 7.888935
+    },
+    {
+      "program": "closures",
+      "variant": "tree-walk",
+      "round": 6,
+      "frontend_ms": 0.429691,
+      "execution_ms": 505.580736,
+      "total_ms": 506.010427
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 6,
+      "frontend_ms": 0.47966,
+      "execution_ms": 1167.724247,
+      "total_ms": 1168.203907
+    },
+    {
+      "program": "closures",
+      "variant": "plox",
+      "round": 6,
+      "frontend_ms": 0.750045,
+      "execution_ms": 2597.431483,
+      "total_ms": 2598.181528
+    },
+    {
+      "program": "closures",
+      "variant": "partial",
+      "round": 6,
+      "frontend_ms": 0.525694,
+      "execution_ms": 596.2079,
+      "total_ms": 596.733594
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 6,
+      "frontend_ms": 2.962834,
+      "execution_ms": 1426.676943,
+      "total_ms": 1429.639777
+    },
+    {
+      "program": "closures",
+      "variant": "tree-walk",
+      "round": 7,
+      "frontend_ms": 0.688102,
+      "execution_ms": 727.366871,
+      "total_ms": 728.054973
+    },
+    {
+      "program": "closures",
+      "variant": "plox",
+      "round": 7,
+      "frontend_ms": 0.596682,
+      "execution_ms": 3037.686815,
+      "total_ms": 3038.283497
+    },
+    {
+      "program": "closures",
+      "variant": "python-native",
+      "round": 7,
+      "frontend_ms": 0.185205,
+      "execution_ms": 6.928879,
+      "total_ms": 7.114084
+    },
+    {
+      "program": "closures",
+      "variant": "partial",
+      "round": 7,
+      "frontend_ms": 0.56687,
+      "execution_ms": 508.578832,
+      "total_ms": 509.145702
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 7,
+      "frontend_ms": 0.827264,
+      "execution_ms": 1385.336805,
+      "total_ms": 1386.164069
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 7,
+      "frontend_ms": 0.636995,
+      "execution_ms": 903.809714,
+      "total_ms": 904.446709
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 8,
+      "frontend_ms": 0.581462,
+      "execution_ms": 947.595659,
+      "total_ms": 948.177121
+    },
+    {
+      "program": "closures",
+      "variant": "tree-walk",
+      "round": 8,
+      "frontend_ms": 0.397451,
+      "execution_ms": 538.283062,
+      "total_ms": 538.680513
+    },
+    {
+      "program": "closures",
+      "variant": "python-native",
+      "round": 8,
+      "frontend_ms": 0.262124,
+      "execution_ms": 9.264374,
+      "total_ms": 9.526498
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 8,
+      "frontend_ms": 1.065424,
+      "execution_ms": 1136.780017,
+      "total_ms": 1137.845441
+    },
+    {
+      "program": "closures",
+      "variant": "partial",
+      "round": 8,
+      "frontend_ms": 0.928815,
+      "execution_ms": 447.634668,
+      "total_ms": 448.563483
+    },
+    {
+      "program": "closures",
+      "variant": "plox",
+      "round": 8,
+      "frontend_ms": 0.447432,
+      "execution_ms": 2176.246602,
+      "total_ms": 2176.694034
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 9,
+      "frontend_ms": 1.159085,
+      "execution_ms": 1134.529628,
+      "total_ms": 1135.688713
+    },
+    {
+      "program": "closures",
+      "variant": "partial",
+      "round": 9,
+      "frontend_ms": 0.387985,
+      "execution_ms": 522.953569,
+      "total_ms": 523.341554
+    },
+    {
+      "program": "closures",
+      "variant": "plox",
+      "round": 9,
+      "frontend_ms": 1.009498,
+      "execution_ms": 3090.239164,
+      "total_ms": 3091.248662
+    },
+    {
+      "program": "closures",
+      "variant": "tree-walk",
+      "round": 9,
+      "frontend_ms": 0.700763,
+      "execution_ms": 628.043215,
+      "total_ms": 628.743978
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 9,
+      "frontend_ms": 0.62052,
+      "execution_ms": 1045.240095,
+      "total_ms": 1045.860615
+    },
+    {
+      "program": "closures",
+      "variant": "python-native",
+      "round": 9,
+      "frontend_ms": 0.261805,
+      "execution_ms": 9.466826,
+      "total_ms": 9.728631
+    },
+    {
+      "program": "closures",
+      "variant": "partial",
+      "round": 10,
+      "frontend_ms": 0.791704,
+      "execution_ms": 576.870724,
+      "total_ms": 577.662428
+    },
+    {
+      "program": "closures",
+      "variant": "tree-walk",
+      "round": 10,
+      "frontend_ms": 0.601633,
+      "execution_ms": 640.985047,
+      "total_ms": 641.58668
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 10,
+      "frontend_ms": 0.507689,
+      "execution_ms": 1327.165213,
+      "total_ms": 1327.672902
+    },
+    {
+      "program": "closures",
+      "variant": "plox",
+      "round": 10,
+      "frontend_ms": 0.916044,
+      "execution_ms": 4483.076979,
+      "total_ms": 4483.993023
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 10,
+      "frontend_ms": 1.365007,
+      "execution_ms": 2844.471366,
+      "total_ms": 2845.836373
+    },
+    {
+      "program": "closures",
+      "variant": "python-native",
+      "round": 10,
+      "frontend_ms": 0.30197,
+      "execution_ms": 16.987441,
+      "total_ms": 17.289411
+    },
+    {
+      "program": "closures",
+      "variant": "tree-walk",
+      "round": 11,
+      "frontend_ms": 0.433861,
+      "execution_ms": 1820.672637,
+      "total_ms": 1821.106498
+    },
+    {
+      "program": "closures",
+      "variant": "plox",
+      "round": 11,
+      "frontend_ms": 0.753905,
+      "execution_ms": 5552.979945,
+      "total_ms": 5553.73385
+    },
+    {
+      "program": "closures",
+      "variant": "partial",
+      "round": 11,
+      "frontend_ms": 0.692757,
+      "execution_ms": 637.244635,
+      "total_ms": 637.937392
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 11,
+      "frontend_ms": 0.639123,
+      "execution_ms": 2167.963707,
+      "total_ms": 2168.60283
+    },
+    {
+      "program": "closures",
+      "variant": "python-native",
+      "round": 11,
+      "frontend_ms": 0.258712,
+      "execution_ms": 11.682584,
+      "total_ms": 11.941296
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 11,
+      "frontend_ms": 1.501811,
+      "execution_ms": 3585.68785,
+      "total_ms": 3587.189661
+    },
+    {
+      "program": "closures",
+      "variant": "partial",
+      "round": 12,
+      "frontend_ms": 0.860727,
+      "execution_ms": 1618.827715,
+      "total_ms": 1619.688442
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 12,
+      "frontend_ms": 0.844555,
+      "execution_ms": 2566.212064,
+      "total_ms": 2567.056619
+    },
+    {
+      "program": "closures",
+      "variant": "python-native",
+      "round": 12,
+      "frontend_ms": 0.418135,
+      "execution_ms": 13.919523,
+      "total_ms": 14.337658
+    },
+    {
+      "program": "closures",
+      "variant": "tree-walk",
+      "round": 12,
+      "frontend_ms": 0.768633,
+      "execution_ms": 1012.751249,
+      "total_ms": 1013.519882
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 12,
+      "frontend_ms": 0.780367,
+      "execution_ms": 1822.362006,
+      "total_ms": 1823.142373
+    },
+    {
+      "program": "closures",
+      "variant": "plox",
+      "round": 12,
+      "frontend_ms": 0.716659,
+      "execution_ms": 4055.478213,
+      "total_ms": 4056.194872
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 13,
+      "frontend_ms": 0.823786,
+      "execution_ms": 1787.42042,
+      "total_ms": 1788.244206
+    },
+    {
+      "program": "closures",
+      "variant": "plox",
+      "round": 13,
+      "frontend_ms": 0.726654,
+      "execution_ms": 3425.543673,
+      "total_ms": 3426.270327
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 13,
+      "frontend_ms": 3.479206,
+      "execution_ms": 1696.448794,
+      "total_ms": 1699.928
+    },
+    {
+      "program": "closures",
+      "variant": "partial",
+      "round": 13,
+      "frontend_ms": 0.647364,
+      "execution_ms": 686.246798,
+      "total_ms": 686.894162
+    },
+    {
+      "program": "closures",
+      "variant": "tree-walk",
+      "round": 13,
+      "frontend_ms": 0.410703,
+      "execution_ms": 735.8956,
+      "total_ms": 736.306303
+    },
+    {
+      "program": "closures",
+      "variant": "python-native",
+      "round": 13,
+      "frontend_ms": 0.296064,
+      "execution_ms": 11.391831,
+      "total_ms": 11.687895
+    },
+    {
+      "program": "closures",
+      "variant": "python-native",
+      "round": 14,
+      "frontend_ms": 0.306402,
+      "execution_ms": 22.377175,
+      "total_ms": 22.683577
+    },
+    {
+      "program": "closures",
+      "variant": "plox",
+      "round": 14,
+      "frontend_ms": 0.918874,
+      "execution_ms": 3735.346908,
+      "total_ms": 3736.265782
+    },
+    {
+      "program": "closures",
+      "variant": "tree-walk",
+      "round": 14,
+      "frontend_ms": 0.637687,
+      "execution_ms": 660.269152,
+      "total_ms": 660.906839
+    },
+    {
+      "program": "closures",
+      "variant": "partial",
+      "round": 14,
+      "frontend_ms": 0.378652,
+      "execution_ms": 571.327586,
+      "total_ms": 571.706238
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 14,
+      "frontend_ms": 0.575536,
+      "execution_ms": 1222.953912,
+      "total_ms": 1223.529448
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 14,
+      "frontend_ms": 1.332095,
+      "execution_ms": 1551.139766,
+      "total_ms": 1552.471861
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 15,
+      "frontend_ms": 0.851684,
+      "execution_ms": 1223.563644,
+      "total_ms": 1224.415328
+    },
+    {
+      "program": "closures",
+      "variant": "tree-walk",
+      "round": 15,
+      "frontend_ms": 0.737363,
+      "execution_ms": 658.416607,
+      "total_ms": 659.15397
+    },
+    {
+      "program": "closures",
+      "variant": "partial",
+      "round": 15,
+      "frontend_ms": 0.588312,
+      "execution_ms": 649.175746,
+      "total_ms": 649.764058
+    },
+    {
+      "program": "closures",
+      "variant": "plox",
+      "round": 15,
+      "frontend_ms": 0.578625,
+      "execution_ms": 3648.708966,
+      "total_ms": 3649.287591
+    },
+    {
+      "program": "closures",
+      "variant": "python-native",
+      "round": 15,
+      "frontend_ms": 0.242699,
+      "execution_ms": 11.138095,
+      "total_ms": 11.380794
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 15,
+      "frontend_ms": 0.88206,
+      "execution_ms": 1221.747441,
+      "total_ms": 1222.629501
+    },
+    {
+      "program": "closures",
+      "variant": "plox",
+      "round": 16,
+      "frontend_ms": 0.647528,
+      "execution_ms": 3669.782374,
+      "total_ms": 3670.429902
+    },
+    {
+      "program": "closures",
+      "variant": "python-native",
+      "round": 16,
+      "frontend_ms": 0.192043,
+      "execution_ms": 8.513139,
+      "total_ms": 8.705182
+    },
+    {
+      "program": "closures",
+      "variant": "tree-walk",
+      "round": 16,
+      "frontend_ms": 0.628312,
+      "execution_ms": 604.484483,
+      "total_ms": 605.112795
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 16,
+      "frontend_ms": 1.42257,
+      "execution_ms": 1386.817842,
+      "total_ms": 1388.240412
+    },
+    {
+      "program": "closures",
+      "variant": "partial",
+      "round": 16,
+      "frontend_ms": 0.811868,
+      "execution_ms": 699.240075,
+      "total_ms": 700.051943
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 16,
+      "frontend_ms": 0.769327,
+      "execution_ms": 1441.978178,
+      "total_ms": 1442.747505
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 17,
+      "frontend_ms": 0.783361,
+      "execution_ms": 1319.571048,
+      "total_ms": 1320.354409
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 17,
+      "frontend_ms": 1.004609,
+      "execution_ms": 1710.931401,
+      "total_ms": 1711.93601
+    },
+    {
+      "program": "closures",
+      "variant": "python-native",
+      "round": 17,
+      "frontend_ms": 0.267735,
+      "execution_ms": 23.081694,
+      "total_ms": 23.349429
+    },
+    {
+      "program": "closures",
+      "variant": "partial",
+      "round": 17,
+      "frontend_ms": 1.622066,
+      "execution_ms": 632.349011,
+      "total_ms": 633.971077
+    },
+    {
+      "program": "closures",
+      "variant": "plox",
+      "round": 17,
+      "frontend_ms": 0.933236,
+      "execution_ms": 2738.567909,
+      "total_ms": 2739.501145
+    },
+    {
+      "program": "closures",
+      "variant": "tree-walk",
+      "round": 17,
+      "frontend_ms": 0.405257,
+      "execution_ms": 590.542032,
+      "total_ms": 590.947289
+    },
+    {
+      "program": "closures",
+      "variant": "partial",
+      "round": 18,
+      "frontend_ms": 0.712785,
+      "execution_ms": 598.65983,
+      "total_ms": 599.372615
+    },
+    {
+      "program": "closures",
+      "variant": "tree-walk",
+      "round": 18,
+      "frontend_ms": 0.786765,
+      "execution_ms": 584.803428,
+      "total_ms": 585.590193
+    },
+    {
+      "program": "closures",
+      "variant": "plox",
+      "round": 18,
+      "frontend_ms": 0.536959,
+      "execution_ms": 2548.912266,
+      "total_ms": 2549.449225
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 18,
+      "frontend_ms": 0.784739,
+      "execution_ms": 928.097973,
+      "total_ms": 928.882712
+    },
+    {
+      "program": "closures",
+      "variant": "python-native",
+      "round": 18,
+      "frontend_ms": 0.243931,
+      "execution_ms": 11.947281,
+      "total_ms": 12.191212
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 18,
+      "frontend_ms": 0.539423,
+      "execution_ms": 1198.101114,
+      "total_ms": 1198.640537
+    },
+    {
+      "program": "closures",
+      "variant": "plox",
+      "round": 19,
+      "frontend_ms": 0.460581,
+      "execution_ms": 4375.014337,
+      "total_ms": 4375.474918
+    },
+    {
+      "program": "closures",
+      "variant": "python-native",
+      "round": 19,
+      "frontend_ms": 0.451813,
+      "execution_ms": 10.744993,
+      "total_ms": 11.196806
+    },
+    {
+      "program": "closures",
+      "variant": "tree-walk",
+      "round": 19,
+      "frontend_ms": 0.866663,
+      "execution_ms": 612.943937,
+      "total_ms": 613.8106
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-before",
+      "round": 19,
+      "frontend_ms": 0.991929,
+      "execution_ms": 1938.283628,
+      "total_ms": 1939.275557
+    },
+    {
+      "program": "closures",
+      "variant": "partial",
+      "round": 19,
+      "frontend_ms": 0.621818,
+      "execution_ms": 1154.415887,
+      "total_ms": 1155.037705
+    },
+    {
+      "program": "closures",
+      "variant": "bytecode-after",
+      "round": 19,
+      "frontend_ms": 0.98181,
+      "execution_ms": 1472.784061,
+      "total_ms": 1473.765871
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 0,
+      "frontend_ms": 0.870057,
+      "execution_ms": 491.416397,
+      "total_ms": 492.286454
+    },
+    {
+      "program": "primos",
+      "variant": "python-native",
+      "round": 0,
+      "frontend_ms": 0.33072,
+      "execution_ms": 0.656929,
+      "total_ms": 0.987649
+    },
+    {
+      "program": "primos",
+      "variant": "tree-walk",
+      "round": 0,
+      "frontend_ms": 0.601695,
+      "execution_ms": 151.129676,
+      "total_ms": 151.731371
+    },
+    {
+      "program": "primos",
+      "variant": "partial",
+      "round": 0,
+      "frontend_ms": 0.59151,
+      "execution_ms": 154.514075,
+      "total_ms": 155.105585
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 0,
+      "frontend_ms": 0.667893,
+      "execution_ms": 297.28018,
+      "total_ms": 297.948073
+    },
+    {
+      "program": "primos",
+      "variant": "plox",
+      "round": 0,
+      "frontend_ms": 0.653665,
+      "execution_ms": 848.222393,
+      "total_ms": 848.876058
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 1,
+      "frontend_ms": 0.629541,
+      "execution_ms": 534.650055,
+      "total_ms": 535.279596
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 1,
+      "frontend_ms": 0.615944,
+      "execution_ms": 342.397461,
+      "total_ms": 343.013405
+    },
+    {
+      "program": "primos",
+      "variant": "plox",
+      "round": 1,
+      "frontend_ms": 0.54098,
+      "execution_ms": 854.683024,
+      "total_ms": 855.224004
+    },
+    {
+      "program": "primos",
+      "variant": "tree-walk",
+      "round": 1,
+      "frontend_ms": 0.600426,
+      "execution_ms": 116.749589,
+      "total_ms": 117.350015
+    },
+    {
+      "program": "primos",
+      "variant": "python-native",
+      "round": 1,
+      "frontend_ms": 9.451929,
+      "execution_ms": 0.824086,
+      "total_ms": 10.276015
+    },
+    {
+      "program": "primos",
+      "variant": "partial",
+      "round": 1,
+      "frontend_ms": 0.446126,
+      "execution_ms": 134.805516,
+      "total_ms": 135.251642
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 2,
+      "frontend_ms": 0.700719,
+      "execution_ms": 330.917093,
+      "total_ms": 331.617812
+    },
+    {
+      "program": "primos",
+      "variant": "plox",
+      "round": 2,
+      "frontend_ms": 0.614557,
+      "execution_ms": 925.019794,
+      "total_ms": 925.634351
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 2,
+      "frontend_ms": 0.793077,
+      "execution_ms": 338.025458,
+      "total_ms": 338.818535
+    },
+    {
+      "program": "primos",
+      "variant": "partial",
+      "round": 2,
+      "frontend_ms": 0.538943,
+      "execution_ms": 115.80355,
+      "total_ms": 116.342493
+    },
+    {
+      "program": "primos",
+      "variant": "python-native",
+      "round": 2,
+      "frontend_ms": 0.240196,
+      "execution_ms": 0.597483,
+      "total_ms": 0.837679
+    },
+    {
+      "program": "primos",
+      "variant": "tree-walk",
+      "round": 2,
+      "frontend_ms": 0.396682,
+      "execution_ms": 143.623073,
+      "total_ms": 144.019755
+    },
+    {
+      "program": "primos",
+      "variant": "plox",
+      "round": 3,
+      "frontend_ms": 0.736095,
+      "execution_ms": 731.902241,
+      "total_ms": 732.638336
+    },
+    {
+      "program": "primos",
+      "variant": "partial",
+      "round": 3,
+      "frontend_ms": 0.38256,
+      "execution_ms": 116.330409,
+      "total_ms": 116.712969
+    },
+    {
+      "program": "primos",
+      "variant": "tree-walk",
+      "round": 3,
+      "frontend_ms": 0.429999,
+      "execution_ms": 112.74169,
+      "total_ms": 113.171689
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 3,
+      "frontend_ms": 0.433823,
+      "execution_ms": 272.261561,
+      "total_ms": 272.695384
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 3,
+      "frontend_ms": 0.7183,
+      "execution_ms": 340.684767,
+      "total_ms": 341.403067
+    },
+    {
+      "program": "primos",
+      "variant": "python-native",
+      "round": 3,
+      "frontend_ms": 0.163304,
+      "execution_ms": 0.622919,
+      "total_ms": 0.786223
+    },
+    {
+      "program": "primos",
+      "variant": "python-native",
+      "round": 4,
+      "frontend_ms": 0.202072,
+      "execution_ms": 0.897912,
+      "total_ms": 1.099984
+    },
+    {
+      "program": "primos",
+      "variant": "partial",
+      "round": 4,
+      "frontend_ms": 0.546003,
+      "execution_ms": 126.668962,
+      "total_ms": 127.214965
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 4,
+      "frontend_ms": 0.685139,
+      "execution_ms": 268.581789,
+      "total_ms": 269.266928
+    },
+    {
+      "program": "primos",
+      "variant": "tree-walk",
+      "round": 4,
+      "frontend_ms": 0.59623,
+      "execution_ms": 118.808868,
+      "total_ms": 119.405098
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 4,
+      "frontend_ms": 0.469099,
+      "execution_ms": 325.210843,
+      "total_ms": 325.679942
+    },
+    {
+      "program": "primos",
+      "variant": "plox",
+      "round": 4,
+      "frontend_ms": 0.729342,
+      "execution_ms": 696.770945,
+      "total_ms": 697.500287
+    },
+    {
+      "program": "primos",
+      "variant": "partial",
+      "round": 5,
+      "frontend_ms": 0.62781,
+      "execution_ms": 122.053423,
+      "total_ms": 122.681233
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 5,
+      "frontend_ms": 0.652609,
+      "execution_ms": 300.277142,
+      "total_ms": 300.929751
+    },
+    {
+      "program": "primos",
+      "variant": "python-native",
+      "round": 5,
+      "frontend_ms": 0.191178,
+      "execution_ms": 0.850841,
+      "total_ms": 1.042019
+    },
+    {
+      "program": "primos",
+      "variant": "plox",
+      "round": 5,
+      "frontend_ms": 0.717178,
+      "execution_ms": 743.622069,
+      "total_ms": 744.339247
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 5,
+      "frontend_ms": 0.459636,
+      "execution_ms": 373.351128,
+      "total_ms": 373.810764
+    },
+    {
+      "program": "primos",
+      "variant": "tree-walk",
+      "round": 5,
+      "frontend_ms": 0.632819,
+      "execution_ms": 134.372065,
+      "total_ms": 135.004884
+    },
+    {
+      "program": "primos",
+      "variant": "plox",
+      "round": 6,
+      "frontend_ms": 0.444941,
+      "execution_ms": 752.431812,
+      "total_ms": 752.876753
+    },
+    {
+      "program": "primos",
+      "variant": "tree-walk",
+      "round": 6,
+      "frontend_ms": 1.030298,
+      "execution_ms": 140.662301,
+      "total_ms": 141.692599
+    },
+    {
+      "program": "primos",
+      "variant": "partial",
+      "round": 6,
+      "frontend_ms": 0.578352,
+      "execution_ms": 134.642258,
+      "total_ms": 135.22061
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 6,
+      "frontend_ms": 0.603871,
+      "execution_ms": 546.826719,
+      "total_ms": 547.43059
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 6,
+      "frontend_ms": 0.938223,
+      "execution_ms": 538.865241,
+      "total_ms": 539.803464
+    },
+    {
+      "program": "primos",
+      "variant": "python-native",
+      "round": 6,
+      "frontend_ms": 0.348053,
+      "execution_ms": 1.184717,
+      "total_ms": 1.53277
+    },
+    {
+      "program": "primos",
+      "variant": "tree-walk",
+      "round": 7,
+      "frontend_ms": 0.709382,
+      "execution_ms": 152.154206,
+      "total_ms": 152.863588
+    },
+    {
+      "program": "primos",
+      "variant": "python-native",
+      "round": 7,
+      "frontend_ms": 0.244054,
+      "execution_ms": 0.771559,
+      "total_ms": 1.015613
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 7,
+      "frontend_ms": 0.644128,
+      "execution_ms": 370.148113,
+      "total_ms": 370.792241
+    },
+    {
+      "program": "primos",
+      "variant": "plox",
+      "round": 7,
+      "frontend_ms": 0.730421,
+      "execution_ms": 980.336712,
+      "total_ms": 981.067133
+    },
+    {
+      "program": "primos",
+      "variant": "partial",
+      "round": 7,
+      "frontend_ms": 1.635607,
+      "execution_ms": 121.695654,
+      "total_ms": 123.331261
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 7,
+      "frontend_ms": 0.485255,
+      "execution_ms": 624.504305,
+      "total_ms": 624.98956
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 8,
+      "frontend_ms": 0.740682,
+      "execution_ms": 400.379444,
+      "total_ms": 401.120126
+    },
+    {
+      "program": "primos",
+      "variant": "tree-walk",
+      "round": 8,
+      "frontend_ms": 0.54889,
+      "execution_ms": 137.656555,
+      "total_ms": 138.205445
+    },
+    {
+      "program": "primos",
+      "variant": "partial",
+      "round": 8,
+      "frontend_ms": 0.410716,
+      "execution_ms": 157.219637,
+      "total_ms": 157.630353
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 8,
+      "frontend_ms": 0.744565,
+      "execution_ms": 328.97423,
+      "total_ms": 329.718795
+    },
+    {
+      "program": "primos",
+      "variant": "plox",
+      "round": 8,
+      "frontend_ms": 0.656428,
+      "execution_ms": 863.582092,
+      "total_ms": 864.23852
+    },
+    {
+      "program": "primos",
+      "variant": "python-native",
+      "round": 8,
+      "frontend_ms": 0.163851,
+      "execution_ms": 0.693619,
+      "total_ms": 0.85747
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 9,
+      "frontend_ms": 0.802755,
+      "execution_ms": 324.417646,
+      "total_ms": 325.220401
+    },
+    {
+      "program": "primos",
+      "variant": "plox",
+      "round": 9,
+      "frontend_ms": 0.801105,
+      "execution_ms": 976.437644,
+      "total_ms": 977.238749
+    },
+    {
+      "program": "primos",
+      "variant": "partial",
+      "round": 9,
+      "frontend_ms": 0.602584,
+      "execution_ms": 200.487491,
+      "total_ms": 201.090075
+    },
+    {
+      "program": "primos",
+      "variant": "tree-walk",
+      "round": 9,
+      "frontend_ms": 0.437698,
+      "execution_ms": 140.183028,
+      "total_ms": 140.620726
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 9,
+      "frontend_ms": 0.733802,
+      "execution_ms": 423.412755,
+      "total_ms": 424.146557
+    },
+    {
+      "program": "primos",
+      "variant": "python-native",
+      "round": 9,
+      "frontend_ms": 0.274094,
+      "execution_ms": 1.580885,
+      "total_ms": 1.854979
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 10,
+      "frontend_ms": 0.692371,
+      "execution_ms": 423.455427,
+      "total_ms": 424.147798
+    },
+    {
+      "program": "primos",
+      "variant": "tree-walk",
+      "round": 10,
+      "frontend_ms": 0.61766,
+      "execution_ms": 155.581379,
+      "total_ms": 156.199039
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 10,
+      "frontend_ms": 0.686957,
+      "execution_ms": 353.64862,
+      "total_ms": 354.335577
+    },
+    {
+      "program": "primos",
+      "variant": "partial",
+      "round": 10,
+      "frontend_ms": 0.439369,
+      "execution_ms": 142.602347,
+      "total_ms": 143.041716
+    },
+    {
+      "program": "primos",
+      "variant": "plox",
+      "round": 10,
+      "frontend_ms": 0.574546,
+      "execution_ms": 806.415517,
+      "total_ms": 806.990063
+    },
+    {
+      "program": "primos",
+      "variant": "python-native",
+      "round": 10,
+      "frontend_ms": 0.281018,
+      "execution_ms": 1.785929,
+      "total_ms": 2.066947
+    },
+    {
+      "program": "primos",
+      "variant": "plox",
+      "round": 11,
+      "frontend_ms": 0.612418,
+      "execution_ms": 703.769554,
+      "total_ms": 704.381972
+    },
+    {
+      "program": "primos",
+      "variant": "partial",
+      "round": 11,
+      "frontend_ms": 0.362081,
+      "execution_ms": 97.124036,
+      "total_ms": 97.486117
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 11,
+      "frontend_ms": 0.68837,
+      "execution_ms": 239.448361,
+      "total_ms": 240.136731
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 11,
+      "frontend_ms": 0.679581,
+      "execution_ms": 305.84171,
+      "total_ms": 306.521291
+    },
+    {
+      "program": "primos",
+      "variant": "tree-walk",
+      "round": 11,
+      "frontend_ms": 0.396255,
+      "execution_ms": 98.119747,
+      "total_ms": 98.516002
+    },
+    {
+      "program": "primos",
+      "variant": "python-native",
+      "round": 11,
+      "frontend_ms": 0.181558,
+      "execution_ms": 0.674901,
+      "total_ms": 0.856459
+    },
+    {
+      "program": "primos",
+      "variant": "plox",
+      "round": 12,
+      "frontend_ms": 0.483896,
+      "execution_ms": 735.704253,
+      "total_ms": 736.188149
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 12,
+      "frontend_ms": 0.511967,
+      "execution_ms": 290.836872,
+      "total_ms": 291.348839
+    },
+    {
+      "program": "primos",
+      "variant": "partial",
+      "round": 12,
+      "frontend_ms": 0.390217,
+      "execution_ms": 106.408467,
+      "total_ms": 106.798684
+    },
+    {
+      "program": "primos",
+      "variant": "tree-walk",
+      "round": 12,
+      "frontend_ms": 0.465559,
+      "execution_ms": 124.83725,
+      "total_ms": 125.302809
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 12,
+      "frontend_ms": 0.464344,
+      "execution_ms": 262.346193,
+      "total_ms": 262.810537
+    },
+    {
+      "program": "primos",
+      "variant": "python-native",
+      "round": 12,
+      "frontend_ms": 0.205827,
+      "execution_ms": 0.810825,
+      "total_ms": 1.016652
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 13,
+      "frontend_ms": 0.454808,
+      "execution_ms": 255.333455,
+      "total_ms": 255.788263
+    },
+    {
+      "program": "primos",
+      "variant": "python-native",
+      "round": 13,
+      "frontend_ms": 0.21074,
+      "execution_ms": 0.644379,
+      "total_ms": 0.855119
+    },
+    {
+      "program": "primos",
+      "variant": "partial",
+      "round": 13,
+      "frontend_ms": 0.449293,
+      "execution_ms": 114.103462,
+      "total_ms": 114.552755
+    },
+    {
+      "program": "primos",
+      "variant": "tree-walk",
+      "round": 13,
+      "frontend_ms": 0.476977,
+      "execution_ms": 126.071184,
+      "total_ms": 126.548161
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 13,
+      "frontend_ms": 0.608568,
+      "execution_ms": 374.155505,
+      "total_ms": 374.764073
+    },
+    {
+      "program": "primos",
+      "variant": "plox",
+      "round": 13,
+      "frontend_ms": 0.472515,
+      "execution_ms": 680.053919,
+      "total_ms": 680.526434
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 14,
+      "frontend_ms": 0.500747,
+      "execution_ms": 267.186329,
+      "total_ms": 267.687076
+    },
+    {
+      "program": "primos",
+      "variant": "python-native",
+      "round": 14,
+      "frontend_ms": 0.212611,
+      "execution_ms": 0.644766,
+      "total_ms": 0.857377
+    },
+    {
+      "program": "primos",
+      "variant": "tree-walk",
+      "round": 14,
+      "frontend_ms": 0.508251,
+      "execution_ms": 102.658839,
+      "total_ms": 103.16709
+    },
+    {
+      "program": "primos",
+      "variant": "plox",
+      "round": 14,
+      "frontend_ms": 0.675192,
+      "execution_ms": 633.197827,
+      "total_ms": 633.873019
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 14,
+      "frontend_ms": 0.521829,
+      "execution_ms": 263.796306,
+      "total_ms": 264.318135
+    },
+    {
+      "program": "primos",
+      "variant": "partial",
+      "round": 14,
+      "frontend_ms": 0.491791,
+      "execution_ms": 111.917626,
+      "total_ms": 112.409417
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 15,
+      "frontend_ms": 1.044294,
+      "execution_ms": 270.875723,
+      "total_ms": 271.920017
+    },
+    {
+      "program": "primos",
+      "variant": "tree-walk",
+      "round": 15,
+      "frontend_ms": 0.381121,
+      "execution_ms": 108.834533,
+      "total_ms": 109.215654
+    },
+    {
+      "program": "primos",
+      "variant": "plox",
+      "round": 15,
+      "frontend_ms": 0.830338,
+      "execution_ms": 855.543756,
+      "total_ms": 856.374094
+    },
+    {
+      "program": "primos",
+      "variant": "partial",
+      "round": 15,
+      "frontend_ms": 0.385851,
+      "execution_ms": 117.59576,
+      "total_ms": 117.981611
+    },
+    {
+      "program": "primos",
+      "variant": "python-native",
+      "round": 15,
+      "frontend_ms": 0.327262,
+      "execution_ms": 0.820813,
+      "total_ms": 1.148075
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 15,
+      "frontend_ms": 0.679202,
+      "execution_ms": 425.687625,
+      "total_ms": 426.366827
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 16,
+      "frontend_ms": 0.707972,
+      "execution_ms": 337.598485,
+      "total_ms": 338.306457
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 16,
+      "frontend_ms": 0.772681,
+      "execution_ms": 470.809265,
+      "total_ms": 471.581946
+    },
+    {
+      "program": "primos",
+      "variant": "tree-walk",
+      "round": 16,
+      "frontend_ms": 0.511197,
+      "execution_ms": 130.575799,
+      "total_ms": 131.086996
+    },
+    {
+      "program": "primos",
+      "variant": "plox",
+      "round": 16,
+      "frontend_ms": 1.17581,
+      "execution_ms": 1240.494962,
+      "total_ms": 1241.670772
+    },
+    {
+      "program": "primos",
+      "variant": "python-native",
+      "round": 16,
+      "frontend_ms": 0.222642,
+      "execution_ms": 1.296078,
+      "total_ms": 1.51872
+    },
+    {
+      "program": "primos",
+      "variant": "partial",
+      "round": 16,
+      "frontend_ms": 2.021748,
+      "execution_ms": 194.794639,
+      "total_ms": 196.816387
+    },
+    {
+      "program": "primos",
+      "variant": "tree-walk",
+      "round": 17,
+      "frontend_ms": 0.737687,
+      "execution_ms": 179.448083,
+      "total_ms": 180.18577
+    },
+    {
+      "program": "primos",
+      "variant": "plox",
+      "round": 17,
+      "frontend_ms": 0.671416,
+      "execution_ms": 1235.539845,
+      "total_ms": 1236.211261
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 17,
+      "frontend_ms": 0.827374,
+      "execution_ms": 532.045506,
+      "total_ms": 532.87288
+    },
+    {
+      "program": "primos",
+      "variant": "partial",
+      "round": 17,
+      "frontend_ms": 0.478827,
+      "execution_ms": 134.33274,
+      "total_ms": 134.811567
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 17,
+      "frontend_ms": 0.916322,
+      "execution_ms": 435.972703,
+      "total_ms": 436.889025
+    },
+    {
+      "program": "primos",
+      "variant": "python-native",
+      "round": 17,
+      "frontend_ms": 0.212312,
+      "execution_ms": 2.940658,
+      "total_ms": 3.15297
+    },
+    {
+      "program": "primos",
+      "variant": "tree-walk",
+      "round": 18,
+      "frontend_ms": 0.583738,
+      "execution_ms": 215.828367,
+      "total_ms": 216.412105
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 18,
+      "frontend_ms": 0.906882,
+      "execution_ms": 528.22655,
+      "total_ms": 529.133432
+    },
+    {
+      "program": "primos",
+      "variant": "python-native",
+      "round": 18,
+      "frontend_ms": 0.343465,
+      "execution_ms": 0.851075,
+      "total_ms": 1.19454
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 18,
+      "frontend_ms": 0.690165,
+      "execution_ms": 410.627157,
+      "total_ms": 411.317322
+    },
+    {
+      "program": "primos",
+      "variant": "partial",
+      "round": 18,
+      "frontend_ms": 0.862396,
+      "execution_ms": 179.389052,
+      "total_ms": 180.251448
+    },
+    {
+      "program": "primos",
+      "variant": "plox",
+      "round": 18,
+      "frontend_ms": 0.856275,
+      "execution_ms": 914.472334,
+      "total_ms": 915.328609
+    },
+    {
+      "program": "primos",
+      "variant": "python-native",
+      "round": 19,
+      "frontend_ms": 0.179129,
+      "execution_ms": 0.634307,
+      "total_ms": 0.813436
+    },
+    {
+      "program": "primos",
+      "variant": "plox",
+      "round": 19,
+      "frontend_ms": 0.437306,
+      "execution_ms": 899.007678,
+      "total_ms": 899.444984
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-before",
+      "round": 19,
+      "frontend_ms": 0.729824,
+      "execution_ms": 383.179534,
+      "total_ms": 383.909358
+    },
+    {
+      "program": "primos",
+      "variant": "bytecode-after",
+      "round": 19,
+      "frontend_ms": 0.486027,
+      "execution_ms": 343.641205,
+      "total_ms": 344.127232
+    },
+    {
+      "program": "primos",
+      "variant": "partial",
+      "round": 19,
+      "frontend_ms": 0.478242,
+      "execution_ms": 148.53414,
+      "total_ms": 149.012382
+    },
+    {
+      "program": "primos",
+      "variant": "tree-walk",
+      "round": 19,
+      "frontend_ms": 0.548923,
+      "execution_ms": 127.692959,
+      "total_ms": 128.241882
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "python-native",
+      "round": 0,
+      "frontend_ms": 0.192361,
+      "execution_ms": 1.036759,
+      "total_ms": 1.22912
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "plox",
+      "round": 0,
+      "frontend_ms": 0.752943,
+      "execution_ms": 937.764729,
+      "total_ms": 938.517672
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 0,
+      "frontend_ms": 0.538429,
+      "execution_ms": 349.338331,
+      "total_ms": 349.87676
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "tree-walk",
+      "round": 0,
+      "frontend_ms": 0.508875,
+      "execution_ms": 143.709944,
+      "total_ms": 144.218819
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 0,
+      "frontend_ms": 0.97457,
+      "execution_ms": 462.43022,
+      "total_ms": 463.40479
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "partial",
+      "round": 0,
+      "frontend_ms": 0.701627,
+      "execution_ms": 163.027624,
+      "total_ms": 163.729251
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "python-native",
+      "round": 1,
+      "frontend_ms": 0.183961,
+      "execution_ms": 1.027425,
+      "total_ms": 1.211386
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "plox",
+      "round": 1,
+      "frontend_ms": 0.496602,
+      "execution_ms": 926.306369,
+      "total_ms": 926.802971
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 1,
+      "frontend_ms": 0.518615,
+      "execution_ms": 485.70212,
+      "total_ms": 486.220735
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "partial",
+      "round": 1,
+      "frontend_ms": 0.424328,
+      "execution_ms": 178.718808,
+      "total_ms": 179.143136
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "tree-walk",
+      "round": 1,
+      "frontend_ms": 0.538451,
+      "execution_ms": 177.739791,
+      "total_ms": 178.278242
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 1,
+      "frontend_ms": 0.53799,
+      "execution_ms": 415.91187,
+      "total_ms": 416.44986
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "plox",
+      "round": 2,
+      "frontend_ms": 1.177675,
+      "execution_ms": 940.984425,
+      "total_ms": 942.1621
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "tree-walk",
+      "round": 2,
+      "frontend_ms": 0.635721,
+      "execution_ms": 202.037171,
+      "total_ms": 202.672892
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 2,
+      "frontend_ms": 0.9448,
+      "execution_ms": 565.167621,
+      "total_ms": 566.112421
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "python-native",
+      "round": 2,
+      "frontend_ms": 0.176048,
+      "execution_ms": 1.348211,
+      "total_ms": 1.524259
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "partial",
+      "round": 2,
+      "frontend_ms": 0.410931,
+      "execution_ms": 202.246142,
+      "total_ms": 202.657073
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 2,
+      "frontend_ms": 0.941289,
+      "execution_ms": 489.376944,
+      "total_ms": 490.318233
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "tree-walk",
+      "round": 3,
+      "frontend_ms": 0.583875,
+      "execution_ms": 170.726083,
+      "total_ms": 171.309958
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "plox",
+      "round": 3,
+      "frontend_ms": 0.497263,
+      "execution_ms": 1008.56817,
+      "total_ms": 1009.065433
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 3,
+      "frontend_ms": 0.695017,
+      "execution_ms": 611.478551,
+      "total_ms": 612.173568
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "python-native",
+      "round": 3,
+      "frontend_ms": 0.201158,
+      "execution_ms": 1.394845,
+      "total_ms": 1.596003
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 3,
+      "frontend_ms": 5.686459,
+      "execution_ms": 1013.779319,
+      "total_ms": 1019.465778
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "partial",
+      "round": 3,
+      "frontend_ms": 0.835808,
+      "execution_ms": 364.242918,
+      "total_ms": 365.078726
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "tree-walk",
+      "round": 4,
+      "frontend_ms": 0.744477,
+      "execution_ms": 415.633515,
+      "total_ms": 416.377992
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "plox",
+      "round": 4,
+      "frontend_ms": 6.388974,
+      "execution_ms": 2323.970691,
+      "total_ms": 2330.359665
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 4,
+      "frontend_ms": 0.733622,
+      "execution_ms": 858.359129,
+      "total_ms": 859.092751
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "python-native",
+      "round": 4,
+      "frontend_ms": 0.245703,
+      "execution_ms": 1.60467,
+      "total_ms": 1.850373
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 4,
+      "frontend_ms": 0.791602,
+      "execution_ms": 1056.188132,
+      "total_ms": 1056.979734
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "partial",
+      "round": 4,
+      "frontend_ms": 0.666157,
+      "execution_ms": 340.573834,
+      "total_ms": 341.239991
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "plox",
+      "round": 5,
+      "frontend_ms": 0.829378,
+      "execution_ms": 2193.224316,
+      "total_ms": 2194.053694
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "tree-walk",
+      "round": 5,
+      "frontend_ms": 0.672524,
+      "execution_ms": 373.050652,
+      "total_ms": 373.723176
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 5,
+      "frontend_ms": 0.85792,
+      "execution_ms": 727.19454,
+      "total_ms": 728.05246
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "partial",
+      "round": 5,
+      "frontend_ms": 0.623639,
+      "execution_ms": 343.048263,
+      "total_ms": 343.671902
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "python-native",
+      "round": 5,
+      "frontend_ms": 0.305372,
+      "execution_ms": 12.221645,
+      "total_ms": 12.527017
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 5,
+      "frontend_ms": 3.444529,
+      "execution_ms": 1103.314788,
+      "total_ms": 1106.759317
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "plox",
+      "round": 6,
+      "frontend_ms": 1.564262,
+      "execution_ms": 2173.309617,
+      "total_ms": 2174.873879
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 6,
+      "frontend_ms": 0.961933,
+      "execution_ms": 789.825663,
+      "total_ms": 790.787596
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "python-native",
+      "round": 6,
+      "frontend_ms": 0.354496,
+      "execution_ms": 1.405886,
+      "total_ms": 1.760382
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "tree-walk",
+      "round": 6,
+      "frontend_ms": 0.717917,
+      "execution_ms": 329.78609,
+      "total_ms": 330.504007
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 6,
+      "frontend_ms": 0.870906,
+      "execution_ms": 938.050588,
+      "total_ms": 938.921494
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "partial",
+      "round": 6,
+      "frontend_ms": 1.068833,
+      "execution_ms": 309.7739,
+      "total_ms": 310.842733
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "plox",
+      "round": 7,
+      "frontend_ms": 0.902843,
+      "execution_ms": 2090.23022,
+      "total_ms": 2091.133063
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 7,
+      "frontend_ms": 0.838689,
+      "execution_ms": 1094.147238,
+      "total_ms": 1094.985927
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "python-native",
+      "round": 7,
+      "frontend_ms": 0.768372,
+      "execution_ms": 1.32886,
+      "total_ms": 2.097232
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "partial",
+      "round": 7,
+      "frontend_ms": 0.629267,
+      "execution_ms": 322.735485,
+      "total_ms": 323.364752
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "tree-walk",
+      "round": 7,
+      "frontend_ms": 1.084769,
+      "execution_ms": 371.223011,
+      "total_ms": 372.30778
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 7,
+      "frontend_ms": 2.017377,
+      "execution_ms": 782.701132,
+      "total_ms": 784.718509
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "partial",
+      "round": 8,
+      "frontend_ms": 1.059085,
+      "execution_ms": 337.648157,
+      "total_ms": 338.707242
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "tree-walk",
+      "round": 8,
+      "frontend_ms": 0.656214,
+      "execution_ms": 332.980732,
+      "total_ms": 333.636946
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "python-native",
+      "round": 8,
+      "frontend_ms": 0.290136,
+      "execution_ms": 1.18512,
+      "total_ms": 1.475256
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 8,
+      "frontend_ms": 0.806867,
+      "execution_ms": 950.98644,
+      "total_ms": 951.793307
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "plox",
+      "round": 8,
+      "frontend_ms": 0.707646,
+      "execution_ms": 2086.154623,
+      "total_ms": 2086.862269
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 8,
+      "frontend_ms": 0.754975,
+      "execution_ms": 753.823631,
+      "total_ms": 754.578606
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "partial",
+      "round": 9,
+      "frontend_ms": 0.697045,
+      "execution_ms": 387.852006,
+      "total_ms": 388.549051
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "tree-walk",
+      "round": 9,
+      "frontend_ms": 1.093276,
+      "execution_ms": 289.854417,
+      "total_ms": 290.947693
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 9,
+      "frontend_ms": 0.786703,
+      "execution_ms": 798.130621,
+      "total_ms": 798.917324
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "python-native",
+      "round": 9,
+      "frontend_ms": 0.405998,
+      "execution_ms": 1.259038,
+      "total_ms": 1.665036
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 9,
+      "frontend_ms": 0.811996,
+      "execution_ms": 1005.345246,
+      "total_ms": 1006.157242
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "plox",
+      "round": 9,
+      "frontend_ms": 1.830005,
+      "execution_ms": 1969.166476,
+      "total_ms": 1970.996481
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "partial",
+      "round": 10,
+      "frontend_ms": 0.780385,
+      "execution_ms": 321.004092,
+      "total_ms": 321.784477
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 10,
+      "frontend_ms": 0.906832,
+      "execution_ms": 828.988959,
+      "total_ms": 829.895791
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 10,
+      "frontend_ms": 1.017049,
+      "execution_ms": 922.998801,
+      "total_ms": 924.01585
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "plox",
+      "round": 10,
+      "frontend_ms": 0.791093,
+      "execution_ms": 1656.299791,
+      "total_ms": 1657.090884
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "tree-walk",
+      "round": 10,
+      "frontend_ms": 0.646604,
+      "execution_ms": 265.173047,
+      "total_ms": 265.819651
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "python-native",
+      "round": 10,
+      "frontend_ms": 1.044157,
+      "execution_ms": 2.106793,
+      "total_ms": 3.15095
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "python-native",
+      "round": 11,
+      "frontend_ms": 0.490207,
+      "execution_ms": 1.651697,
+      "total_ms": 2.141904
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "partial",
+      "round": 11,
+      "frontend_ms": 0.789843,
+      "execution_ms": 306.411794,
+      "total_ms": 307.201637
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 11,
+      "frontend_ms": 0.873983,
+      "execution_ms": 905.162871,
+      "total_ms": 906.036854
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "plox",
+      "round": 11,
+      "frontend_ms": 0.745468,
+      "execution_ms": 1707.948094,
+      "total_ms": 1708.693562
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "tree-walk",
+      "round": 11,
+      "frontend_ms": 0.69149,
+      "execution_ms": 303.144048,
+      "total_ms": 303.835538
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 11,
+      "frontend_ms": 0.975554,
+      "execution_ms": 655.634819,
+      "total_ms": 656.610373
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "python-native",
+      "round": 12,
+      "frontend_ms": 0.451078,
+      "execution_ms": 1.38079,
+      "total_ms": 1.831868
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "partial",
+      "round": 12,
+      "frontend_ms": 0.593377,
+      "execution_ms": 259.823791,
+      "total_ms": 260.417168
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "plox",
+      "round": 12,
+      "frontend_ms": 0.842852,
+      "execution_ms": 1745.197801,
+      "total_ms": 1746.040653
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 12,
+      "frontend_ms": 0.934798,
+      "execution_ms": 828.482524,
+      "total_ms": 829.417322
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 12,
+      "frontend_ms": 0.863527,
+      "execution_ms": 706.033234,
+      "total_ms": 706.896761
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "tree-walk",
+      "round": 12,
+      "frontend_ms": 0.703162,
+      "execution_ms": 286.779179,
+      "total_ms": 287.482341
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "tree-walk",
+      "round": 13,
+      "frontend_ms": 1.927384,
+      "execution_ms": 324.777442,
+      "total_ms": 326.704826
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 13,
+      "frontend_ms": 1.225704,
+      "execution_ms": 822.074889,
+      "total_ms": 823.300593
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 13,
+      "frontend_ms": 0.831621,
+      "execution_ms": 656.657813,
+      "total_ms": 657.489434
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "partial",
+      "round": 13,
+      "frontend_ms": 0.651618,
+      "execution_ms": 275.038251,
+      "total_ms": 275.689869
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "python-native",
+      "round": 13,
+      "frontend_ms": 0.267641,
+      "execution_ms": 1.285107,
+      "total_ms": 1.552748
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "plox",
+      "round": 13,
+      "frontend_ms": 0.823697,
+      "execution_ms": 1903.171272,
+      "total_ms": 1903.994969
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 14,
+      "frontend_ms": 1.010313,
+      "execution_ms": 806.075487,
+      "total_ms": 807.0858
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "partial",
+      "round": 14,
+      "frontend_ms": 0.706424,
+      "execution_ms": 297.691509,
+      "total_ms": 298.397933
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "python-native",
+      "round": 14,
+      "frontend_ms": 0.243427,
+      "execution_ms": 1.285143,
+      "total_ms": 1.52857
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "plox",
+      "round": 14,
+      "frontend_ms": 0.74549,
+      "execution_ms": 1582.216415,
+      "total_ms": 1582.961905
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "tree-walk",
+      "round": 14,
+      "frontend_ms": 0.657815,
+      "execution_ms": 253.613015,
+      "total_ms": 254.27083
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 14,
+      "frontend_ms": 1.136864,
+      "execution_ms": 644.484172,
+      "total_ms": 645.621036
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "tree-walk",
+      "round": 15,
+      "frontend_ms": 0.90414,
+      "execution_ms": 263.220613,
+      "total_ms": 264.124753
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "plox",
+      "round": 15,
+      "frontend_ms": 1.163489,
+      "execution_ms": 1591.511692,
+      "total_ms": 1592.675181
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "python-native",
+      "round": 15,
+      "frontend_ms": 0.228728,
+      "execution_ms": 1.252817,
+      "total_ms": 1.481545
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "partial",
+      "round": 15,
+      "frontend_ms": 0.588701,
+      "execution_ms": 250.887382,
+      "total_ms": 251.476083
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 15,
+      "frontend_ms": 1.200753,
+      "execution_ms": 742.868345,
+      "total_ms": 744.069098
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 15,
+      "frontend_ms": 2.310612,
+      "execution_ms": 635.709447,
+      "total_ms": 638.020059
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 16,
+      "frontend_ms": 0.795243,
+      "execution_ms": 669.755768,
+      "total_ms": 670.551011
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "plox",
+      "round": 16,
+      "frontend_ms": 0.660029,
+      "execution_ms": 1577.04477,
+      "total_ms": 1577.704799
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "python-native",
+      "round": 16,
+      "frontend_ms": 0.308108,
+      "execution_ms": 1.765422,
+      "total_ms": 2.07353
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "partial",
+      "round": 16,
+      "frontend_ms": 0.655879,
+      "execution_ms": 253.839226,
+      "total_ms": 254.495105
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "tree-walk",
+      "round": 16,
+      "frontend_ms": 0.67131,
+      "execution_ms": 288.996309,
+      "total_ms": 289.667619
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 16,
+      "frontend_ms": 1.182397,
+      "execution_ms": 750.733294,
+      "total_ms": 751.915691
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 17,
+      "frontend_ms": 2.539069,
+      "execution_ms": 631.760209,
+      "total_ms": 634.299278
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "partial",
+      "round": 17,
+      "frontend_ms": 0.595776,
+      "execution_ms": 262.261076,
+      "total_ms": 262.856852
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 17,
+      "frontend_ms": 0.822292,
+      "execution_ms": 737.089114,
+      "total_ms": 737.911406
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "python-native",
+      "round": 17,
+      "frontend_ms": 0.327367,
+      "execution_ms": 1.321685,
+      "total_ms": 1.649052
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "tree-walk",
+      "round": 17,
+      "frontend_ms": 1.343212,
+      "execution_ms": 254.022547,
+      "total_ms": 255.365759
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "plox",
+      "round": 17,
+      "frontend_ms": 0.691923,
+      "execution_ms": 1596.327591,
+      "total_ms": 1597.019514
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 18,
+      "frontend_ms": 1.351138,
+      "execution_ms": 636.711941,
+      "total_ms": 638.063079
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "partial",
+      "round": 18,
+      "frontend_ms": 0.608563,
+      "execution_ms": 260.791435,
+      "total_ms": 261.399998
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 18,
+      "frontend_ms": 0.815877,
+      "execution_ms": 768.521154,
+      "total_ms": 769.337031
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "tree-walk",
+      "round": 18,
+      "frontend_ms": 1.306162,
+      "execution_ms": 280.568092,
+      "total_ms": 281.874254
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "plox",
+      "round": 18,
+      "frontend_ms": 0.842763,
+      "execution_ms": 1626.533092,
+      "total_ms": 1627.375855
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "python-native",
+      "round": 18,
+      "frontend_ms": 0.346359,
+      "execution_ms": 1.825742,
+      "total_ms": 2.172101
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "tree-walk",
+      "round": 19,
+      "frontend_ms": 0.630866,
+      "execution_ms": 261.653011,
+      "total_ms": 262.283877
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "partial",
+      "round": 19,
+      "frontend_ms": 0.725031,
+      "execution_ms": 275.697423,
+      "total_ms": 276.422454
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-after",
+      "round": 19,
+      "frontend_ms": 1.044546,
+      "execution_ms": 640.318094,
+      "total_ms": 641.36264
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "bytecode-before",
+      "round": 19,
+      "frontend_ms": 0.880134,
+      "execution_ms": 747.235672,
+      "total_ms": 748.115806
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "python-native",
+      "round": 19,
+      "frontend_ms": 0.241338,
+      "execution_ms": 1.277701,
+      "total_ms": 1.519039
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "plox",
+      "round": 19,
+      "frontend_ms": 0.765667,
+      "execution_ms": 1602.260741,
+      "total_ms": 1603.026408
+    },
+    {
+      "program": "objetos",
+      "variant": "tree-walk",
+      "round": 0,
+      "frontend_ms": 0.762478,
+      "execution_ms": 468.139296,
+      "total_ms": 468.901774
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 0,
+      "frontend_ms": 0.576471,
+      "execution_ms": 889.326016,
+      "total_ms": 889.902487
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 0,
+      "frontend_ms": 0.542334,
+      "execution_ms": 767.286938,
+      "total_ms": 767.829272
+    },
+    {
+      "program": "objetos",
+      "variant": "tree-walk",
+      "round": 1,
+      "frontend_ms": 0.454703,
+      "execution_ms": 529.177834,
+      "total_ms": 529.632537
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 1,
+      "frontend_ms": 0.496635,
+      "execution_ms": 697.493153,
+      "total_ms": 697.989788
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 1,
+      "frontend_ms": 0.990217,
+      "execution_ms": 882.93285,
+      "total_ms": 883.923067
+    },
+    {
+      "program": "objetos",
+      "variant": "tree-walk",
+      "round": 2,
+      "frontend_ms": 0.497184,
+      "execution_ms": 508.07213,
+      "total_ms": 508.569314
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 2,
+      "frontend_ms": 0.549988,
+      "execution_ms": 1159.659226,
+      "total_ms": 1160.209214
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 2,
+      "frontend_ms": 0.584503,
+      "execution_ms": 823.250674,
+      "total_ms": 823.835177
+    },
+    {
+      "program": "objetos",
+      "variant": "tree-walk",
+      "round": 3,
+      "frontend_ms": 0.940814,
+      "execution_ms": 427.028314,
+      "total_ms": 427.969128
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 3,
+      "frontend_ms": 0.549493,
+      "execution_ms": 777.668467,
+      "total_ms": 778.21796
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 3,
+      "frontend_ms": 0.542776,
+      "execution_ms": 876.478758,
+      "total_ms": 877.021534
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 4,
+      "frontend_ms": 0.695022,
+      "execution_ms": 691.942491,
+      "total_ms": 692.637513
+    },
+    {
+      "program": "objetos",
+      "variant": "tree-walk",
+      "round": 4,
+      "frontend_ms": 0.443795,
+      "execution_ms": 414.754475,
+      "total_ms": 415.19827
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 4,
+      "frontend_ms": 0.607224,
+      "execution_ms": 862.776019,
+      "total_ms": 863.383243
+    },
+    {
+      "program": "objetos",
+      "variant": "tree-walk",
+      "round": 5,
+      "frontend_ms": 0.428206,
+      "execution_ms": 426.354462,
+      "total_ms": 426.782668
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 5,
+      "frontend_ms": 0.523643,
+      "execution_ms": 950.429916,
+      "total_ms": 950.953559
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 5,
+      "frontend_ms": 0.888826,
+      "execution_ms": 754.667143,
+      "total_ms": 755.555969
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 6,
+      "frontend_ms": 0.585668,
+      "execution_ms": 889.896525,
+      "total_ms": 890.482193
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 6,
+      "frontend_ms": 0.60717,
+      "execution_ms": 733.102209,
+      "total_ms": 733.709379
+    },
+    {
+      "program": "objetos",
+      "variant": "tree-walk",
+      "round": 6,
+      "frontend_ms": 0.504366,
+      "execution_ms": 491.137535,
+      "total_ms": 491.641901
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 7,
+      "frontend_ms": 0.566883,
+      "execution_ms": 874.594216,
+      "total_ms": 875.161099
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 7,
+      "frontend_ms": 0.541831,
+      "execution_ms": 1022.094289,
+      "total_ms": 1022.63612
+    },
+    {
+      "program": "objetos",
+      "variant": "tree-walk",
+      "round": 7,
+      "frontend_ms": 0.540976,
+      "execution_ms": 492.048416,
+      "total_ms": 492.589392
+    },
+    {
+      "program": "objetos",
+      "variant": "tree-walk",
+      "round": 8,
+      "frontend_ms": 0.950341,
+      "execution_ms": 489.914022,
+      "total_ms": 490.864363
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 8,
+      "frontend_ms": 0.643403,
+      "execution_ms": 796.719363,
+      "total_ms": 797.362766
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 8,
+      "frontend_ms": 0.649754,
+      "execution_ms": 1284.432208,
+      "total_ms": 1285.081962
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 9,
+      "frontend_ms": 0.679568,
+      "execution_ms": 1481.388171,
+      "total_ms": 1482.067739
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 9,
+      "frontend_ms": 0.662373,
+      "execution_ms": 1417.426253,
+      "total_ms": 1418.088626
+    },
+    {
+      "program": "objetos",
+      "variant": "tree-walk",
+      "round": 9,
+      "frontend_ms": 0.428147,
+      "execution_ms": 630.92642,
+      "total_ms": 631.354567
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 10,
+      "frontend_ms": 0.557082,
+      "execution_ms": 1471.856812,
+      "total_ms": 1472.413894
+    },
+    {
+      "program": "objetos",
+      "variant": "tree-walk",
+      "round": 10,
+      "frontend_ms": 0.526712,
+      "execution_ms": 909.096863,
+      "total_ms": 909.623575
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 10,
+      "frontend_ms": 0.581415,
+      "execution_ms": 2034.057482,
+      "total_ms": 2034.638897
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 11,
+      "frontend_ms": 0.603738,
+      "execution_ms": 1584.683893,
+      "total_ms": 1585.287631
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 11,
+      "frontend_ms": 3.891136,
+      "execution_ms": 2629.98173,
+      "total_ms": 2633.872866
+    },
+    {
+      "program": "objetos",
+      "variant": "tree-walk",
+      "round": 11,
+      "frontend_ms": 8.991611,
+      "execution_ms": 1266.011942,
+      "total_ms": 1275.003553
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 12,
+      "frontend_ms": 19.328694,
+      "execution_ms": 1553.938574,
+      "total_ms": 1573.267268
+    },
+    {
+      "program": "objetos",
+      "variant": "tree-walk",
+      "round": 12,
+      "frontend_ms": 0.619797,
+      "execution_ms": 1098.573564,
+      "total_ms": 1099.193361
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 12,
+      "frontend_ms": 0.68801,
+      "execution_ms": 2398.01018,
+      "total_ms": 2398.69819
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 13,
+      "frontend_ms": 0.580211,
+      "execution_ms": 1403.509669,
+      "total_ms": 1404.08988
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 13,
+      "frontend_ms": 0.65308,
+      "execution_ms": 1292.325371,
+      "total_ms": 1292.978451
+    },
+    {
+      "program": "objetos",
+      "variant": "tree-walk",
+      "round": 13,
+      "frontend_ms": 0.470209,
+      "execution_ms": 632.593099,
+      "total_ms": 633.063308
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 14,
+      "frontend_ms": 5.186353,
+      "execution_ms": 1945.286248,
+      "total_ms": 1950.472601
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 14,
+      "frontend_ms": 0.59328,
+      "execution_ms": 934.818765,
+      "total_ms": 935.412045
+    },
+    {
+      "program": "objetos",
+      "variant": "tree-walk",
+      "round": 14,
+      "frontend_ms": 0.584857,
+      "execution_ms": 601.563901,
+      "total_ms": 602.148758
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 15,
+      "frontend_ms": 1.197954,
+      "execution_ms": 1543.186931,
+      "total_ms": 1544.384885
+    },
+    {
+      "program": "objetos",
+      "variant": "tree-walk",
+      "round": 15,
+      "frontend_ms": 0.50762,
+      "execution_ms": 1530.001161,
+      "total_ms": 1530.508781
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 15,
+      "frontend_ms": 0.592688,
+      "execution_ms": 1813.289733,
+      "total_ms": 1813.882421
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 16,
+      "frontend_ms": 4.293174,
+      "execution_ms": 1440.707464,
+      "total_ms": 1445.000638
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 16,
+      "frontend_ms": 0.410307,
+      "execution_ms": 982.334151,
+      "total_ms": 982.744458
+    },
+    {
+      "program": "objetos",
+      "variant": "tree-walk",
+      "round": 16,
+      "frontend_ms": 0.449641,
+      "execution_ms": 836.174072,
+      "total_ms": 836.623713
+    },
+    {
+      "program": "objetos",
+      "variant": "tree-walk",
+      "round": 17,
+      "frontend_ms": 0.44526,
+      "execution_ms": 893.928422,
+      "total_ms": 894.373682
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 17,
+      "frontend_ms": 0.495952,
+      "execution_ms": 1291.04055,
+      "total_ms": 1291.536502
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 17,
+      "frontend_ms": 0.566241,
+      "execution_ms": 1258.389827,
+      "total_ms": 1258.956068
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 18,
+      "frontend_ms": 0.616604,
+      "execution_ms": 1262.64608,
+      "total_ms": 1263.262684
+    },
+    {
+      "program": "objetos",
+      "variant": "tree-walk",
+      "round": 18,
+      "frontend_ms": 0.640731,
+      "execution_ms": 448.672445,
+      "total_ms": 449.313176
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 18,
+      "frontend_ms": 0.737864,
+      "execution_ms": 753.611354,
+      "total_ms": 754.349218
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-after",
+      "round": 19,
+      "frontend_ms": 0.611775,
+      "execution_ms": 846.235827,
+      "total_ms": 846.847602
+    },
+    {
+      "program": "objetos",
+      "variant": "bytecode-before",
+      "round": 19,
+      "frontend_ms": 0.607655,
+      "execution_ms": 898.010655,
+      "total_ms": 898.61831
+    },
+    {
+      "program": "objetos",
+      "variant": "tree-walk",
+      "round": 19,
+      "frontend_ms": 0.475055,
+      "execution_ms": 1043.290353,
+      "total_ms": 1043.765408
+    },
+    {
+      "program": "listas",
+      "variant": "tree-walk",
+      "round": 0,
+      "frontend_ms": 0.463709,
+      "execution_ms": 232.856284,
+      "total_ms": 233.319993
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 0,
+      "frontend_ms": 0.500182,
+      "execution_ms": 818.04772,
+      "total_ms": 818.547902
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 0,
+      "frontend_ms": 0.573269,
+      "execution_ms": 732.90958,
+      "total_ms": 733.482849
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 1,
+      "frontend_ms": 0.665153,
+      "execution_ms": 753.594329,
+      "total_ms": 754.259482
+    },
+    {
+      "program": "listas",
+      "variant": "tree-walk",
+      "round": 1,
+      "frontend_ms": 0.496869,
+      "execution_ms": 217.613536,
+      "total_ms": 218.110405
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 1,
+      "frontend_ms": 0.63707,
+      "execution_ms": 649.367234,
+      "total_ms": 650.004304
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 2,
+      "frontend_ms": 0.571085,
+      "execution_ms": 583.63742,
+      "total_ms": 584.208505
+    },
+    {
+      "program": "listas",
+      "variant": "tree-walk",
+      "round": 2,
+      "frontend_ms": 0.466495,
+      "execution_ms": 146.503244,
+      "total_ms": 146.969739
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 2,
+      "frontend_ms": 0.554376,
+      "execution_ms": 600.14272,
+      "total_ms": 600.697096
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 3,
+      "frontend_ms": 0.713623,
+      "execution_ms": 1038.519051,
+      "total_ms": 1039.232674
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 3,
+      "frontend_ms": 0.721368,
+      "execution_ms": 974.047082,
+      "total_ms": 974.76845
+    },
+    {
+      "program": "listas",
+      "variant": "tree-walk",
+      "round": 3,
+      "frontend_ms": 2.868495,
+      "execution_ms": 396.425985,
+      "total_ms": 399.29448
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 4,
+      "frontend_ms": 25.052923,
+      "execution_ms": 1237.822207,
+      "total_ms": 1262.87513
+    },
+    {
+      "program": "listas",
+      "variant": "tree-walk",
+      "round": 4,
+      "frontend_ms": 0.513555,
+      "execution_ms": 206.661643,
+      "total_ms": 207.175198
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 4,
+      "frontend_ms": 0.908168,
+      "execution_ms": 858.829844,
+      "total_ms": 859.738012
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 5,
+      "frontend_ms": 0.604694,
+      "execution_ms": 1161.681073,
+      "total_ms": 1162.285767
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 5,
+      "frontend_ms": 0.596286,
+      "execution_ms": 1268.207862,
+      "total_ms": 1268.804148
+    },
+    {
+      "program": "listas",
+      "variant": "tree-walk",
+      "round": 5,
+      "frontend_ms": 0.672312,
+      "execution_ms": 240.862946,
+      "total_ms": 241.535258
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 6,
+      "frontend_ms": 1.014977,
+      "execution_ms": 596.483328,
+      "total_ms": 597.498305
+    },
+    {
+      "program": "listas",
+      "variant": "tree-walk",
+      "round": 6,
+      "frontend_ms": 0.344256,
+      "execution_ms": 206.042642,
+      "total_ms": 206.386898
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 6,
+      "frontend_ms": 0.577088,
+      "execution_ms": 1256.923683,
+      "total_ms": 1257.500771
+    },
+    {
+      "program": "listas",
+      "variant": "tree-walk",
+      "round": 7,
+      "frontend_ms": 0.949247,
+      "execution_ms": 477.870956,
+      "total_ms": 478.820203
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 7,
+      "frontend_ms": 0.563665,
+      "execution_ms": 926.410747,
+      "total_ms": 926.974412
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 7,
+      "frontend_ms": 0.803217,
+      "execution_ms": 622.005161,
+      "total_ms": 622.808378
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 8,
+      "frontend_ms": 2.710845,
+      "execution_ms": 1384.755176,
+      "total_ms": 1387.466021
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 8,
+      "frontend_ms": 0.687858,
+      "execution_ms": 1169.443369,
+      "total_ms": 1170.131227
+    },
+    {
+      "program": "listas",
+      "variant": "tree-walk",
+      "round": 8,
+      "frontend_ms": 0.862986,
+      "execution_ms": 241.624041,
+      "total_ms": 242.487027
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 9,
+      "frontend_ms": 1.282564,
+      "execution_ms": 664.614494,
+      "total_ms": 665.897058
+    },
+    {
+      "program": "listas",
+      "variant": "tree-walk",
+      "round": 9,
+      "frontend_ms": 0.814975,
+      "execution_ms": 145.506172,
+      "total_ms": 146.321147
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 9,
+      "frontend_ms": 0.747399,
+      "execution_ms": 498.55173,
+      "total_ms": 499.299129
+    },
+    {
+      "program": "listas",
+      "variant": "tree-walk",
+      "round": 10,
+      "frontend_ms": 0.59343,
+      "execution_ms": 228.030828,
+      "total_ms": 228.624258
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 10,
+      "frontend_ms": 0.738455,
+      "execution_ms": 1312.125886,
+      "total_ms": 1312.864341
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 10,
+      "frontend_ms": 0.697457,
+      "execution_ms": 644.739015,
+      "total_ms": 645.436472
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 11,
+      "frontend_ms": 1.097817,
+      "execution_ms": 909.388558,
+      "total_ms": 910.486375
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 11,
+      "frontend_ms": 0.60752,
+      "execution_ms": 621.891203,
+      "total_ms": 622.498723
+    },
+    {
+      "program": "listas",
+      "variant": "tree-walk",
+      "round": 11,
+      "frontend_ms": 0.519252,
+      "execution_ms": 189.381329,
+      "total_ms": 189.900581
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 12,
+      "frontend_ms": 0.399829,
+      "execution_ms": 703.610717,
+      "total_ms": 704.010546
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 12,
+      "frontend_ms": 0.39999,
+      "execution_ms": 1709.758472,
+      "total_ms": 1710.158462
+    },
+    {
+      "program": "listas",
+      "variant": "tree-walk",
+      "round": 12,
+      "frontend_ms": 0.558655,
+      "execution_ms": 169.021989,
+      "total_ms": 169.580644
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 13,
+      "frontend_ms": 0.452345,
+      "execution_ms": 687.050253,
+      "total_ms": 687.502598
+    },
+    {
+      "program": "listas",
+      "variant": "tree-walk",
+      "round": 13,
+      "frontend_ms": 0.587104,
+      "execution_ms": 219.582417,
+      "total_ms": 220.169521
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 13,
+      "frontend_ms": 0.614811,
+      "execution_ms": 776.588035,
+      "total_ms": 777.202846
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 14,
+      "frontend_ms": 2.906736,
+      "execution_ms": 855.007177,
+      "total_ms": 857.913913
+    },
+    {
+      "program": "listas",
+      "variant": "tree-walk",
+      "round": 14,
+      "frontend_ms": 14.489691,
+      "execution_ms": 310.903953,
+      "total_ms": 325.393644
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 14,
+      "frontend_ms": 0.396923,
+      "execution_ms": 728.424535,
+      "total_ms": 728.821458
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 15,
+      "frontend_ms": 1.018762,
+      "execution_ms": 963.457616,
+      "total_ms": 964.476378
+    },
+    {
+      "program": "listas",
+      "variant": "tree-walk",
+      "round": 15,
+      "frontend_ms": 3.66285,
+      "execution_ms": 359.105741,
+      "total_ms": 362.768591
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 15,
+      "frontend_ms": 0.641205,
+      "execution_ms": 1004.471261,
+      "total_ms": 1005.112466
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 16,
+      "frontend_ms": 7.559716,
+      "execution_ms": 1320.941315,
+      "total_ms": 1328.501031
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 16,
+      "frontend_ms": 1.255592,
+      "execution_ms": 512.896934,
+      "total_ms": 514.152526
+    },
+    {
+      "program": "listas",
+      "variant": "tree-walk",
+      "round": 16,
+      "frontend_ms": 0.466814,
+      "execution_ms": 148.127365,
+      "total_ms": 148.594179
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 17,
+      "frontend_ms": 0.638377,
+      "execution_ms": 1003.918982,
+      "total_ms": 1004.557359
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 17,
+      "frontend_ms": 0.542341,
+      "execution_ms": 784.046993,
+      "total_ms": 784.589334
+    },
+    {
+      "program": "listas",
+      "variant": "tree-walk",
+      "round": 17,
+      "frontend_ms": 0.484044,
+      "execution_ms": 154.915562,
+      "total_ms": 155.399606
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 18,
+      "frontend_ms": 0.817864,
+      "execution_ms": 815.329706,
+      "total_ms": 816.14757
+    },
+    {
+      "program": "listas",
+      "variant": "tree-walk",
+      "round": 18,
+      "frontend_ms": 0.667747,
+      "execution_ms": 245.42206,
+      "total_ms": 246.089807
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 18,
+      "frontend_ms": 0.5161,
+      "execution_ms": 661.200455,
+      "total_ms": 661.716555
+    },
+    {
+      "program": "listas",
+      "variant": "tree-walk",
+      "round": 19,
+      "frontend_ms": 0.734552,
+      "execution_ms": 217.427254,
+      "total_ms": 218.161806
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-before",
+      "round": 19,
+      "frontend_ms": 0.814573,
+      "execution_ms": 1618.980894,
+      "total_ms": 1619.795467
+    },
+    {
+      "program": "listas",
+      "variant": "bytecode-after",
+      "round": 19,
+      "frontend_ms": 0.705006,
+      "execution_ms": 1071.082259,
+      "total_ms": 1071.787265
+    },
+    {
+      "program": "suma",
+      "variant": "clox",
+      "round": 0,
+      "total_ms": 2.594611
+    },
+    {
+      "program": "suma",
+      "variant": "clox",
+      "round": 1,
+      "total_ms": 3.192037
+    },
+    {
+      "program": "suma",
+      "variant": "clox",
+      "round": 2,
+      "total_ms": 3.163698
+    },
+    {
+      "program": "suma",
+      "variant": "clox",
+      "round": 3,
+      "total_ms": 2.784558
+    },
+    {
+      "program": "suma",
+      "variant": "clox",
+      "round": 4,
+      "total_ms": 2.477846
+    },
+    {
+      "program": "suma",
+      "variant": "clox",
+      "round": 5,
+      "total_ms": 3.018281
+    },
+    {
+      "program": "suma",
+      "variant": "clox",
+      "round": 6,
+      "total_ms": 2.760472
+    },
+    {
+      "program": "suma",
+      "variant": "clox",
+      "round": 7,
+      "total_ms": 3.286161
+    },
+    {
+      "program": "suma",
+      "variant": "clox",
+      "round": 8,
+      "total_ms": 4.363788
+    },
+    {
+      "program": "suma",
+      "variant": "clox",
+      "round": 9,
+      "total_ms": 4.304
+    },
+    {
+      "program": "suma",
+      "variant": "clox",
+      "round": 10,
+      "total_ms": 4.352803
+    },
+    {
+      "program": "suma",
+      "variant": "clox",
+      "round": 11,
+      "total_ms": 3.357729
+    },
+    {
+      "program": "suma",
+      "variant": "clox",
+      "round": 12,
+      "total_ms": 4.303006
+    },
+    {
+      "program": "suma",
+      "variant": "clox",
+      "round": 13,
+      "total_ms": 4.336199
+    },
+    {
+      "program": "suma",
+      "variant": "clox",
+      "round": 14,
+      "total_ms": 4.141963
+    },
+    {
+      "program": "suma",
+      "variant": "clox",
+      "round": 15,
+      "total_ms": 3.002352
+    },
+    {
+      "program": "suma",
+      "variant": "clox",
+      "round": 16,
+      "total_ms": 3.496306
+    },
+    {
+      "program": "suma",
+      "variant": "clox",
+      "round": 17,
+      "total_ms": 4.289557
+    },
+    {
+      "program": "suma",
+      "variant": "clox",
+      "round": 18,
+      "total_ms": 4.297464
+    },
+    {
+      "program": "suma",
+      "variant": "clox",
+      "round": 19,
+      "total_ms": 4.09907
+    },
+    {
+      "program": "suma",
+      "variant": "javascript-native",
+      "round": 0,
+      "frontend_ms": 0.096557,
+      "execution_ms": 2.361395,
+      "total_ms": 2.457952
+    },
+    {
+      "program": "suma",
+      "variant": "javascript-native",
+      "round": 1,
+      "frontend_ms": 0.118894,
+      "execution_ms": 2.772919,
+      "total_ms": 2.891813
+    },
+    {
+      "program": "suma",
+      "variant": "javascript-native",
+      "round": 2,
+      "frontend_ms": 0.14214,
+      "execution_ms": 2.38162,
+      "total_ms": 2.52376
+    },
+    {
+      "program": "suma",
+      "variant": "javascript-native",
+      "round": 3,
+      "frontend_ms": 0.100729,
+      "execution_ms": 2.168533,
+      "total_ms": 2.269262
+    },
+    {
+      "program": "suma",
+      "variant": "javascript-native",
+      "round": 4,
+      "frontend_ms": 0.128564,
+      "execution_ms": 2.844048,
+      "total_ms": 2.972612
+    },
+    {
+      "program": "suma",
+      "variant": "javascript-native",
+      "round": 5,
+      "frontend_ms": 0.173184,
+      "execution_ms": 3.474825,
+      "total_ms": 3.648009
+    },
+    {
+      "program": "suma",
+      "variant": "javascript-native",
+      "round": 6,
+      "frontend_ms": 0.134416,
+      "execution_ms": 2.298777,
+      "total_ms": 2.433193
+    },
+    {
+      "program": "suma",
+      "variant": "javascript-native",
+      "round": 7,
+      "frontend_ms": 0.126019,
+      "execution_ms": 2.408931,
+      "total_ms": 2.53495
+    },
+    {
+      "program": "suma",
+      "variant": "javascript-native",
+      "round": 8,
+      "frontend_ms": 0.130693,
+      "execution_ms": 2.878259,
+      "total_ms": 3.008952
+    },
+    {
+      "program": "suma",
+      "variant": "javascript-native",
+      "round": 9,
+      "frontend_ms": 0.25102,
+      "execution_ms": 2.298766,
+      "total_ms": 2.549786
+    },
+    {
+      "program": "suma",
+      "variant": "javascript-native",
+      "round": 10,
+      "frontend_ms": 0.103296,
+      "execution_ms": 2.194561,
+      "total_ms": 2.297857
+    },
+    {
+      "program": "suma",
+      "variant": "javascript-native",
+      "round": 11,
+      "frontend_ms": 0.138631,
+      "execution_ms": 2.222653,
+      "total_ms": 2.361284
+    },
+    {
+      "program": "suma",
+      "variant": "javascript-native",
+      "round": 12,
+      "frontend_ms": 0.121953,
+      "execution_ms": 2.283427,
+      "total_ms": 2.40538
+    },
+    {
+      "program": "suma",
+      "variant": "javascript-native",
+      "round": 13,
+      "frontend_ms": 0.121867,
+      "execution_ms": 2.148421,
+      "total_ms": 2.270288
+    },
+    {
+      "program": "suma",
+      "variant": "javascript-native",
+      "round": 14,
+      "frontend_ms": 0.119332,
+      "execution_ms": 2.352116,
+      "total_ms": 2.471448
+    },
+    {
+      "program": "suma",
+      "variant": "javascript-native",
+      "round": 15,
+      "frontend_ms": 0.115514,
+      "execution_ms": 2.314695,
+      "total_ms": 2.430209
+    },
+    {
+      "program": "suma",
+      "variant": "javascript-native",
+      "round": 16,
+      "frontend_ms": 0.101146,
+      "execution_ms": 2.807264,
+      "total_ms": 2.90841
+    },
+    {
+      "program": "suma",
+      "variant": "javascript-native",
+      "round": 17,
+      "frontend_ms": 0.13846,
+      "execution_ms": 3.042335,
+      "total_ms": 3.180795
+    },
+    {
+      "program": "suma",
+      "variant": "javascript-native",
+      "round": 18,
+      "frontend_ms": 0.14122,
+      "execution_ms": 2.677624,
+      "total_ms": 2.818844
+    },
+    {
+      "program": "suma",
+      "variant": "javascript-native",
+      "round": 19,
+      "frontend_ms": 0.518922,
+      "execution_ms": 2.574028,
+      "total_ms": 3.09295
+    },
+    {
+      "program": "fibonacci",
+      "variant": "clox",
+      "round": 0,
+      "total_ms": 1.418553
+    },
+    {
+      "program": "fibonacci",
+      "variant": "clox",
+      "round": 1,
+      "total_ms": 1.43185
+    },
+    {
+      "program": "fibonacci",
+      "variant": "clox",
+      "round": 2,
+      "total_ms": 1.123597
+    },
+    {
+      "program": "fibonacci",
+      "variant": "clox",
+      "round": 3,
+      "total_ms": 1.027189
+    },
+    {
+      "program": "fibonacci",
+      "variant": "clox",
+      "round": 4,
+      "total_ms": 1.467312
+    },
+    {
+      "program": "fibonacci",
+      "variant": "clox",
+      "round": 5,
+      "total_ms": 1.435049
+    },
+    {
+      "program": "fibonacci",
+      "variant": "clox",
+      "round": 6,
+      "total_ms": 1.46727
+    },
+    {
+      "program": "fibonacci",
+      "variant": "clox",
+      "round": 7,
+      "total_ms": 1.676966
+    },
+    {
+      "program": "fibonacci",
+      "variant": "clox",
+      "round": 8,
+      "total_ms": 1.378383
+    },
+    {
+      "program": "fibonacci",
+      "variant": "clox",
+      "round": 9,
+      "total_ms": 1.124602
+    },
+    {
+      "program": "fibonacci",
+      "variant": "clox",
+      "round": 10,
+      "total_ms": 0.991032
+    },
+    {
+      "program": "fibonacci",
+      "variant": "clox",
+      "round": 11,
+      "total_ms": 0.953643
+    },
+    {
+      "program": "fibonacci",
+      "variant": "clox",
+      "round": 12,
+      "total_ms": 0.961297
+    },
+    {
+      "program": "fibonacci",
+      "variant": "clox",
+      "round": 13,
+      "total_ms": 0.995738
+    },
+    {
+      "program": "fibonacci",
+      "variant": "clox",
+      "round": 14,
+      "total_ms": 0.97906
+    },
+    {
+      "program": "fibonacci",
+      "variant": "clox",
+      "round": 15,
+      "total_ms": 0.988495
+    },
+    {
+      "program": "fibonacci",
+      "variant": "clox",
+      "round": 16,
+      "total_ms": 0.960114
+    },
+    {
+      "program": "fibonacci",
+      "variant": "clox",
+      "round": 17,
+      "total_ms": 0.953418
+    },
+    {
+      "program": "fibonacci",
+      "variant": "clox",
+      "round": 18,
+      "total_ms": 1.174742
+    },
+    {
+      "program": "fibonacci",
+      "variant": "clox",
+      "round": 19,
+      "total_ms": 1.409652
+    },
+    {
+      "program": "fibonacci",
+      "variant": "javascript-native",
+      "round": 0,
+      "frontend_ms": 0.138673,
+      "execution_ms": 5.43806,
+      "total_ms": 5.576733
+    },
+    {
+      "program": "fibonacci",
+      "variant": "javascript-native",
+      "round": 1,
+      "frontend_ms": 0.142482,
+      "execution_ms": 5.048588,
+      "total_ms": 5.19107
+    },
+    {
+      "program": "fibonacci",
+      "variant": "javascript-native",
+      "round": 2,
+      "frontend_ms": 0.171162,
+      "execution_ms": 4.606049,
+      "total_ms": 4.777211
+    },
+    {
+      "program": "fibonacci",
+      "variant": "javascript-native",
+      "round": 3,
+      "frontend_ms": 0.120231,
+      "execution_ms": 5.113844,
+      "total_ms": 5.234075
+    },
+    {
+      "program": "fibonacci",
+      "variant": "javascript-native",
+      "round": 4,
+      "frontend_ms": 0.16944,
+      "execution_ms": 5.164382,
+      "total_ms": 5.333822
+    },
+    {
+      "program": "fibonacci",
+      "variant": "javascript-native",
+      "round": 5,
+      "frontend_ms": 0.171334,
+      "execution_ms": 5.027333,
+      "total_ms": 5.198667
+    },
+    {
+      "program": "fibonacci",
+      "variant": "javascript-native",
+      "round": 6,
+      "frontend_ms": 0.152944,
+      "execution_ms": 4.796543,
+      "total_ms": 4.949487
+    },
+    {
+      "program": "fibonacci",
+      "variant": "javascript-native",
+      "round": 7,
+      "frontend_ms": 0.166959,
+      "execution_ms": 8.065371,
+      "total_ms": 8.23233
+    },
+    {
+      "program": "fibonacci",
+      "variant": "javascript-native",
+      "round": 8,
+      "frontend_ms": 0.168638,
+      "execution_ms": 6.017637,
+      "total_ms": 6.186275
+    },
+    {
+      "program": "fibonacci",
+      "variant": "javascript-native",
+      "round": 9,
+      "frontend_ms": 0.342688,
+      "execution_ms": 4.916735,
+      "total_ms": 5.259423
+    },
+    {
+      "program": "fibonacci",
+      "variant": "javascript-native",
+      "round": 10,
+      "frontend_ms": 0.141412,
+      "execution_ms": 6.456317,
+      "total_ms": 6.597729
+    },
+    {
+      "program": "fibonacci",
+      "variant": "javascript-native",
+      "round": 11,
+      "frontend_ms": 0.184385,
+      "execution_ms": 6.345081,
+      "total_ms": 6.529466
+    },
+    {
+      "program": "fibonacci",
+      "variant": "javascript-native",
+      "round": 12,
+      "frontend_ms": 0.229454,
+      "execution_ms": 8.336596,
+      "total_ms": 8.56605
+    },
+    {
+      "program": "fibonacci",
+      "variant": "javascript-native",
+      "round": 13,
+      "frontend_ms": 0.178897,
+      "execution_ms": 5.687508,
+      "total_ms": 5.866405
+    },
+    {
+      "program": "fibonacci",
+      "variant": "javascript-native",
+      "round": 14,
+      "frontend_ms": 0.195071,
+      "execution_ms": 5.387599,
+      "total_ms": 5.58267
+    },
+    {
+      "program": "fibonacci",
+      "variant": "javascript-native",
+      "round": 15,
+      "frontend_ms": 0.199661,
+      "execution_ms": 5.48606,
+      "total_ms": 5.685721
+    },
+    {
+      "program": "fibonacci",
+      "variant": "javascript-native",
+      "round": 16,
+      "frontend_ms": 0.127741,
+      "execution_ms": 4.759742,
+      "total_ms": 4.887483
+    },
+    {
+      "program": "fibonacci",
+      "variant": "javascript-native",
+      "round": 17,
+      "frontend_ms": 0.12695,
+      "execution_ms": 4.834024,
+      "total_ms": 4.960974
+    },
+    {
+      "program": "fibonacci",
+      "variant": "javascript-native",
+      "round": 18,
+      "frontend_ms": 0.204571,
+      "execution_ms": 6.041504,
+      "total_ms": 6.246075
+    },
+    {
+      "program": "fibonacci",
+      "variant": "javascript-native",
+      "round": 19,
+      "frontend_ms": 0.184685,
+      "execution_ms": 5.081152,
+      "total_ms": 5.265837
+    },
+    {
+      "program": "closures",
+      "variant": "clox",
+      "round": 0,
+      "total_ms": 3.457163
+    },
+    {
+      "program": "closures",
+      "variant": "clox",
+      "round": 1,
+      "total_ms": 3.963316
+    },
+    {
+      "program": "closures",
+      "variant": "clox",
+      "round": 2,
+      "total_ms": 3.488726
+    },
+    {
+      "program": "closures",
+      "variant": "clox",
+      "round": 3,
+      "total_ms": 3.362563
+    },
+    {
+      "program": "closures",
+      "variant": "clox",
+      "round": 4,
+      "total_ms": 3.322833
+    },
+    {
+      "program": "closures",
+      "variant": "clox",
+      "round": 5,
+      "total_ms": 5.313967
+    },
+    {
+      "program": "closures",
+      "variant": "clox",
+      "round": 6,
+      "total_ms": 4.001174
+    },
+    {
+      "program": "closures",
+      "variant": "clox",
+      "round": 7,
+      "total_ms": 3.320971
+    },
+    {
+      "program": "closures",
+      "variant": "clox",
+      "round": 8,
+      "total_ms": 3.407965
+    },
+    {
+      "program": "closures",
+      "variant": "clox",
+      "round": 9,
+      "total_ms": 3.351395
+    },
+    {
+      "program": "closures",
+      "variant": "clox",
+      "round": 10,
+      "total_ms": 3.663521
+    },
+    {
+      "program": "closures",
+      "variant": "clox",
+      "round": 11,
+      "total_ms": 3.479691
+    },
+    {
+      "program": "closures",
+      "variant": "clox",
+      "round": 12,
+      "total_ms": 3.475948
+    },
+    {
+      "program": "closures",
+      "variant": "clox",
+      "round": 13,
+      "total_ms": 3.321977
+    },
+    {
+      "program": "closures",
+      "variant": "clox",
+      "round": 14,
+      "total_ms": 3.409612
+    },
+    {
+      "program": "closures",
+      "variant": "clox",
+      "round": 15,
+      "total_ms": 3.606567
+    },
+    {
+      "program": "closures",
+      "variant": "clox",
+      "round": 16,
+      "total_ms": 3.51632
+    },
+    {
+      "program": "closures",
+      "variant": "clox",
+      "round": 17,
+      "total_ms": 3.543343
+    },
+    {
+      "program": "closures",
+      "variant": "clox",
+      "round": 18,
+      "total_ms": 3.435532
+    },
+    {
+      "program": "closures",
+      "variant": "clox",
+      "round": 19,
+      "total_ms": 4.094369
+    },
+    {
+      "program": "closures",
+      "variant": "javascript-native",
+      "round": 0,
+      "frontend_ms": 0.14551,
+      "execution_ms": 5.513852,
+      "total_ms": 5.659362
+    },
+    {
+      "program": "closures",
+      "variant": "javascript-native",
+      "round": 1,
+      "frontend_ms": 0.121087,
+      "execution_ms": 5.657233,
+      "total_ms": 5.77832
+    },
+    {
+      "program": "closures",
+      "variant": "javascript-native",
+      "round": 2,
+      "frontend_ms": 0.112026,
+      "execution_ms": 6.572064,
+      "total_ms": 6.68409
+    },
+    {
+      "program": "closures",
+      "variant": "javascript-native",
+      "round": 3,
+      "frontend_ms": 0.142001,
+      "execution_ms": 5.551605,
+      "total_ms": 5.693606
+    },
+    {
+      "program": "closures",
+      "variant": "javascript-native",
+      "round": 4,
+      "frontend_ms": 0.119589,
+      "execution_ms": 5.105778,
+      "total_ms": 5.225367
+    },
+    {
+      "program": "closures",
+      "variant": "javascript-native",
+      "round": 5,
+      "frontend_ms": 0.119878,
+      "execution_ms": 5.429416,
+      "total_ms": 5.549294
+    },
+    {
+      "program": "closures",
+      "variant": "javascript-native",
+      "round": 6,
+      "frontend_ms": 0.110742,
+      "execution_ms": 4.985495,
+      "total_ms": 5.096237
+    },
+    {
+      "program": "closures",
+      "variant": "javascript-native",
+      "round": 7,
+      "frontend_ms": 0.132234,
+      "execution_ms": 5.360676,
+      "total_ms": 5.49291
+    },
+    {
+      "program": "closures",
+      "variant": "javascript-native",
+      "round": 8,
+      "frontend_ms": 0.148087,
+      "execution_ms": 6.076058,
+      "total_ms": 6.224145
+    },
+    {
+      "program": "closures",
+      "variant": "javascript-native",
+      "round": 9,
+      "frontend_ms": 0.151982,
+      "execution_ms": 7.608667,
+      "total_ms": 7.760649
+    },
+    {
+      "program": "closures",
+      "variant": "javascript-native",
+      "round": 10,
+      "frontend_ms": 0.145306,
+      "execution_ms": 6.767446,
+      "total_ms": 6.912752
+    },
+    {
+      "program": "closures",
+      "variant": "javascript-native",
+      "round": 11,
+      "frontend_ms": 0.20088,
+      "execution_ms": 6.037097,
+      "total_ms": 6.237977
+    },
+    {
+      "program": "closures",
+      "variant": "javascript-native",
+      "round": 12,
+      "frontend_ms": 0.132191,
+      "execution_ms": 6.170057,
+      "total_ms": 6.302248
+    },
+    {
+      "program": "closures",
+      "variant": "javascript-native",
+      "round": 13,
+      "frontend_ms": 0.138118,
+      "execution_ms": 5.64584,
+      "total_ms": 5.783958
+    },
+    {
+      "program": "closures",
+      "variant": "javascript-native",
+      "round": 14,
+      "frontend_ms": 0.132609,
+      "execution_ms": 5.560418,
+      "total_ms": 5.693027
+    },
+    {
+      "program": "closures",
+      "variant": "javascript-native",
+      "round": 15,
+      "frontend_ms": 0.155362,
+      "execution_ms": 6.226242,
+      "total_ms": 6.381604
+    },
+    {
+      "program": "closures",
+      "variant": "javascript-native",
+      "round": 16,
+      "frontend_ms": 0.128629,
+      "execution_ms": 6.335945,
+      "total_ms": 6.464574
+    },
+    {
+      "program": "closures",
+      "variant": "javascript-native",
+      "round": 17,
+      "frontend_ms": 0.146579,
+      "execution_ms": 5.40111,
+      "total_ms": 5.547689
+    },
+    {
+      "program": "closures",
+      "variant": "javascript-native",
+      "round": 18,
+      "frontend_ms": 0.110122,
+      "execution_ms": 5.370005,
+      "total_ms": 5.480127
+    },
+    {
+      "program": "closures",
+      "variant": "javascript-native",
+      "round": 19,
+      "frontend_ms": 0.133132,
+      "execution_ms": 6.727962,
+      "total_ms": 6.861094
+    },
+    {
+      "program": "primos",
+      "variant": "clox",
+      "round": 0,
+      "total_ms": 0.455249
+    },
+    {
+      "program": "primos",
+      "variant": "clox",
+      "round": 1,
+      "total_ms": 0.498393
+    },
+    {
+      "program": "primos",
+      "variant": "clox",
+      "round": 2,
+      "total_ms": 0.737368
+    },
+    {
+      "program": "primos",
+      "variant": "clox",
+      "round": 3,
+      "total_ms": 0.56612
+    },
+    {
+      "program": "primos",
+      "variant": "clox",
+      "round": 4,
+      "total_ms": 0.555572
+    },
+    {
+      "program": "primos",
+      "variant": "clox",
+      "round": 5,
+      "total_ms": 0.645658
+    },
+    {
+      "program": "primos",
+      "variant": "clox",
+      "round": 6,
+      "total_ms": 0.551636
+    },
+    {
+      "program": "primos",
+      "variant": "clox",
+      "round": 7,
+      "total_ms": 0.515638
+    },
+    {
+      "program": "primos",
+      "variant": "clox",
+      "round": 8,
+      "total_ms": 0.614099
+    },
+    {
+      "program": "primos",
+      "variant": "clox",
+      "round": 9,
+      "total_ms": 0.491183
+    },
+    {
+      "program": "primos",
+      "variant": "clox",
+      "round": 10,
+      "total_ms": 0.508909
+    },
+    {
+      "program": "primos",
+      "variant": "clox",
+      "round": 11,
+      "total_ms": 0.591388
+    },
+    {
+      "program": "primos",
+      "variant": "clox",
+      "round": 12,
+      "total_ms": 0.51168
+    },
+    {
+      "program": "primos",
+      "variant": "clox",
+      "round": 13,
+      "total_ms": 0.496435
+    },
+    {
+      "program": "primos",
+      "variant": "clox",
+      "round": 14,
+      "total_ms": 0.520008
+    },
+    {
+      "program": "primos",
+      "variant": "clox",
+      "round": 15,
+      "total_ms": 0.508117
+    },
+    {
+      "program": "primos",
+      "variant": "clox",
+      "round": 16,
+      "total_ms": 0.522923
+    },
+    {
+      "program": "primos",
+      "variant": "clox",
+      "round": 17,
+      "total_ms": 0.586242
+    },
+    {
+      "program": "primos",
+      "variant": "clox",
+      "round": 18,
+      "total_ms": 0.712187
+    },
+    {
+      "program": "primos",
+      "variant": "clox",
+      "round": 19,
+      "total_ms": 0.771066
+    },
+    {
+      "program": "primos",
+      "variant": "javascript-native",
+      "round": 0,
+      "frontend_ms": 0.124125,
+      "execution_ms": 0.747135,
+      "total_ms": 0.87126
+    },
+    {
+      "program": "primos",
+      "variant": "javascript-native",
+      "round": 1,
+      "frontend_ms": 0.163567,
+      "execution_ms": 0.959323,
+      "total_ms": 1.12289
+    },
+    {
+      "program": "primos",
+      "variant": "javascript-native",
+      "round": 2,
+      "frontend_ms": 0.130051,
+      "execution_ms": 1.401501,
+      "total_ms": 1.531552
+    },
+    {
+      "program": "primos",
+      "variant": "javascript-native",
+      "round": 3,
+      "frontend_ms": 0.118541,
+      "execution_ms": 1.505128,
+      "total_ms": 1.623669
+    },
+    {
+      "program": "primos",
+      "variant": "javascript-native",
+      "round": 4,
+      "frontend_ms": 0.218232,
+      "execution_ms": 1.41683,
+      "total_ms": 1.635062
+    },
+    {
+      "program": "primos",
+      "variant": "javascript-native",
+      "round": 5,
+      "frontend_ms": 0.202871,
+      "execution_ms": 2.174952,
+      "total_ms": 2.377823
+    },
+    {
+      "program": "primos",
+      "variant": "javascript-native",
+      "round": 6,
+      "frontend_ms": 0.183797,
+      "execution_ms": 1.21765,
+      "total_ms": 1.401447
+    },
+    {
+      "program": "primos",
+      "variant": "javascript-native",
+      "round": 7,
+      "frontend_ms": 0.148633,
+      "execution_ms": 1.152555,
+      "total_ms": 1.301188
+    },
+    {
+      "program": "primos",
+      "variant": "javascript-native",
+      "round": 8,
+      "frontend_ms": 0.191252,
+      "execution_ms": 1.734562,
+      "total_ms": 1.925814
+    },
+    {
+      "program": "primos",
+      "variant": "javascript-native",
+      "round": 9,
+      "frontend_ms": 0.151083,
+      "execution_ms": 1.771726,
+      "total_ms": 1.922809
+    },
+    {
+      "program": "primos",
+      "variant": "javascript-native",
+      "round": 10,
+      "frontend_ms": 0.119483,
+      "execution_ms": 1.645299,
+      "total_ms": 1.764782
+    },
+    {
+      "program": "primos",
+      "variant": "javascript-native",
+      "round": 11,
+      "frontend_ms": 0.11239,
+      "execution_ms": 1.508402,
+      "total_ms": 1.620792
+    },
+    {
+      "program": "primos",
+      "variant": "javascript-native",
+      "round": 12,
+      "frontend_ms": 0.132555,
+      "execution_ms": 0.737197,
+      "total_ms": 0.869752
+    },
+    {
+      "program": "primos",
+      "variant": "javascript-native",
+      "round": 13,
+      "frontend_ms": 0.115128,
+      "execution_ms": 1.383004,
+      "total_ms": 1.498132
+    },
+    {
+      "program": "primos",
+      "variant": "javascript-native",
+      "round": 14,
+      "frontend_ms": 0.1147,
+      "execution_ms": 1.156535,
+      "total_ms": 1.271235
+    },
+    {
+      "program": "primos",
+      "variant": "javascript-native",
+      "round": 15,
+      "frontend_ms": 0.112636,
+      "execution_ms": 2.960904,
+      "total_ms": 3.07354
+    },
+    {
+      "program": "primos",
+      "variant": "javascript-native",
+      "round": 16,
+      "frontend_ms": 0.186909,
+      "execution_ms": 1.788884,
+      "total_ms": 1.975793
+    },
+    {
+      "program": "primos",
+      "variant": "javascript-native",
+      "round": 17,
+      "frontend_ms": 0.17051,
+      "execution_ms": 1.678099,
+      "total_ms": 1.848609
+    },
+    {
+      "program": "primos",
+      "variant": "javascript-native",
+      "round": 18,
+      "frontend_ms": 0.141263,
+      "execution_ms": 2.020691,
+      "total_ms": 2.161954
+    },
+    {
+      "program": "primos",
+      "variant": "javascript-native",
+      "round": 19,
+      "frontend_ms": 0.186193,
+      "execution_ms": 1.185054,
+      "total_ms": 1.371247
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "clox",
+      "round": 0,
+      "total_ms": 1.422735
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "clox",
+      "round": 1,
+      "total_ms": 1.588988
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "clox",
+      "round": 2,
+      "total_ms": 1.257382
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "clox",
+      "round": 3,
+      "total_ms": 1.00803
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "clox",
+      "round": 4,
+      "total_ms": 1.080838
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "clox",
+      "round": 5,
+      "total_ms": 1.206889
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "clox",
+      "round": 6,
+      "total_ms": 1.054918
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "clox",
+      "round": 7,
+      "total_ms": 1.078164
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "clox",
+      "round": 8,
+      "total_ms": 1.002232
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "clox",
+      "round": 9,
+      "total_ms": 1.104009
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "clox",
+      "round": 10,
+      "total_ms": 1.088872
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "clox",
+      "round": 11,
+      "total_ms": 1.296642
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "clox",
+      "round": 12,
+      "total_ms": 0.938163
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "clox",
+      "round": 13,
+      "total_ms": 0.87815
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "clox",
+      "round": 14,
+      "total_ms": 0.879059
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "clox",
+      "round": 15,
+      "total_ms": 0.988143
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "clox",
+      "round": 16,
+      "total_ms": 0.862819
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "clox",
+      "round": 17,
+      "total_ms": 0.933327
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "clox",
+      "round": 18,
+      "total_ms": 0.851555
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "clox",
+      "round": 19,
+      "total_ms": 0.944325
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "javascript-native",
+      "round": 0,
+      "frontend_ms": 0.089743,
+      "execution_ms": 1.292031,
+      "total_ms": 1.381774
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "javascript-native",
+      "round": 1,
+      "frontend_ms": 0.084705,
+      "execution_ms": 1.170115,
+      "total_ms": 1.25482
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "javascript-native",
+      "round": 2,
+      "frontend_ms": 0.119568,
+      "execution_ms": 1.283003,
+      "total_ms": 1.402571
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "javascript-native",
+      "round": 3,
+      "frontend_ms": 0.097263,
+      "execution_ms": 1.21427,
+      "total_ms": 1.311533
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "javascript-native",
+      "round": 4,
+      "frontend_ms": 0.184043,
+      "execution_ms": 1.200203,
+      "total_ms": 1.384246
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "javascript-native",
+      "round": 5,
+      "frontend_ms": 0.097413,
+      "execution_ms": 0.784566,
+      "total_ms": 0.881979
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "javascript-native",
+      "round": 6,
+      "frontend_ms": 0.092695,
+      "execution_ms": 0.821506,
+      "total_ms": 0.914201
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "javascript-native",
+      "round": 7,
+      "frontend_ms": 0.093038,
+      "execution_ms": 2.6883,
+      "total_ms": 2.781338
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "javascript-native",
+      "round": 8,
+      "frontend_ms": 0.09291,
+      "execution_ms": 1.127052,
+      "total_ms": 1.219962
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "javascript-native",
+      "round": 9,
+      "frontend_ms": 0.178052,
+      "execution_ms": 1.128368,
+      "total_ms": 1.30642
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "javascript-native",
+      "round": 10,
+      "frontend_ms": 0.089347,
+      "execution_ms": 1.105003,
+      "total_ms": 1.19435
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "javascript-native",
+      "round": 11,
+      "frontend_ms": 0.106752,
+      "execution_ms": 1.282586,
+      "total_ms": 1.389338
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "javascript-native",
+      "round": 12,
+      "frontend_ms": 0.098932,
+      "execution_ms": 1.130336,
+      "total_ms": 1.229268
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "javascript-native",
+      "round": 13,
+      "frontend_ms": 0.08986,
+      "execution_ms": 1.208622,
+      "total_ms": 1.298482
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "javascript-native",
+      "round": 14,
+      "frontend_ms": 0.083977,
+      "execution_ms": 1.215756,
+      "total_ms": 1.299733
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "javascript-native",
+      "round": 15,
+      "frontend_ms": 0.084094,
+      "execution_ms": 1.206814,
+      "total_ms": 1.290908
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "javascript-native",
+      "round": 16,
+      "frontend_ms": 0.083036,
+      "execution_ms": 0.819751,
+      "total_ms": 0.902787
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "javascript-native",
+      "round": 17,
+      "frontend_ms": 0.161663,
+      "execution_ms": 3.253709,
+      "total_ms": 3.415372
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "javascript-native",
+      "round": 18,
+      "frontend_ms": 0.14413,
+      "execution_ms": 1.553974,
+      "total_ms": 1.698104
+    },
+    {
+      "program": "fizzbuzz",
+      "variant": "javascript-native",
+      "round": 19,
+      "frontend_ms": 0.1518,
+      "execution_ms": 1.801464,
+      "total_ms": 1.953264
+    },
+    {
+      "program": "objetos",
+      "variant": "clox",
+      "round": 0,
+      "total_ms": 1.313458
+    },
+    {
+      "program": "objetos",
+      "variant": "clox",
+      "round": 1,
+      "total_ms": 1.412208
+    },
+    {
+      "program": "objetos",
+      "variant": "clox",
+      "round": 2,
+      "total_ms": 1.333912
+    },
+    {
+      "program": "objetos",
+      "variant": "clox",
+      "round": 3,
+      "total_ms": 1.399233
+    },
+    {
+      "program": "objetos",
+      "variant": "clox",
+      "round": 4,
+      "total_ms": 1.654393
+    },
+    {
+      "program": "objetos",
+      "variant": "clox",
+      "round": 5,
+      "total_ms": 1.746029
+    },
+    {
+      "program": "objetos",
+      "variant": "clox",
+      "round": 6,
+      "total_ms": 1.480578
+    },
+    {
+      "program": "objetos",
+      "variant": "clox",
+      "round": 7,
+      "total_ms": 1.381891
+    },
+    {
+      "program": "objetos",
+      "variant": "clox",
+      "round": 8,
+      "total_ms": 1.386096
+    },
+    {
+      "program": "objetos",
+      "variant": "clox",
+      "round": 9,
+      "total_ms": 1.421773
+    },
+    {
+      "program": "objetos",
+      "variant": "clox",
+      "round": 10,
+      "total_ms": 1.311469
+    },
+    {
+      "program": "objetos",
+      "variant": "clox",
+      "round": 11,
+      "total_ms": 1.351414
+    },
+    {
+      "program": "objetos",
+      "variant": "clox",
+      "round": 12,
+      "total_ms": 1.398077
+    },
+    {
+      "program": "objetos",
+      "variant": "clox",
+      "round": 13,
+      "total_ms": 1.316711
+    },
+    {
+      "program": "objetos",
+      "variant": "clox",
+      "round": 14,
+      "total_ms": 1.32974
+    },
+    {
+      "program": "objetos",
+      "variant": "clox",
+      "round": 15,
+      "total_ms": 1.392996
+    },
+    {
+      "program": "objetos",
+      "variant": "clox",
+      "round": 16,
+      "total_ms": 1.338256
+    },
+    {
+      "program": "objetos",
+      "variant": "clox",
+      "round": 17,
+      "total_ms": 1.30335
+    },
+    {
+      "program": "objetos",
+      "variant": "clox",
+      "round": 18,
+      "total_ms": 1.419687
+    },
+    {
+      "program": "objetos",
+      "variant": "clox",
+      "round": 19,
+      "total_ms": 1.377763
+    }
+  ],
+  "resources": [
+    {
+      "path": "/tmp/mylox-benchmark-avl0yyr5",
+      "purpose": "fuentes 341d6eb25caa286d54fe23c87fb62e03ccda370e (src)",
+      "removed": true
+    },
+    {
+      "path": "/tmp/mylox-benchmark-dhdekrhq",
+      "purpose": "fuentes 088a86c2c86816dea2bbd3d3bb5fe549855ccf6d (src)",
+      "removed": true
+    },
+    {
+      "path": "/tmp/mylox-benchmark-ayorr0j3",
+      "purpose": "fuentes 734f4d2adaf708c503dc5d17e88315e273c2f0ab (plox)",
+      "removed": true
+    },
+    {
+      "path": "/tmp/mylox-clox-benchmark-orqkhf_y",
+      "purpose": "fuentes clox y ejecutable de comparación",
+      "removed": true
+    },
+    {
+      "path": "/tmp/mylox-clox-benchmark-ps99j0n_",
+      "purpose": "fuentes clox y ejecutable de comparación",
+      "removed": true
+    },
+    {
+      "path": "/tmp/mylox-clox-benchmark-szr3r2h5",
+      "purpose": "fuentes clox y ejecutable de comparación",
+      "removed": true
+    }
+  ],
+  "complete": true,
+  "finished_utc": "2026-11-11T16:08:33.205038+00:00",
+  "external_resources": {
+    "path": "/tmp/mylox-clox-benchmark-ggcgy0xw",
+    "purpose": "fuentes clox y ejecutable de comparación",
+    "removed": true
+  },
+  "clox": {
+    "commit": "4a840f70f69c6ddd17cfef4f6964f8e1bcd8c3d4",
+    "flags": [
+      "-std=c99",
+      "-O2",
+      "-DNDEBUG"
+    ],
+    "compiler": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "harness_sha256": "234516eb38936408607f4c9c8a0ad2bc8f066d7aae0c5cac143d3b1e627a9f66"
+  },
+  "javascript": {
+    "node": "v18.19.1",
+    "v8": "10.2.154.26-node.28"
+  },
+  "external_complete": true
+}
