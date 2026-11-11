@@ -1,73 +1,45 @@
 # Harnesses de medición
 
-Estos archivos son **nuestros**: son instrumentación de medición, no
-implementaciones de Lox. Sirven para ejecutar un programa `.lox` dentro del
-proceso de la implementación medida y reportar cuánto tardó, de modo que la
-comparación con `mylox` y `plox` sea justa (sin incluir el arranque del
-proceso ni de la JVM).
+Estos programas miden dentro del proceso del runtime, excluyendo la lectura
+de archivos y el arranque del proceso.
 
-## Por qué hacen falta
+## Corrida de la entrega final
 
-`mylox` y `plox` se importan directamente desde Python, así que se miden en
-proceso sin más. `jlox` (Java) y `clox` (C) son programas cerrados: para
-medirlos sin el costo de arranque hay que llamar a su API desde un programa
-propio.
+`benchmarks/external.py` ejecuta los harnesses de C y JavaScript. Usa las mismas
+repeticiones, calentamiento y afinidad de CPU que `benchmarks/compare.py`.
 
-- `jlox/Bench.java` — replica el flujo de `Lox.run()` (scan → parse → resolve →
-  interpret). Tiene que vivir en el package `com.craftinginterpreters.lox`
-  porque las clases del intérprete son *package-private*.
-- `clox/cloxbench.c` — llama a `interpret(source)`, que compila la fuente a
-  bytecode y la ejecuta en la VM. Se compila junto a las fuentes de clox pero
-  **sin** `main.c` (ese archivo es la CLI y trae su propio `main`).
+`clox/cloxbench.c` se compila junto con las fuentes oficiales de clox,
+excluyendo `main.c`. Recibe `<archivo.lox> <calentamiento> <repeticiones>`.
+Cada muestra incluye `initVM()`, `interpret(source)` y `freeVM()`, con un reloj
+monótono de pared (`CLOCK_MONOTONIC`). El código Lox se compila nuevamente y
+la VM comienza vacía en cada iteración.
 
-## Cómo se compilan
+La salida se captura en un `tmpfile()`. Una ejecución inicial establece la
+salida de referencia; todas las demás deben coincidir. Se mide el formateo y
+la escritura al buffer de stdio; el vaciado y la comparación quedan fuera del
+cronómetro. Se emite la salida una vez por stdout y una línea
+`BENCH_MS <milisegundos>` por muestra en stderr. Los errores del intérprete
+producen un código de salida no nulo y detienen la comparación.
 
-`../setup.sh` se encarga: clona el repositorio del libro y compila ambos
-harnesses en `../.cache/` (ignorado por git).
+`native.js` recibe `<archivo.js> <calentamiento> <repeticiones>` y requiere
+`node --expose-gc`. Crea un `vm.Script` y un contexto nuevo por muestra. Separa
+compilación y ejecución; esta última incluye crear el contexto. Captura
+`print` en memoria y verifica que la salida no cambie entre muestras. Devuelve
+un JSON con tiempos y versiones de Node/V8. La recolección explícita queda
+fuera del intervalo; no se desactiva el GC durante la ejecución.
 
-```sh
-benchmarks/setup.sh
-```
+`external.py` contrasta las salidas con resultados esperados, además de los
+chequeos internos. Las fuentes de clox y el ejecutable se crean en un único
+directorio temporal, cuyo nombre y eliminación se registran en el JSON de
+resultados. El archivo anónimo de captura se cierra al terminar el harness.
 
-Para compilar a mano:
+## Harness del parcial
 
-```sh
-# jlox
-javac -d benchmarks/.cache/jlox-build \
-    benchmarks/.cache/craftinginterpreters/java/com/craftinginterpreters/lox/*.java \
-    benchmarks/harness/jlox/Bench.java
+`jlox/Bench.java` conserva la medición en proceso del intérprete Java:
+scanner, parser, resolver e intérprete. Vive en el package
+`com.craftinginterpreters.lox` porque las clases son package-private.
+Puede usarse con `benchmarks/setup.sh` y `benchmarks/bench.py` si hay un JDK.
+No se incluyó en la corrida final porque el entorno Linux usado no tenía Java.
 
-# clox
-C=benchmarks/.cache/craftinginterpreters/c
-gcc -std=c99 -O2 -I"$C" -o benchmarks/.cache/cloxbench \
-    benchmarks/harness/clox/cloxbench.c \
-    "$C/vm.c" "$C/compiler.c" "$C/chunk.c" "$C/memory.c" "$C/object.c" \
-    "$C/scanner.c" "$C/table.c" "$C/value.c" "$C/debug.c" -lm
-```
-
-## Formato de salida
-
-Ambos harnesses reciben `<archivo.lox> <calentamiento> <repeticiones>`:
-
-- el **calentamiento** son ejecuciones que se descartan, hechas dentro del
-  mismo proceso para que el JIT de la JVM o el estado de la VM queden
-  estables (igual que el warmup de Python);
-- las **repeticiones** son las que se miden.
-
-La salida del programa va por **stdout** (una sola vez, de la primera
-ejecución) y los tiempos por **stderr**, para que no se mezclen:
-
-```text
-$ benchmarks/.cache/cloxbench benchmarks/programas/primos.lox 3 3
-62
-```
-
-```text
-$ benchmarks/.cache/cloxbench benchmarks/programas/primos.lox 3 3 2>&1 >/dev/null
-BENCH_MS 1.104
-BENCH_MS 1.136
-BENCH_MS 1.162
-```
-
-El benchmark (`benchmarks/bench.py`) lee las líneas `BENCH_MS` del stderr para
-armar las estadísticas y el stdout para verificar la equivalencia de salida.
+Tres iteraciones de calentamiento reducen algunos efectos iniciales, pero
+no garantizan un estado estable del JIT de Java o JavaScript.
