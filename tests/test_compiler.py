@@ -82,16 +82,14 @@ def test_la_desigualdad_se_descompone_en_equal_y_not():
     assert chunk.read(5) == OpCode.OP_NOT.value
 
 
-def test_menor_o_igual_se_descompone_en_greater_y_not():
+def test_menor_o_igual_tiene_opcode_propio():
     chunk = compilar("1 <= 2;")
-    assert chunk.read(4) == OpCode.OP_GREATER.value
-    assert chunk.read(5) == OpCode.OP_NOT.value
+    assert chunk.read(4) == OpCode.OP_LESS_EQUAL.value
 
 
-def test_mayor_o_igual_se_descompone_en_less_y_not():
+def test_mayor_o_igual_tiene_opcode_propio():
     chunk = compilar("1 >= 2;")
-    assert chunk.read(4) == OpCode.OP_LESS.value
-    assert chunk.read(5) == OpCode.OP_NOT.value
+    assert chunk.read(4) == OpCode.OP_GREATER_EQUAL.value
 
 
 def test_el_modulo_emite_op_modulo():

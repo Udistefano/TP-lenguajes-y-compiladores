@@ -73,6 +73,8 @@ class OpCode(IntEnum):
     OP_LIST = auto()
     OP_GET_INDEX = auto()
     OP_SET_INDEX = auto()
+    OP_GREATER_EQUAL = auto()
+    OP_LESS_EQUAL = auto()
 
 
 @dataclass(frozen=True, slots=True)
@@ -97,6 +99,8 @@ INSTRUCTIONS: dict[OpCode, Instruction] = {
     OpCode.OP_EQUAL: Instruction(stack_effect=-1, operand_size=0),
     OpCode.OP_GREATER: Instruction(stack_effect=-1, operand_size=0),
     OpCode.OP_LESS: Instruction(stack_effect=-1, operand_size=0),
+    OpCode.OP_GREATER_EQUAL: Instruction(stack_effect=-1, operand_size=0),
+    OpCode.OP_LESS_EQUAL: Instruction(stack_effect=-1, operand_size=0),
     OpCode.OP_ADD: Instruction(stack_effect=-1, operand_size=0),
     OpCode.OP_SUBTRACT: Instruction(stack_effect=-1, operand_size=0),
     OpCode.OP_MULTIPLY: Instruction(stack_effect=-1, operand_size=0),

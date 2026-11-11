@@ -417,15 +417,11 @@ class Compiler:
             if operator.kind == TokenKind.GREATER:
                 self.chunk.emit(OpCode.OP_GREATER, operator.line)
             elif operator.kind == TokenKind.GREATER_EQUAL:
-                # a >= b  ⇔  !(a < b)
-                self.chunk.emit(OpCode.OP_LESS, operator.line)
-                self.chunk.emit(OpCode.OP_NOT, operator.line)
+                self.chunk.emit(OpCode.OP_GREATER_EQUAL, operator.line)
             elif operator.kind == TokenKind.LESS:
                 self.chunk.emit(OpCode.OP_LESS, operator.line)
-            else:  # LESS_EQUAL
-                # a <= b  ⇔  !(a > b)
-                self.chunk.emit(OpCode.OP_GREATER, operator.line)
-                self.chunk.emit(OpCode.OP_NOT, operator.line)
+            else:
+                self.chunk.emit(OpCode.OP_LESS_EQUAL, operator.line)
 
     def term(self, can_assign: bool = False) -> None:
         """term → factor ( ( '-' | '+' ) factor )*"""

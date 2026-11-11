@@ -286,6 +286,11 @@ class VM:
                             "Operands of < must be numbers", line=self.current_line
                         )
                     push(left < right)
+                case OpCode.OP_GREATER_EQUAL | OpCode.OP_LESS_EQUAL:
+                    right, left = pop(), pop()
+                    if not (is_number(left) and is_number(right)):
+                        raise VMRuntimeError("Comparison operands must be numbers", line=self.current_line)
+                    push(left >= right if opcode == OpCode.OP_GREATER_EQUAL else left <= right)
                 case OpCode.OP_JUMP:
                     offset = (read_byte() << 8) | read_byte()
                     frame.ip += offset

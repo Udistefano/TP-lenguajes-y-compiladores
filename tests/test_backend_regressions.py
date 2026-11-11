@@ -81,5 +81,21 @@ def test_inicializador_sin_nombre_anterior_falla_en_runtime(backend, capsys):
     assert "Traceback" not in capsys.readouterr().err
 
 
+def test_comparaciones_con_nan_e_infinito(backend, capsys):
+    source = 'var inf = ' + '9' * 310 + ''';
+        var n = inf - inf;
+        print n < 0; print n > 0; print n <= 0; print n >= 0;
+        print 0 <= n; print 0 >= n; print n == n; print n != n;
+        print inf >= inf; print inf <= inf; print inf > 0; print -inf < 0;
+        print 2 >= 2; print 2 <= 2; print 2 >= 3; print 3 <= 2;
+    '''
+    assert run_actions(source, backend) == 0
+    output = capsys.readouterr()
+    assert output.out.splitlines() == ['false'] * 7 + ['true'] * 7 + ['false'] * 2
+    assert output.err == ''
 
 
+@pytest.mark.parametrize("operator", ['<=', '>='])
+def test_comparaciones_exigen_numeros(backend, capsys, operator):
+    assert run_actions(f'print "x" {operator} 1;', backend) == 70
+    assert 'must be numbers' in capsys.readouterr().err
