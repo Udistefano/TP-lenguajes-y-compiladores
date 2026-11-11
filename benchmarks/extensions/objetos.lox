@@ -1,0 +1,13 @@
+class Counter {
+  init() { this.n = 0; }
+  next() { this.n = this.n + 1; return this.n; }
+}
+class StepCounter < Counter {
+  next() { return super.next() + 1; }
+}
+var counter = StepCounter();
+var total = 0;
+for (var i = 0; i < 20000; i = i + 1) {
+  total = total + counter.next();
+}
+print total;
