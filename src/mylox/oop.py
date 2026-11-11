@@ -13,7 +13,7 @@ from .function import ReturnValue
 from .errors import LoxRuntimeError
 
 
-@dataclass
+@dataclass(eq=False)
 class LoxInstance:
     """Una instancia de una clase Lox.
 
@@ -41,7 +41,7 @@ class LoxInstance:
         return f"{self.klass.name} instance"
 
 
-@dataclass
+@dataclass(eq=False)
 class LoxClass:
     """Una clase Lox, con su superclase y sus métodos.
 
@@ -85,7 +85,7 @@ class LoxClass:
         return self.name
 
 
-@dataclass
+@dataclass(eq=False)
 class LoxFunction:
     """Una función Lox, que puede ser un método o una función libre.
 

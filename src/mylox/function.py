@@ -20,7 +20,7 @@ class ReturnValue(Exception):
         super().__init__("función devolvió un valor")
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, eq=False)
 class Function:
     """
     Representa una función de Lox ( como en la pag 92)
