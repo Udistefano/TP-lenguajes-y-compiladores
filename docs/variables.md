@@ -1,8 +1,4 @@
-# VARIABLES, ASIGNACIONES Y ÁMBITOS
-
-## 1. ¿Qué significa guardar un valor en una variable?
-
-Considerá:
+# Variables y ámbitos
 
 ```lox
 var puntos = 10;
@@ -10,198 +6,81 @@ puntos = puntos + 5;
 print puntos;
 ```
 
-La salida es:
+`var` declara, una referencia lee y `=` modifica una variable existente.
+El ejemplo imprime `15`. Sin inicializador, `var dato;` guarda `nil`.
 
-```text
-15
-```
+## Parseo y asignación
 
-Hay tres operaciones distintas:
+El [parser](../src/mylox/pipeline/parser.py) reconoce
+`var nombre (= expresión)? ;`. Los nodos del AST son:
 
-1. **Declarar:** `var puntos = 10;` crea el nombre `puntos` en el ámbito actual y guarda su valor inicial.
-2. **Leer:** el `puntos` que aparece a la derecha de `=` consulta el valor guardado.
-3. **Asignar:** `puntos = ...` reemplaza el valor de una variable existente.
-
-El nombre y el valor tienen trabajos diferentes. El nombre permite encontrar un lugar de almacenamiento; el valor es lo que usamos al calcular.
-
-## 2. ¿Dónde intervienen lexer, parser y AST?
-
-El [lexer](../src/mylox/pipeline/lexer.py) reconoce `var` como `VAR` y `puntos` como `IDENTIFIER`:
-
-```text
-VAR IDENTIFIER("puntos") EQUAL NUMBER(10) SEMICOLON
-IDENTIFIER("puntos") EQUAL IDENTIFIER("puntos") PLUS NUMBER(5) SEMICOLON
-PRINT IDENTIFIER("puntos") SEMICOLON
-EOF
-```
-
-El lexer reconoce los nombres, pero no comprueba si ya están declarados. Eso depende de lo que ocurra al ejecutar el programa.
-
-El [parser](../src/mylox/pipeline/parser.py) construye estos nodos. Los nombres se muestran abreviados; en el código se guardan como objetos `Token`:
-
-```text
-VarDecl("puntos", Literal(10))
-ExprStmt(
-    Assign("puntos", Binary(Variable("puntos"), +, Literal(5)))
-)
-PrintStmt(Variable("puntos"))
-```
-
-Cada nodo de [nodes.py](../src/mylox/nodes.py) tiene una responsabilidad:
-
-| Nodo | Qué guarda |
+| Nodo | Datos |
 | --- | --- |
-| `VarDecl` | El token del nombre y una expresión inicializadora opcional |
-| `Variable` | El token del nombre que queremos leer |
-| `Assign` | El token del nombre y la expresión del nuevo valor |
-| `BlockStmt` | Una lista de declaraciones y sentencias |
+| `VarDecl` | Nombre e inicializador opcional |
+| `Variable` | Nombre que se lee |
+| `Assign` | Nombre y expresión del nuevo valor |
+| `BlockStmt` | Declaraciones y sentencias del bloque |
 
-Guardar el token también conserva la línea y columna para informar errores de variables indefinidas.
+Los nombres conservan su token para informar línea y columna en los errores.
+La asignación devuelve el valor guardado y se agrupa por derecha:
+`a = b = 3` asigna primero a `b` y después a `a`.
 
-## 3. ¿Cómo se parsean las declaraciones y las asignaciones?
+El destino puede ser una variable, una propiedad o un índice de lista.
+`(1 + 2) = 3;` es un error de sintaxis. `==` compara valores; no asigna.
 
-`_declaration()` reconoce esta forma:
+## Ambientes y resolución
 
-```text
-"var" nombre ("=" expresión)? ";"
-```
-
-El inicializador es opcional. Por eso este programa imprime `nil`:
-
-```lox
-var dato;
-print dato;
-```
-
-La asignación es una **expresión**: además de guardar un valor, devuelve ese mismo valor.
-Esto permite escribir:
-
-```lox
-var a;
-var b;
-print a = b = 3;
-print a;
-print b;
-```
-
-Las tres líneas de salida son `3`.
-
-`_assignment()` primero construye la expresión que aparece a la izquierda.
-Si encuentra `=`, llama recursivamente a `_assignment()` para construir la derecha.
-Esa recursión hace que la asignación se agrupe **de derecha a izquierda**:
-
-```text
-a = (b = 3)
-```
-
-Primero se asigna `3` a `b`. Esa asignación devuelve `3`, que luego se asigna a `a`.
-
-El parser también exige que el destino sea un nodo `Variable`.
-Por eso `(1 + 2) = 3;` es un error de sintaxis: una suma no identifica una variable donde guardar el resultado.
-
-`=` y `==` son operaciones diferentes: `=` asigna; `==` compara valores.
-
-## 4. ¿Qué es un ambiente, o Env?
-
-Un [Env](../src/mylox/env.py) es el objeto que guarda las variables de un ámbito.
-Su diccionario `values` relaciona nombres con valores:
-
-```text
-values = {
-    "puntos": 15.0,
-    "dato": None
-}
-```
-
-Además, `enclosing` apunta al ambiente exterior. El ambiente global tiene `enclosing = None`.
-
-Sus operaciones son:
+[Env](../src/mylox/env.py) guarda un diccionario `values` y una referencia
+`enclosing` al ambiente exterior. El ambiente global no tiene padre.
 
 | Método | Acción |
 | --- | --- |
-| `define(name: str, value)` | Guarda el nombre en este ambiente |
-| `get(name: Token)` | Busca el nombre aquí y luego en los ambientes exteriores |
-| `assign(name: Token, value)` | Actualiza el primer ambiente de la cadena que contiene el nombre |
-| `get_local(name: Token, levels)` | Lee en el ambiente fijado por el resolvedor |
-| `assign_local(name: Token, value, levels)` | Modifica ese mismo ambiente |
+| `define(name, value)` | Define o reemplaza el nombre en este ambiente |
+| `get(name)` | Busca en este ambiente y sus padres |
+| `assign(name, value)` | Actualiza el primer ambiente que contiene el nombre |
+| `get_local(name, levels)` | Lee en el ambiente elegido por el resolver |
+| `assign_local(name, value, levels)` | Modifica ese ambiente |
 
-`get()` y `assign()` usan `name.lexeme` como clave del diccionario.
-Si llegan al final de la cadena sin encontrar el nombre, lanzan `LoxRuntimeError`.
+Leer o asignar un nombre inexistente produce `LoxRuntimeError`. Una variable
+con `nil`, `false` o `0` sigue estando definida.
 
-La búsqueda comprueba si la clave existe. Una variable que contiene `nil`, `false` o `0` sigue siendo una variable definida.
+[BindingResolver](../src/mylox/resolver.py) fija el ámbito de cada referencia
+antes de ejecutar. El intérprete usa `get_local()` y `assign_local()` para
+los locales, y accede al ambiente global para el resto. Esto evita que una
+declaración posterior cambie el ámbito de un [closure](funciones-y-closures.md).
 
-En nuestra implementación, declarar otra vez un nombre en el mismo ambiente reemplaza su entrada. Declararlo dentro de un bloque crea una entrada en otro ambiente.
+## Inicializadores y redeclaraciones
 
-Con funciones integradas, [BindingResolver](../src/mylox/resolver.py) fija el ámbito de cada referencia antes de ejecutar. El intérprete usa `get_local()` y `assign_local()` para los locales, y `globals.get()` o `globals.assign()` para los globales. Esto conserva el vínculo de un closure aunque después se declare otro nombre igual. Ver [funciones-y-closures.md](funciones-y-closures.md).
-
-## 5. ¿Cómo se ejecuta el ejemplo inicial?
-
-El [intérprete](../src/mylox/interpreter.py) comienza con un ambiente global:
-
-```python
-self.globals = Env()
-self.environment = self.globals
-```
-
-`environment` es el ambiente activo. Sigamos las tres sentencias:
-
-1. `visit_var_decl()` evalúa `Literal(10)` y llama a `environment.define("puntos", 10.0)`.
-2. `visit_assign()` evalúa primero su expresión derecha. `visit_variable()` obtiene `10`, y la suma produce `15`.
-3. Como `puntos` es global, `visit_assign()` llama a `globals.assign(...)`, guarda `15` y devuelve ese valor. La sentencia de expresión descarta ese resultado.
-4. `visit_print_stmt()` lee `puntos` nuevamente y escribe `15`.
-
-Cada llamada se selecciona mediante el `accept()` del nodo correspondiente, conservando el Visitor con double dispatch.
-
-## 6. ¿Qué cambia al entrar en un bloque?
-
-Las llaves crean un ámbito propio:
+Ambos backends evalúan el inicializador antes de definir el nombre:
 
 ```lox
-var x = 1;
-var y = 0;
+var a = 1;
 {
-    var x = 2;
-    y = x;
-    print x;
+    var a = a + 1;
+    print a;
 }
-print x;
-print y;
+print a;
 ```
 
-La salida es:
+Imprime `2` y `1`. Si no existe un nombre anterior, leerlo falla en runtime.
+Una redeclaración en el mismo ámbito reemplaza la variable; en bytecode
+reutiliza su slot, así que las funciones que la capturaron ven el nuevo valor.
+Esto se aplica a `var`, `fun` y `class`. Si se repite un parámetro, su nombre
+queda asociado al último argumento recibido.
 
-```text
-2
-1
-2
-```
+Conservamos estas reglas del parcial. El Lox del libro rechaza las
+redeclaraciones locales y las lecturas del nombre que se está inicializando.
+Las redeclaraciones globales están permitidas en ambos.
 
-El parser usa `_block()` para reunir los nodos que están entre `{` y `}`.
-Al ejecutar ese `BlockStmt`, el intérprete crea un ambiente cuyo padre es el ambiente activo:
+## Bloques
 
-```text
-Ambiente del bloque             Ambiente global
-values: {x: 2}  ── enclosing ──→ values: {x: 1, y: 0}
-```
+Cada bloque crea un `Env` cuyo padre es el ambiente activo. Una declaración
+local oculta el nombre exterior; una asignación modifica el ámbito que eligió
+el resolver.
 
-Dentro del bloque:
+`execute_block()` guarda el ambiente activo, ejecuta el cuerpo en el nuevo
+y restaura el anterior con `finally`. La restauración ocurre también ante
+un error o un `return`. Las funciones usan la misma operación para sus cuerpos.
 
-- `var x = 2;` define un `x` local. El resolvedor vincula la lectura con ese ámbito, y `get_local(..., 0)` obtiene su valor. Esto se llama **sombrear** un nombre.
-- `y = x;` lee el `x` local y modifica el `y` global, porque la asignación no tiene un vínculo local para `y`.
-
-Al salir del bloque, el ambiente activo vuelve a ser el global. Su `x` sigue valiendo `1`, y su `y` ahora vale `2`.
-Una variable declarada solamente dentro del bloque deja de estar disponible desde afuera.
-
-## 7. ¿Por qué execute_block() usa try/finally?
-
-`execute_block(statements, environment)` hace tres cosas:
-
-1. Guarda el ambiente que estaba activo.
-2. Activa el ambiente recibido y ejecuta las sentencias del cuerpo.
-3. Restaura el ambiente anterior en un `finally`.
-
-`finally` se ejecuta también si una sentencia lanza una excepción.
-Así, un error dentro del bloque no deja al intérprete usando por accidente el ambiente interno.
-Las funciones también ejecutan sus cuerpos con esta operación. Un return atraviesa los bloques y sus finally restauran los ambientes hasta llegar a Function.call.
-
-**Idea para recordar:** declarar agrega un nombre al ámbito actual; la resolución elige qué ámbito leer o modificar; un bloque agrega un ambiente a esa cadena.
+La VM representa esos ámbitos con slots de la pila y cierra las capturas al
+salir. Los detalles están en [bytecode](bytecode.md).
