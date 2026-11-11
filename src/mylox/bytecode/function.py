@@ -42,6 +42,8 @@ class Closure:
 
     def __init__(self, function: Function) -> None:
         self.function = function
+        self.code = function.chunk.code
+        self.constants = function.chunk.constants
         self.upvalues: list = []
 
     def __repr__(self) -> str:
@@ -55,6 +57,8 @@ class CallFrame:
 
     def __init__(self, closure: Closure, stack_slot: int) -> None:
         self.closure = closure
+        self.code = closure.code
+        self.constants = closure.constants
         self.ip = 0
         self.stack_slot = stack_slot
 

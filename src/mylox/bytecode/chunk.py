@@ -81,6 +81,10 @@ class Chunk:
         """El pool completo, en sólo lectura, para el desensamblador."""
         return tuple(self._constants)
 
+    @property
+    def code(self) -> memoryview:
+        return memoryview(self._bytes).toreadonly()
+
     def patch(self, offset: int, byte: int) -> None:
         """Sobrescribe el byte en ``offset`` con un nuevo valor.
 

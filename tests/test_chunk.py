@@ -62,6 +62,14 @@ def test_line_at_devuelve_la_linea_de_cada_byte():
     assert (chunk.line_at(0), chunk.line_at(1), chunk.line_at(2)) == (3, 3, 4)
 
 
+def test_el_buffer_de_ejecucion_es_de_solo_lectura():
+    chunk = Chunk()
+    chunk.emit(OpCode.OP_NIL, line=1)
+    assert chunk.code[0] == OpCode.OP_NIL
+    with pytest.raises(TypeError):
+        chunk.code[0] = OpCode.OP_TRUE
+
+
 def test_el_bytecode_de_una_expresion_coincide_con_los_offsets_esperados():
     """El programa 6 / 3 - 1; completo, como en la diapositiva."""
     chunk = Chunk()
