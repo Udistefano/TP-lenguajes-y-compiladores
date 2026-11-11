@@ -154,6 +154,8 @@ class BindingResolver(Visitor):
 
     def visit_class_decl(self, statement: ClassDecl) -> None:
         """Registra la clase y resuelve sus métodos con this y super."""
+        if statement.superclass and statement.superclass.name.lexeme == statement.name.lexeme:
+            raise ParseError(f"Una clase no puede heredarse a sí misma (línea {statement.name.line})")
         self._register(statement.name)
         had_superclass = self._current_class_has_superclass
         self._inside_classes += 1
@@ -164,34 +166,24 @@ class BindingResolver(Visitor):
             else:
                 self._current_class_has_superclass = False
 
-            # Cada método se resuelve en un ámbito propio con this (y super).
-            for method in statement.methods:
-                self._resolve_method(method)
+            if statement.superclass is not None:
+                self._scope_names.append({"super"})
+            self._scope_names.append({"this"})
+            try:
+                for method in statement.methods:
+                    self._resolve_method(method)
+            finally:
+                self._scope_names.pop()
+                if statement.superclass is not None:
+                    self._scope_names.pop()
         finally:
             self._inside_classes -= 1
             self._current_class_has_superclass = had_superclass
 
     def _resolve_method(self, method: FunctionDecl) -> None:
-        """Resuelve un método: this en el scope del método, super en el de la clase."""
         self._inside_functions += 1
         try:
-            # Scope de clase (exterior): contiene "super" si hay superclase.
-            class_scope: set[str] = set()
-            if self._current_class_has_superclass:
-                class_scope.add("super")
-            self._scope_names.append(class_scope)
-            try:
-                # Scope de método (interior): contiene "this" + parámetros.
-                method_scope: set[str] = {"this"}
-                method_scope.update(p.lexeme for p in method.parameters)
-                self._scope_names.append(method_scope)
-                try:
-                    for stmt in method.body:
-                        stmt.accept(self)
-                finally:
-                    self._scope_names.pop()
-            finally:
-                self._scope_names.pop()
+            self._walk_scope(method.body, tuple(p.lexeme for p in method.parameters))
         finally:
             self._inside_functions -= 1
 

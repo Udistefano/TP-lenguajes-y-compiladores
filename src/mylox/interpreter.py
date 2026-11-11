@@ -221,32 +221,14 @@ class Interpreter(Visitor):
         return value
 
     def visit_this(self, expression: This) -> object:
-        """Devuelve la instancia actual."""
-        env = self.environment
-        while env is not None:
-            if "this" in env.values:
-                return env.values["this"]
-            env = env.enclosing
-        raise LoxRuntimeError(expression.keyword, "No se puede usar 'this' fuera de un método.")
+        _, distance = self.local_bindings[id(expression)]
+        return self.environment.get_local(expression.keyword, distance)
 
     def visit_super(self, expression: Super) -> object:
-        """Busca un método en la superclase del this actual."""
-        env = self.environment
-        superclass = None
-        obj = None
-        while env is not None:
-            if "super" in env.values and superclass is None:
-                superclass = env.values["super"]
-            if "this" in env.values and obj is None:
-                obj = env.values["this"]
-            if superclass is not None and obj is not None:
-                break
-            env = env.enclosing
-
-        if not isinstance(superclass, LoxClass):
-            raise LoxRuntimeError(expression.keyword, "Superclass must be a class.")
-        if not isinstance(obj, LoxInstance):
-            raise LoxRuntimeError(expression.keyword, "Super must be used inside a method.")
+        _, distance = self.local_bindings[id(expression)]
+        superclass = self.environment.get_local(expression.keyword, distance)
+        receiver = Token(TokenKind.THIS, "this", line=expression.keyword.line)
+        obj = self.environment.get_local(receiver, distance - 1)
 
         method = superclass.find_method(expression.method.lexeme)
         if method is None:
