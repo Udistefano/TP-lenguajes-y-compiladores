@@ -10,9 +10,11 @@ from __future__ import annotations
 from .env import Env
 from .errors import LoxRuntimeError
 from .function import Function, ReturnValue
+from .lists import ListError, ListMethod, LoxList, require_list
 from .nodes import (
     Assign, Binary, BlockStmt, Call, ClassDecl, ExprStmt, FunctionDecl, Get,
-    Grouping, IfStmt, Literal, Logical, Node, PrintStmt, ReturnStmt, Set, Super,
+    Grouping, IfStmt, Index, IndexSet, ListLiteral, Literal, Logical, Node,
+    PrintStmt, ReturnStmt, Set, Super,
     This, Unary, VarDecl, Variable, Visitor, WhileStmt,
 )
 from .oop import LoxClass, LoxFunction, LoxInstance
@@ -200,11 +202,36 @@ class Interpreter(Visitor):
 
         self.environment.assign(statement.name, klass)
 
+    def visit_list(self, expression: ListLiteral) -> LoxList:
+        return LoxList([self.evaluate(element) for element in expression.elements])
+
+    def visit_index(self, expression: Index) -> object:
+        obj = self.evaluate(expression.object)
+        index = self.evaluate(expression.index)
+        try:
+            return require_list(obj).get(index)
+        except ListError as error:
+            raise LoxRuntimeError(expression.bracket, str(error)) from None
+
+    def visit_index_set(self, expression: IndexSet) -> object:
+        obj = self.evaluate(expression.object)
+        index = self.evaluate(expression.index)
+        value = self.evaluate(expression.value)
+        try:
+            return require_list(obj).set(index, value)
+        except ListError as error:
+            raise LoxRuntimeError(expression.bracket, str(error)) from None
+
     def visit_get(self, expression: Get) -> object:
         """Accede a una propiedad de un objeto."""
         obj = self.evaluate(expression.object)
         if isinstance(obj, LoxInstance):
             return obj.get(expression.name)
+        if isinstance(obj, LoxList):
+            try:
+                return obj.get_property(expression.name.lexeme)
+            except ListError as error:
+                raise LoxRuntimeError(expression.name, str(error)) from None
         raise LoxRuntimeError(
             expression.name, "Only instances have properties."
         )
@@ -212,11 +239,13 @@ class Interpreter(Visitor):
     def visit_set(self, expression: Set) -> object:
         """Asigna un valor a una propiedad de un objeto."""
         obj = self.evaluate(expression.object)
+        value = self.evaluate(expression.value)
+        if isinstance(obj, LoxList):
+            raise LoxRuntimeError(expression.name, "List properties are read-only.")
         if not isinstance(obj, LoxInstance):
             raise LoxRuntimeError(
                 expression.name, "Only instances have fields."
             )
-        value = self.evaluate(expression.value)
         obj.set(expression.name, value)
         return value
 
@@ -387,7 +416,7 @@ class Interpreter(Visitor):
         callee = self.evaluate(expression.callee)
         arguments = [self.evaluate(argument) for argument in expression.arguments]
 
-        if not self.is_callable(callee):
+        if not (self.is_callable(callee) or isinstance(callee, ListMethod)):
             raise LoxRuntimeError(
                 expression.paren, "Can only call functions and classes."
             )
@@ -398,6 +427,11 @@ class Interpreter(Visitor):
                 "Expected " + str(callee.arity) + " arguments but got " + str(len(arguments)) + ".",
             )
 
+        if isinstance(callee, ListMethod):
+            try:
+                return callee.invoke(arguments)
+            except ListError as error:
+                raise LoxRuntimeError(expression.paren, str(error)) from None
         return callee.call(self, arguments)
 
     def visit_logical(self, expression: Logical) -> object:

@@ -10,7 +10,8 @@ from __future__ import annotations
 from .errors import ParseError
 from .nodes import (
     Assign, Binary, BlockStmt, Call, ClassDecl, ExprStmt, FunctionDecl, Get,
-    Grouping, IfStmt, Literal, Logical, Node, PrintStmt, ReturnStmt, Set, Super,
+    Grouping, IfStmt, Index, IndexSet, ListLiteral, Literal, Logical, Node,
+    PrintStmt, ReturnStmt, Set, Super,
     This, Unary, VarDecl, Variable, Visitor, WhileStmt,
 )
 from .tokens import Token
@@ -82,6 +83,19 @@ class BindingResolver(Visitor):
 
     def visit_literal(self, expression: Literal) -> None:
         """Los literales no contienen nombres que necesiten vincularse."""
+
+    def visit_list(self, expression: ListLiteral) -> None:
+        for element in expression.elements:
+            element.accept(self)
+
+    def visit_index(self, expression: Index) -> None:
+        expression.object.accept(self)
+        expression.index.accept(self)
+
+    def visit_index_set(self, expression: IndexSet) -> None:
+        expression.object.accept(self)
+        expression.index.accept(self)
+        expression.value.accept(self)
 
     def visit_grouping(self, expression: Grouping) -> None:
         """Recorre la expresión agrupada sin crear un ámbito de variables."""
