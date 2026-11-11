@@ -170,7 +170,8 @@ def test_error_super_sin_superclase_bytecode():
     """
     out, err, code = run(source, "bytecode")
     assert code != 0
-    assert "No superclass" in err or "Undefined property" in err
+    assert code == 65
+    assert "sin superclase" in err
 
 
 def test_error_llamar_no_callable_bytecode():

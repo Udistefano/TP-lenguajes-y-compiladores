@@ -26,7 +26,7 @@ def disassemble_instruction(chunk: Chunk, offset: int) -> tuple[str, int]:
         return f"{offset:04d}| {opcode.name}<+{target}>", offset + 3
 
     # Funciones: OP_CALL lleva la cantidad de argumentos.
-    if opcode == OpCode.OP_CALL:
+    if opcode in (OpCode.OP_CALL, OpCode.OP_LIST, OpCode.OP_GET_LOCAL, OpCode.OP_SET_LOCAL):
         argc = chunk.read(offset + 1)
         return f"{offset:04d}| {opcode.name}<{argc}>", offset + 2
 

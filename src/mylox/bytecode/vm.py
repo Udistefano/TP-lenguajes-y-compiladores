@@ -2,14 +2,15 @@
 from __future__ import annotations
 
 from ..errors import VMRuntimeError
+from ..lists import ListError, ListMethod, LoxList, require_list
 from ..oop import LoxClass, LoxInstance
-from ..tokens import LiteralValue
 from ..values import is_equal, is_number, is_string, is_truthy, stringify
 from .chunk import Chunk
 from .disassembler import RUNTIME_HEADER
 from .function import BoundMethod, CallFrame, Closure, Function, Upvalue
 from .opcodes import OpCode
 
+MAX_CALL_FRAMES = 1024
 
 class VM:
     """Corre las instrucciones de un chunk sobre una pila de valores.
@@ -29,7 +30,7 @@ class VM:
         self.frames: list[CallFrame] = []
         self.stack: list[object] = []
         self.globals: dict[str, object] = {}
-        self.open_upvalues: list = []
+        self.open_upvalues: dict[int, Upvalue] = {}
         self.current_line = 1
 
     @property
@@ -52,31 +53,16 @@ class VM:
         self.stack.append(value)
 
     # Upvalues (closures)
-    def capture_upvalue(self, stack_index: int):
-        """Asegura que exista un upvalue abierto para stack_index."""
-        for upvalue in self.open_upvalues:
-            if upvalue.stack_index == stack_index:
-                return upvalue
+    def capture_upvalue(self, stack_index: int) -> Upvalue:
+        if stack_index not in self.open_upvalues:
+            self.open_upvalues[stack_index] = Upvalue(stack_index)
+        return self.open_upvalues[stack_index]
 
-        created = Upvalue(stack_index)
-        insert_pos = len(self.open_upvalues)
-        for i, upvalue in enumerate(self.open_upvalues):
-            if upvalue.stack_index is None or upvalue.stack_index > stack_index:
-                insert_pos = i
-                break
-        self.open_upvalues.insert(insert_pos, created)
-        return created
-
-    def close_upvalues(self, last: int) -> None:
-        """Cierra todos los upvalues que vivan en posiciones >= last."""
-        while self.open_upvalues:
-            upvalue = self.open_upvalues[0]
-            if upvalue.stack_index is not None and upvalue.stack_index >= last:
-                upvalue.closed_value = self.stack[upvalue.stack_index]
-                upvalue.stack_index = None
-                self.open_upvalues.pop(0)
-            else:
-                break
+    def close_upvalues(self, first: int) -> None:
+        for slot in [slot for slot in self.open_upvalues if slot >= first]:
+            upvalue = self.open_upvalues.pop(slot)
+            upvalue.closed_value = self.stack[slot]
+            upvalue.stack_index = None
 
     def pop(self) -> object:
         """Devuelve el tope de la pila y lo retira."""
@@ -93,15 +79,58 @@ class VM:
     # Lectura del chunk
     def read_byte(self) -> int:
         """Consume el byte en la posición actual y avanza el puntero."""
-        byte = self.chunk.read(self.ip)
-        self.ip += 1
+        frame = self.frames[-1]
+        byte = frame.closure.function.chunk.read(frame.ip)
+        frame.ip += 1
         return byte
 
-    def read_constant(self) -> LiteralValue:
+    def read_constant(self) -> object:
         """Consume un índice y devuelve la constante del pool que referencia."""
         return self.chunk.constant(self.read_byte())
 
+    def call(self, callee: object, arg_count: int) -> None:
+        base = len(self.stack) - arg_count - 1
+        if isinstance(callee, ListMethod):
+            if arg_count != callee.arity:
+                raise VMRuntimeError(
+                    f"Expected {callee.arity} arguments, got {arg_count}", line=self.current_line
+                )
+            result = callee.invoke(self.stack[base + 1:])
+            del self.stack[base:]
+            self.push(result)
+            return
+        if isinstance(callee, LoxClass):
+            instance = LoxInstance(callee)
+            initializer = callee.find_method("init")
+            if initializer is None:
+                if arg_count != 0:
+                    raise VMRuntimeError(f"Expected 0 arguments, got {arg_count}", line=self.current_line)
+                self.stack[base] = instance
+                return
+            self.stack[base] = instance
+            closure = initializer
+        elif isinstance(callee, BoundMethod):
+            self.stack[base] = callee.instance
+            closure = callee.method
+        elif isinstance(callee, Closure):
+            closure = callee
+        else:
+            raise VMRuntimeError("Can only call functions and classes.", line=self.current_line)
+        if arg_count != closure.function.arity:
+            raise VMRuntimeError(
+                f"Expected {closure.function.arity} arguments, got {arg_count}", line=self.current_line
+            )
+        if len(self.frames) >= MAX_CALL_FRAMES:
+            raise VMRuntimeError("Call stack limit exceeded", line=self.current_line)
+        self.frames.append(CallFrame(closure, base))
+
     def run(self, trace: bool = False) -> None:
+        try:
+            self._run(trace)
+        except ListError as error:
+            raise VMRuntimeError(str(error), line=self.current_line) from None
+
+    def _run(self, trace: bool = False) -> None:
         """Consume instrucciones hasta OP_RETURN o el final del chunk."""
         # Frame del script principal
         main_function = Function(None)
@@ -114,19 +143,22 @@ class VM:
             print(RUNTIME_HEADER)
 
         while self.frames:
-            if self.ip >= len(self.chunk):
+            frame = self.frames[-1]
+            chunk = frame.closure.function.chunk
+            if frame.ip >= len(chunk):
                 # Chunk agotado sin OP_RETURN: retorno implícito.
                 finished_frame = self.frames.pop()
+                self.close_upvalues(finished_frame.stack_slot)
                 if not self.frames:
                     return
-                self.stack = self.stack[: finished_frame.stack_slot - 1]
+                del self.stack[finished_frame.stack_slot:]
                 self.push(None)
                 continue
 
-            start = self.ip
-            self.current_line = self.chunk.line_at(self.ip) if self.ip < len(self.chunk) else 1
+            start = frame.ip
+            self.current_line = chunk.line_at(frame.ip)
 
-            match OpCode(self.read_byte()):
+            match self.read_byte():
                 case OpCode.OP_CONSTANT:
                     self.push(self.read_constant())
                 case OpCode.OP_TRUE:
@@ -137,12 +169,12 @@ class VM:
                     self.push(None)
                 case OpCode.OP_DEFINE_GLOBAL:
                     var_index = self.read_byte()
-                    var_name = self.chunk.constant(var_index)
+                    var_name = chunk.constant(var_index)
                     var_value = self.pop()
                     self.globals[str(var_name)] = var_value
                 case OpCode.OP_SET_GLOBAL:
                     var_index = self.read_byte()
-                    var_name = self.chunk.constant(var_index)
+                    var_name = chunk.constant(var_index)
                     if str(var_name) not in self.globals:
                         raise VMRuntimeError(
                             f"Undefined variable '{var_name}'", line=self.current_line
@@ -150,7 +182,7 @@ class VM:
                     self.globals[str(var_name)] = self.peek()
                 case OpCode.OP_GET_GLOBAL:
                     var_index = self.read_byte()
-                    var_name = self.chunk.constant(var_index)
+                    var_name = chunk.constant(var_index)
                     if str(var_name) not in self.globals:
                         raise VMRuntimeError(
                             f"Undefined variable '{var_name}'", line=self.current_line
@@ -247,77 +279,24 @@ class VM:
                     self.push(left < right)
                 case OpCode.OP_JUMP:
                     offset = (self.read_byte() << 8) | self.read_byte()
-                    self.ip += offset
+                    frame.ip += offset
                 case OpCode.OP_JUMP_IF_FALSE:
                     offset = (self.read_byte() << 8) | self.read_byte()
                     if not is_truthy(self.peek()):
-                        self.ip += offset
+                        frame.ip += offset
                 case OpCode.OP_LOOP:
                     offset = (self.read_byte() << 8) | self.read_byte()
-                    self.ip -= offset
+                    frame.ip -= offset
                 case OpCode.OP_CALL:
                     arg_count = self.read_byte()
                     callee = self.peek(arg_count)
-                    if isinstance(callee, LoxClass):
-                        # Instanciación: reemplaza la clase por la instancia
-                        instance = LoxInstance(callee)
-                        initializer = callee.find_method("init")
-                        if isinstance(initializer, Closure):
-                            if initializer.function.arity != arg_count:
-                                raise VMRuntimeError(
-                                    f"Expected {initializer.function.arity} arguments, "
-                                    f"got {arg_count}",
-                                    line=self.current_line,
-                                )
-                            self.stack[-arg_count - 1] = instance
-                            self.frames[-1].ip = self.ip
-                            self.frames.append(
-                                CallFrame(initializer, len(self.stack) - arg_count - 1)
-                            )
-                            self.ip = 0
-                            if trace:
-                                print(
-                                    f"{start:04d}| ENTERING CALLFRAME "
-                                    f"{callee.name}.init()"
-                                )
-                            continue
-                        if arg_count != 0:
-                            raise VMRuntimeError(
-                                f"Expected 0 arguments, got {arg_count} "
-                                f"for class '{callee.name}'",
-                                line=self.current_line,
-                            )
-                        self.stack[-arg_count - 1] = instance
-                        if arg_count:
-                            del self.stack[-arg_count:]
-                        continue
-                    if isinstance(callee, BoundMethod):
-                        # El método ligado deja su instancia en el slot 0 del
-                        # nuevo frame: ahí el compilador declaró ``this``.
-                        closure = callee.method
-                        self.stack[-arg_count - 1] = callee.instance
-                    elif isinstance(callee, Closure):
-                        closure = callee
-                    else:
-                        raise VMRuntimeError(
-                            f"Cannot call non-callable object: {callee}",
-                            line=self.current_line,
-                        )
-                    if closure.function.arity != arg_count:
-                        raise VMRuntimeError(
-                            f"Expected {closure.function.arity} arguments, got {arg_count}",
-                            line=self.current_line,
-                        )
-                    self.frames[-1].ip = self.ip
-                    fn_callframe = CallFrame(closure, len(self.stack) - arg_count - 1)
-                    self.frames.append(fn_callframe)
-                    self.ip = 0
+                    self.call(callee, arg_count)
                     if trace:
-                        print(f"{start:04d}| ENTERING CALLFRAME {closure.function.name}()")
-                        continue
+                        print(f"{start:04d}| CALL {callee}")
+                    continue
                 case OpCode.OP_CLOSURE:
                     fun_index = self.read_byte()
-                    function = self.chunk.constant(fun_index)
+                    function = chunk.constant(fun_index)
                     closure = Closure(function)
                     self.push(closure)
                     for _ in range(function.upvalue_count):
@@ -347,11 +326,14 @@ class VM:
                     self.close_upvalues(len(self.stack) - 1)
                     self.pop()
                 case OpCode.OP_CLASS:
-                    name = str(self.chunk.constant(self.read_byte()))
+                    name = str(chunk.constant(self.read_byte()))
                     self.push(LoxClass(name, None, {}))
                 case OpCode.OP_GET_PROPERTY:
-                    name = str(self.chunk.constant(self.read_byte()))
+                    name = str(chunk.constant(self.read_byte()))
                     obj = self.pop()
+                    if isinstance(obj, LoxList):
+                        self.push(obj.get_property(name))
+                        continue
                     if not isinstance(obj, LoxInstance):
                         raise VMRuntimeError(
                             "Only instances have properties", line=self.current_line
@@ -367,9 +349,11 @@ class VM:
                                 f"Undefined property '{name}'.", line=self.current_line
                             )
                 case OpCode.OP_SET_PROPERTY:
-                    name = str(self.chunk.constant(self.read_byte()))
+                    name = str(chunk.constant(self.read_byte()))
                     value = self.pop()
                     obj = self.pop()
+                    if isinstance(obj, LoxList):
+                        raise VMRuntimeError("List properties are read-only.", line=self.current_line)
                     if not isinstance(obj, LoxInstance):
                         raise VMRuntimeError(
                             "Only instances have fields", line=self.current_line
@@ -377,7 +361,7 @@ class VM:
                     obj.fields[name] = value
                     self.push(value)
                 case OpCode.OP_METHOD:
-                    name = str(self.chunk.constant(self.read_byte()))
+                    name = str(chunk.constant(self.read_byte()))
                     method = self.pop()
                     klass = self.peek()
                     if not isinstance(klass, LoxClass) or not isinstance(method, Closure):
@@ -386,49 +370,34 @@ class VM:
                         )
                     klass.methods[name] = method
                 case OpCode.OP_INHERIT:
-                    # El stack tiene [superclass, subclass]: la subclase fue
-                    # empujada despues por OP_CLASS.
                     subclass = self.pop()
-                    superclass = self.pop()
+                    superclass = self.peek()
                     if not isinstance(superclass, LoxClass):
-                        raise VMRuntimeError(
-                            "Superclass must be a class", line=self.current_line
-                        )
-                    if not isinstance(subclass, LoxClass):
-                        raise VMRuntimeError(
-                            "Invalid inherit target", line=self.current_line
-                        )
+                        raise VMRuntimeError("Superclass must be a class", line=self.current_line)
                     subclass.superclass = superclass
-                    self.push(subclass)
                 case OpCode.OP_GET_SUPER:
-                    name = str(self.chunk.constant(self.read_byte()))
-                    this_value = self.stack[self.frames[-1].stack_slot]
-                    if not isinstance(this_value, LoxInstance):
-                        raise VMRuntimeError(
-                            "super is only allowed inside a method",
-                            line=self.current_line,
-                        )
-                    # La superclase se resuelve lexicamente respecto de la clase
-                    # en la que el método está definido, no respecto de la clase
-                    # real de la instancia (que puede ser una subclase).
-                    defining_class_name = self.frames[-1].closure.function.enclosing_class
-                    defining_class = this_value.klass
-                    if defining_class_name is not None and defining_class_name in self.globals:
-                        candidate = self.globals[defining_class_name]
-                        if isinstance(candidate, LoxClass):
-                            defining_class = candidate
-                    superclass = defining_class.superclass
-                    if not isinstance(superclass, LoxClass):
-                        raise VMRuntimeError(
-                            "No superclass to call super from",
-                            line=self.current_line,
-                        )
+                    name = str(chunk.constant(self.read_byte()))
+                    superclass = self.pop()
+                    instance = self.pop()
                     method = superclass.find_method(name)
-                    if not isinstance(method, Closure):
-                        raise VMRuntimeError(
-                            f"Undefined property '{name}'.", line=self.current_line
-                        )
-                    self.push(BoundMethod(this_value, method))
+                    if method is None:
+                        raise VMRuntimeError(f"Undefined property '{name}'.", line=self.current_line)
+                    self.push(BoundMethod(instance, method))
+                case OpCode.OP_LIST:
+                    count = self.read_byte()
+                    base = len(self.stack) - count
+                    items = self.stack[base:]
+                    del self.stack[base:]
+                    self.push(LoxList(items))
+                case OpCode.OP_GET_INDEX:
+                    index = self.pop()
+                    obj = require_list(self.pop())
+                    self.push(obj.get(index))
+                case OpCode.OP_SET_INDEX:
+                    value = self.pop()
+                    index = self.pop()
+                    obj = require_list(self.pop())
+                    self.push(obj.set(index, value))
                 case OpCode.OP_RETURN:
                     result = self.pop()
                     finished_frame = self.frames.pop()
@@ -436,12 +405,12 @@ class VM:
                         # init descarta su valor y devuelve la instancia
                         # (que ocupa el slot 0 del frame que termina).
                         result = self.stack[finished_frame.stack_slot]
-                    self.close_upvalues(finished_frame.stack_slot - 1)
+                    self.close_upvalues(finished_frame.stack_slot)
                     if not self.frames:
                         if trace:
                             print(f"{start:04d}| THE END")
                         return
-                    self.stack = self.stack[: finished_frame.stack_slot]
+                    del self.stack[finished_frame.stack_slot:]
                     self.push(result)
                     if trace:
                         print(f"{start:04d}| EXITING CALLFRAME {finished_frame.closure.function.name}()")

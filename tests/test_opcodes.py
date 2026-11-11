@@ -10,6 +10,7 @@ def test_solo_opcodes_de_variables_globales_y_locales_llevan_operando_junto_a_co
     con_operando = {opcode for opcode in OpCode if takes_operand(opcode)}
     assert con_operando == {
         OpCode.OP_CONSTANT,
+        OpCode.OP_LIST,
         OpCode.OP_DEFINE_GLOBAL,
         OpCode.OP_GET_GLOBAL,
         OpCode.OP_SET_GLOBAL,

@@ -2,12 +2,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum, auto
+from enum import IntEnum, auto
 
 MAX_CONSTANT_INDEX = 255
 
 
-class OpCode(Enum):
+class OpCode(IntEnum):
     """instrucciones que la máquina virtual sabe ejecutar."""
 
     # Carga de valores en la pila
@@ -70,6 +70,10 @@ class OpCode(Enum):
     OP_JUMP_IF_FALSE = auto()
     OP_LOOP = auto()
 
+    OP_LIST = auto()
+    OP_GET_INDEX = auto()
+    OP_SET_INDEX = auto()
+
 
 @dataclass(frozen=True, slots=True)
 class Instruction:
@@ -100,7 +104,7 @@ INSTRUCTIONS: dict[OpCode, Instruction] = {
     OpCode.OP_MODULO: Instruction(stack_effect=-1, operand_size=0),
     OpCode.OP_NOT: Instruction(stack_effect=0, operand_size=0),
     OpCode.OP_NEGATE: Instruction(stack_effect=0, operand_size=0),
-    OpCode.OP_CALL: Instruction(stack_effect=-1, operand_size=1),
+    OpCode.OP_CALL: Instruction(stack_effect=0, operand_size=1),
     OpCode.OP_CLOSURE: Instruction(stack_effect=+1, operand_size=1),
     OpCode.OP_GET_UPVALUE: Instruction(stack_effect=+1, operand_size=1),
     OpCode.OP_SET_UPVALUE: Instruction(stack_effect=0, operand_size=1),
@@ -110,12 +114,15 @@ INSTRUCTIONS: dict[OpCode, Instruction] = {
     OpCode.OP_SET_PROPERTY: Instruction(stack_effect=-1, operand_size=1),
     OpCode.OP_METHOD: Instruction(stack_effect=-1, operand_size=1),
     OpCode.OP_INHERIT: Instruction(stack_effect=-1, operand_size=0),
-    OpCode.OP_GET_SUPER: Instruction(stack_effect=+1, operand_size=1),
+    OpCode.OP_GET_SUPER: Instruction(stack_effect=-1, operand_size=1),
     OpCode.OP_INVOKE: Instruction(stack_effect=0, operand_size=2),
     OpCode.OP_SUPER_INVOKE: Instruction(stack_effect=0, operand_size=2),
     OpCode.OP_JUMP: Instruction(stack_effect=0, operand_size=2),
     OpCode.OP_JUMP_IF_FALSE: Instruction(stack_effect=0, operand_size=2),
     OpCode.OP_LOOP: Instruction(stack_effect=0, operand_size=2),
+    OpCode.OP_LIST: Instruction(stack_effect=+1, operand_size=1),
+    OpCode.OP_GET_INDEX: Instruction(stack_effect=-1, operand_size=0),
+    OpCode.OP_SET_INDEX: Instruction(stack_effect=-2, operand_size=0),
 }
 
 
@@ -129,6 +136,10 @@ def operand_bytes(opcode: OpCode) -> int:
     return INSTRUCTIONS[opcode].operand_size
 
 
-def stack_effect(opcode: OpCode) -> int:
+def stack_effect(opcode: OpCode, operand: int = 0) -> int:
     """Devuelve cuánto cambia el tamaño de la pila al ejecutar ``opcode``."""
+    if opcode == OpCode.OP_LIST:
+        return 1 - operand
+    if opcode == OpCode.OP_CALL:
+        return -operand
     return INSTRUCTIONS[opcode].stack_effect

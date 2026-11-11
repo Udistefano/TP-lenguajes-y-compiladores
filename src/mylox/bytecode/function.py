@@ -30,7 +30,6 @@ class Function:
         self.arity = 0
         self.upvalue_count = 0
         self.is_initializer = False
-        self.enclosing_class: str | None = None
 
     def __repr__(self) -> str:
         if self.name is None:

@@ -5,7 +5,6 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from ..errors import CompileError
-from ..tokens import LiteralValue
 from .opcodes import MAX_CONSTANT_INDEX, OpCode, takes_operand
 
 # Un byte de código no puede representar valores fuera de este rango.
@@ -19,8 +18,8 @@ class Chunk:
         """Crea un chunk vacío, sin instrucciones ni constantes."""
         self._bytes = bytearray()
         self._lines: list[int] = []
-        self._constants: list[LiteralValue] = []
-        self._indices: dict[tuple[type, LiteralValue], int] = {}
+        self._constants: list[object] = []
+        self._indices: dict[tuple[type, object], int] = {}
 
 
     #Escritura
@@ -46,7 +45,7 @@ class Chunk:
         if operand is not None:
             self.write_byte(operand, line)
 
-    def add_constant(self, value: LiteralValue) -> int:
+    def add_constant(self, value: object) -> int:
         """Guarda ``value`` en el pool y devuelve el índice que lo referencia."""
         clave = (type(value), value)
         existente = self._indices.get(clave)
@@ -73,12 +72,12 @@ class Chunk:
         """Devuelve la línea de la fuente de la que salió el byte en offset"""
         return self._lines[offset]
 
-    def constant(self, index: int) -> LiteralValue:
+    def constant(self, index: int) -> object:
         """Devuelve la constante del pool referenciada por index"""
         return self._constants[index]
 
     @property
-    def constants(self) -> Sequence[LiteralValue]:
+    def constants(self) -> Sequence[object]:
         """El pool completo, en sólo lectura, para el desensamblador."""
         return tuple(self._constants)
 

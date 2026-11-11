@@ -1,7 +1,7 @@
 """Compilador de Lox a bytecode, de una sola pasada"""
 from __future__ import annotations
 
-from ..errors import ParseError
+from ..errors import CompileError, ParseError
 from ..tokens import Token, TokenKind
 from .chunk import Chunk
 from .function import Function
@@ -28,7 +28,7 @@ class Compiler:
     """Traduce una secuencia de tokens en un chunk de bytecode. No construye AST: parsea y emite instrucciones en el mismo recorrido
     """
 
-    def __init__(self, tokens: list[Token], start: int = 0, enclosing=None) -> None:
+    def __init__(self, tokens: list[Token], start: int = 0, enclosing: Compiler | None = None) -> None:
         """Conserva la secuencia de tokens e inicia el cursor y el chunk."""
         self.tokens = tokens
         self.current = start
@@ -36,10 +36,7 @@ class Compiler:
         self.scope_depth = 0
         self.locals: list[Local] = []
         self.in_function = False
-        self.in_method = False
-        self.in_class = False
-        self.has_superclass = False
-        self.current_class = None
+        self.class_has_superclass = enclosing.class_has_superclass if enclosing else None
         self.enclosing = enclosing
         self.upvalues: list[tuple[bool, int]] = []
 
@@ -52,9 +49,7 @@ class Compiler:
     def end_scope(self) -> None:
         """Sale del bloque actual y retira las variables locales del stack."""
         self.scope_depth -= 1
-        removed = 0
         while self.locals and self.locals[-1].depth > self.scope_depth:
-            removed += 1
             local = self.locals.pop()
             if local.is_captured:
                 self.chunk.emit(OpCode.OP_CLOSE_UPVALUE, self.previous().line)
@@ -242,173 +237,87 @@ class Compiler:
         self.end_scope()
 
     def function_declaration(self) -> None:
-        """Compila ``fun nombre ( params? ) { cuerpo }``."""
         name = self.consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de función")
         is_local = self.scope_depth > 0
-
         if is_local:
             self.declare(name.lexeme)
             self.mark_initialized()
+        self.function_body(name)
+        if not is_local:
+            self.chunk.emit(OpCode.OP_DEFINE_GLOBAL, name.line, self.chunk.add_constant(name.lexeme))
 
+    def function_body(self, name: Token, method: bool = False) -> None:
         self.consume(TokenKind.LEFT_PAREN, "Se esperaba '(' después del nombre")
+        body = Compiler(self.tokens, start=self.current, enclosing=self)
+        body.in_function = True
+        body.begin_scope()
+        body.declare("this" if method else "")
+        body.mark_initialized()
 
-        params: list[Token] = []
+        arity = 0
         if not self.check(TokenKind.RIGHT_PAREN):
-            params.append(self.consume(TokenKind.IDENTIFIER, "Se esperaba un parámetro"))
-            while self.match(TokenKind.COMMA):
-                params.append(self.consume(TokenKind.IDENTIFIER, "Se esperaba un parámetro"))
-
+            while True:
+                param = self.consume(TokenKind.IDENTIFIER, "Se esperaba un parámetro")
+                arity += 1
+                if arity > 255:
+                    raise CompileError("Una función admite hasta 255 parámetros", param)
+                body.declare(param.lexeme)
+                body.mark_initialized()
+                if not self.match(TokenKind.COMMA):
+                    break
         self.consume(TokenKind.RIGHT_PAREN, "Se esperaba ')' después de los parámetros")
         self.consume(TokenKind.LEFT_BRACE, "Se esperaba '{' antes del cuerpo")
-
-        body_compiler = Compiler(self.tokens, start=self.current, enclosing=self)
-        body_compiler.in_function = True
-        body_compiler.begin_scope()
-
-        # Slot 0: la función misma (normal) o this (método).
-        if body_compiler.in_method:
-            body_compiler.declare("this")
-        else:
-            body_compiler.declare("_")
-        body_compiler.mark_initialized()
-
-        for param in params:
-            body_compiler.declare(param.lexeme)
-            body_compiler.mark_initialized()
-
-        while not body_compiler.is_at_end() and not body_compiler.check(TokenKind.RIGHT_BRACE):
-            body_compiler.declaration()
-
-        body_compiler.consume(TokenKind.RIGHT_BRACE, "Se esperaba '}' después del cuerpo")
-
-        # Failsafe return
-        body_compiler.chunk.emit(OpCode.OP_NIL, body_compiler.previous().line)
-        body_compiler.chunk.emit(OpCode.OP_RETURN, body_compiler.previous().line)
-
-        self.current = body_compiler.current
+        body.current = self.current
+        body.block()
+        body.chunk.emit(OpCode.OP_NIL, body.previous().line)
+        body.chunk.emit(OpCode.OP_RETURN, body.previous().line)
+        self.current = body.current
 
         function = Function(name.lexeme)
-        function.chunk = body_compiler.chunk
-        function.arity = len(params)
-        function.upvalue_count = len(body_compiler.upvalues)
-        index = self.chunk.add_constant(function)
-        self.chunk.emit(OpCode.OP_CLOSURE, name.line, index)
-
-        # Emitir los upvalues capturados
-        for is_local, slot in body_compiler.upvalues:
-            self.chunk.write_byte(1 if is_local else 0, name.line)
+        function.chunk = body.chunk
+        function.arity = arity
+        function.upvalue_count = len(body.upvalues)
+        function.is_initializer = method and name.lexeme == "init"
+        self.chunk.emit(OpCode.OP_CLOSURE, name.line, self.chunk.add_constant(function))
+        for is_local, slot in body.upvalues:
+            self.chunk.write_byte(int(is_local), name.line)
             self.chunk.write_byte(slot, name.line)
-
-        if not is_local:
-            name_index = self.chunk.add_constant(name.lexeme)
-            self.chunk.emit(OpCode.OP_DEFINE_GLOBAL, name.line, name_index)
 
     def class_declaration(self) -> None:
-        """Compila ``class nombre ( < superclase )? { métodos }``."""
         name = self.consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de clase")
         is_local = self.scope_depth > 0
-        has_superclass = False
-
         if is_local:
-            # El nombre queda declarado antes de compilar los métodos para
-            # que puedan referirse a la propia clase (fábricas, recursion).
             self.declare(name.lexeme)
-
-        previous_class = self.current_class
-        self.current_class = name
-
-        if self.match(TokenKind.LESS):
-            has_superclass = True
-            superclass_name = self.consume(TokenKind.IDENTIFIER, "Se esperaba nombre de superclase")
-            slot = self.resolve_local(superclass_name)
-            if slot is not None:
-                self.chunk.emit(OpCode.OP_GET_LOCAL, superclass_name.line, slot)
-            else:
-                upvalue_index = self.resolve_upvalue(superclass_name)
-                if upvalue_index is not None:
-                    self.chunk.emit(OpCode.OP_GET_UPVALUE, superclass_name.line, upvalue_index)
-                else:
-                    index = self.chunk.add_constant(superclass_name.lexeme)
-                    self.chunk.emit(OpCode.OP_GET_GLOBAL, superclass_name.line, index)
-
-        index = self.chunk.add_constant(name.lexeme)
-        self.chunk.emit(OpCode.OP_CLASS, name.line, index)
-
-        if has_superclass:
-            self.chunk.emit(OpCode.OP_INHERIT, name.line)
-
-        self.consume(TokenKind.LEFT_BRACE, "Se esperaba '{' después del nombre")
-
-        while not self.check(TokenKind.RIGHT_BRACE) and not self.is_at_end():
-            self.method_declaration()
-
-        self.consume(TokenKind.RIGHT_BRACE, "Se esperaba '}' después de la clase")
-
+        self.chunk.emit(OpCode.OP_CLASS, name.line, self.chunk.add_constant(name.lexeme))
         if is_local:
             self.mark_initialized()
         else:
-            name_index = self.chunk.add_constant(name.lexeme)
-            self.chunk.emit(OpCode.OP_DEFINE_GLOBAL, name.line, name_index)
+            self.chunk.emit(OpCode.OP_DEFINE_GLOBAL, name.line, self.chunk.add_constant(name.lexeme))
 
-        self.current_class = previous_class
+        previous_class = self.class_has_superclass
+        self.class_has_superclass = self.match(TokenKind.LESS)
+        if self.class_has_superclass:
+            superclass = self.consume(TokenKind.IDENTIFIER, "Se esperaba nombre de superclase")
+            if superclass.lexeme == name.lexeme:
+                raise CompileError("Una clase no puede heredarse a sí misma", superclass)
+            self.variable(superclass)
+            self.begin_scope()
+            self.declare("super")
+            self.mark_initialized()
+            self.variable(name)
+            self.chunk.emit(OpCode.OP_INHERIT, name.line)
 
-    def method_declaration(self) -> None:
-        """Compila un método de clase (sin keyword fun)."""
-        name = self.consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de método")
-        had_method = self.in_method
-        self.in_method = True
-
-        self.consume(TokenKind.LEFT_PAREN, "Se esperaba '(' después del nombre")
-
-        params: list[Token] = []
-        if not self.check(TokenKind.RIGHT_PAREN):
-            params.append(self.consume(TokenKind.IDENTIFIER, "Se esperaba un parámetro"))
-            while self.match(TokenKind.COMMA):
-                params.append(self.consume(TokenKind.IDENTIFIER, "Se esperaba un parámetro"))
-
-        self.consume(TokenKind.RIGHT_PAREN, "Se esperaba ')' después de los parámetros")
-        self.consume(TokenKind.LEFT_BRACE, "Se esperaba '{' antes del cuerpo")
-
-        body_compiler = Compiler(self.tokens, start=self.current, enclosing=self)
-        body_compiler.in_function = True
-        body_compiler.in_method = True
-        body_compiler.begin_scope()
-
-        # this es slot 0
-        body_compiler.declare("this")
-        body_compiler.mark_initialized()
-
-        for param in params:
-            body_compiler.declare(param.lexeme)
-            body_compiler.mark_initialized()
-
-        while not body_compiler.is_at_end() and not body_compiler.check(TokenKind.RIGHT_BRACE):
-            body_compiler.declaration()
-
-        body_compiler.consume(TokenKind.RIGHT_BRACE, "Se esperaba '}' después del cuerpo")
-
-        body_compiler.chunk.emit(OpCode.OP_NIL, body_compiler.previous().line)
-        body_compiler.chunk.emit(OpCode.OP_RETURN, body_compiler.previous().line)
-
-        self.current = body_compiler.current
-
-        function = Function(name.lexeme)
-        function.chunk = body_compiler.chunk
-        function.arity = len(params)
-        function.upvalue_count = len(body_compiler.upvalues)
-        function.is_initializer = name.lexeme == "init"
-        function.enclosing_class = self.current_class.lexeme if self.current_class is not None else None
-        index = self.chunk.add_constant(function)
-        self.chunk.emit(OpCode.OP_CLOSURE, name.line, index)
-
-        for is_local, slot in body_compiler.upvalues:
-            self.chunk.write_byte(1 if is_local else 0, name.line)
-            self.chunk.write_byte(slot, name.line)
-
-        name_index = self.chunk.add_constant(name.lexeme)
-        self.chunk.emit(OpCode.OP_METHOD, name.line, name_index)
-
-        self.in_method = had_method
+        self.variable(name)
+        self.consume(TokenKind.LEFT_BRACE, "Se esperaba '{' después del nombre")
+        while not self.check(TokenKind.RIGHT_BRACE) and not self.is_at_end():
+            method = self.consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de método")
+            self.function_body(method, method=True)
+            self.chunk.emit(OpCode.OP_METHOD, method.line, self.chunk.add_constant(method.lexeme))
+        self.consume(TokenKind.RIGHT_BRACE, "Se esperaba '}' después de la clase")
+        self.chunk.emit(OpCode.OP_POP, name.line)
+        if self.class_has_superclass:
+            self.end_scope()
+        self.class_has_superclass = previous_class
 
     # Sentencias
 
@@ -465,104 +374,31 @@ class Compiler:
         """expression → assignment"""
         self.assignment()
 
-    def _is_property_assignment_start(self) -> bool:
-        """Indica si el token actual inicia una asignación a propiedad."""
-        if self.is_at_end():
-            return False
-        first = self.peek()
-        if first.kind not in (TokenKind.IDENTIFIER, TokenKind.THIS, TokenKind.SUPER):
-            return False
-        if self.current + 1 >= len(self.tokens):
-            return False
-        if self.tokens[self.current + 1].kind != TokenKind.DOT:
-            return False
-        if self.current + 2 >= len(self.tokens):
-            return False
-        if self.tokens[self.current + 2].kind != TokenKind.IDENTIFIER:
-            return False
-        if self.current + 3 >= len(self.tokens):
-            return False
-        return self.tokens[self.current + 3].kind == TokenKind.EQUAL
-
-    def _compile_property_assignment(self) -> None:
-        """Compila ``obj.prop = val`` o ``this.prop = val``."""
-        # Compilar el objeto
-        if self.match(TokenKind.THIS):
-            token = self.previous()
-            slot = self.resolve_local(token)
-            if slot is not None:
-                self.chunk.emit(OpCode.OP_GET_LOCAL, token.line, slot)
-            else:
-                upvalue_index = self.resolve_upvalue(token)
-                if upvalue_index is not None:
-                    self.chunk.emit(OpCode.OP_GET_UPVALUE, token.line, upvalue_index)
-                else:
-                    raise ParseError(
-                        f"'this' solo es válido dentro de un método en la línea {token.line}, "
-                        f"columna {token.column}"
-                    )
-        elif self.match(TokenKind.SUPER):
-            raise ParseError("No se puede asignar a una propiedad de super")
+    def variable(self, name: Token, can_assign: bool = False) -> None:
+        slot = self.resolve_local(name)
+        if slot is not None:
+            read, write = OpCode.OP_GET_LOCAL, OpCode.OP_SET_LOCAL
         else:
-            name = self.advance()
-            slot = self.resolve_local(name)
+            slot = self.resolve_upvalue(name)
             if slot is not None:
-                self.chunk.emit(OpCode.OP_GET_LOCAL, name.line, slot)
+                read, write = OpCode.OP_GET_UPVALUE, OpCode.OP_SET_UPVALUE
             else:
-                upvalue_index = self.resolve_upvalue(name)
-                if upvalue_index is not None:
-                    self.chunk.emit(OpCode.OP_GET_UPVALUE, name.line, upvalue_index)
-                else:
-                    index = self.chunk.add_constant(name.lexeme)
-                    self.chunk.emit(OpCode.OP_GET_GLOBAL, name.line, index)
-
-        # Consumir .prop
-        self.consume(TokenKind.DOT, "Se esperaba '.' después del objeto")
-        prop_name = self.consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de propiedad")
-        self.consume(TokenKind.EQUAL, "Se esperaba '=' después del nombre")
-
-        # Compilar el valor
-        self.assignment()
-
-        # Emitir OP_SET_PROPERTY
-        index = self.chunk.add_constant(prop_name.lexeme)
-        self.chunk.emit(OpCode.OP_SET_PROPERTY, prop_name.line, index)
+                slot = self.chunk.add_constant(name.lexeme)
+                read, write = OpCode.OP_GET_GLOBAL, OpCode.OP_SET_GLOBAL
+        if can_assign and self.match(TokenKind.EQUAL):
+            self.assignment()
+            self.chunk.emit(write, name.line, slot)
+        else:
+            self.chunk.emit(read, name.line, slot)
 
     def assignment(self) -> None:
-        """assignment → equality ( '=' assignment )?"""
-        # Asignación a propiedad: obj.prop = val
-        if self._is_property_assignment_start():
-            self._compile_property_assignment()
-            return
-
-        # Asignación a variable: ident = val
-        if self.check(TokenKind.IDENTIFIER) and self._peek_next() == TokenKind.EQUAL:
-            name = self.advance()
-            self.consume(TokenKind.EQUAL, "Se esperaba '=' después del nombre")
-            self.assignment()
-            slot = self.resolve_local(name)
-            if slot is not None:
-                self.chunk.emit(OpCode.OP_SET_LOCAL, name.line, slot)
-            else:
-                upvalue_index = self.resolve_upvalue(name)
-                if upvalue_index is not None:
-                    self.chunk.emit(OpCode.OP_SET_UPVALUE, name.line, upvalue_index)
-                else:
-                    index = self.chunk.add_constant(name.lexeme)
-                    self.chunk.emit(OpCode.OP_SET_GLOBAL, name.line, index)
-            return
-
-        self.logical_or()
+        self.logical_or(can_assign=True)
         if self.match(TokenKind.EQUAL):
-            token = self.previous()
-            raise ParseError(
-                f"Destino inválido de asignación en la línea {token.line}, "
-                f"columna {token.column}"
-            )
+            raise CompileError("Destino inválido de asignación", self.previous())
 
-    def logical_or(self) -> None:
+    def logical_or(self, can_assign: bool = False) -> None:
         """logical_or → logical_and ( 'or' logical_and )*"""
-        self.logical_and()
+        self.logical_and(can_assign)
         while self.match(TokenKind.OR):
             else_jump = self.emit_jump(OpCode.OP_JUMP_IF_FALSE, self.previous().line)
             end_jump = self.emit_jump(OpCode.OP_JUMP, self.previous().line)
@@ -571,18 +407,18 @@ class Compiler:
             self.logical_and()
             self.patch_jump(end_jump)
 
-    def logical_and(self) -> None:
+    def logical_and(self, can_assign: bool = False) -> None:
         """logical_and → equality ( 'and' equality )*"""
-        self.equality()
+        self.equality(can_assign)
         while self.match(TokenKind.AND):
             end_jump = self.emit_jump(OpCode.OP_JUMP_IF_FALSE, self.previous().line)
             self.chunk.emit(OpCode.OP_POP, self.previous().line)
             self.equality()
             self.patch_jump(end_jump)
 
-    def equality(self) -> None:
+    def equality(self, can_assign: bool = False) -> None:
         """equality → comparison ( ( '!=' | '==' ) comparison )*"""
-        self.comparison()
+        self.comparison(can_assign)
         while self.match(TokenKind.BANG_EQUAL, TokenKind.EQUAL_EQUAL):
             operator = self.previous()
             self.comparison()
@@ -592,9 +428,9 @@ class Compiler:
             else:
                 self.chunk.emit(OpCode.OP_EQUAL, operator.line)
 
-    def comparison(self) -> None:
+    def comparison(self, can_assign: bool = False) -> None:
         """comparison → term ( ( '>' | '>=' | '<' | '<=' ) term )*"""
-        self.term()
+        self.term(can_assign)
         while self.match(
             TokenKind.GREATER, TokenKind.GREATER_EQUAL,
             TokenKind.LESS, TokenKind.LESS_EQUAL,
@@ -614,9 +450,9 @@ class Compiler:
                 self.chunk.emit(OpCode.OP_GREATER, operator.line)
                 self.chunk.emit(OpCode.OP_NOT, operator.line)
 
-    def term(self) -> None:
+    def term(self, can_assign: bool = False) -> None:
         """term → factor ( ( '-' | '+' ) factor )*"""
-        self.factor()
+        self.factor(can_assign)
         while self.match(TokenKind.MINUS, TokenKind.PLUS):
             operator = self.previous()
             self.factor()
@@ -625,9 +461,9 @@ class Compiler:
             else:
                 self.chunk.emit(OpCode.OP_ADD, operator.line)
 
-    def factor(self) -> None:
+    def factor(self, can_assign: bool = False) -> None:
         """factor → unary ( ( '/' | '*' | '%' ) unary )*"""
-        self.unary()
+        self.unary(can_assign)
         while self.match(TokenKind.SLASH, TokenKind.STAR, TokenKind.PERCENT):
             operator = self.previous()
             self.unary()
@@ -638,7 +474,7 @@ class Compiler:
             else:
                 self.chunk.emit(OpCode.OP_MULTIPLY, operator.line)
 
-    def unary(self) -> None:
+    def unary(self, can_assign: bool = False) -> None:
         """unary → ( '!' | '-' ) unary | primary"""
         if self.match(TokenKind.BANG, TokenKind.MINUS):
             operator = self.previous()
@@ -648,121 +484,86 @@ class Compiler:
             else:
                 self.chunk.emit(OpCode.OP_NEGATE, operator.line)
         else:
-            self.primary()
+            self.postfix(can_assign)
 
-    def primary(self) -> None:
-        """primary → NUMBER | STRING | true | false | nil | '(' expression ')'"""
+    def postfix(self, can_assign: bool) -> None:
+        self.primary(can_assign)
+        while True:
+            if self.match(TokenKind.LEFT_PAREN):
+                paren = self.previous()
+                count = self.expression_list(TokenKind.RIGHT_PAREN)
+                if count > 255:
+                    raise CompileError("Una llamada admite hasta 255 argumentos", paren)
+                self.chunk.emit(OpCode.OP_CALL, paren.line, count)
+            elif self.match(TokenKind.DOT):
+                name = self.consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de propiedad")
+                index = self.chunk.add_constant(name.lexeme)
+                if can_assign and self.match(TokenKind.EQUAL):
+                    self.assignment()
+                    self.chunk.emit(OpCode.OP_SET_PROPERTY, name.line, index)
+                else:
+                    self.chunk.emit(OpCode.OP_GET_PROPERTY, name.line, index)
+            elif self.match(TokenKind.LEFT_BRACKET):
+                bracket = self.previous()
+                self.expression()
+                self.consume(TokenKind.RIGHT_BRACKET, "Se esperaba ']' después del índice")
+                if can_assign and self.match(TokenKind.EQUAL):
+                    self.assignment()
+                    self.chunk.emit(OpCode.OP_SET_INDEX, bracket.line)
+                else:
+                    self.chunk.emit(OpCode.OP_GET_INDEX, bracket.line)
+            else:
+                break
+
+    def expression_list(self, closing: TokenKind) -> int:
+        count = 0
+        if not self.check(closing):
+            while True:
+                self.expression()
+                count += 1
+                if not self.match(TokenKind.COMMA):
+                    break
+        self.consume(closing, "Se esperaba el cierre de la lista de expresiones")
+        return count
+
+    def primary(self, can_assign: bool) -> None:
         if self.match(TokenKind.FALSE):
             self.chunk.emit(OpCode.OP_FALSE, self.previous().line)
-            return
-        if self.match(TokenKind.TRUE):
+        elif self.match(TokenKind.TRUE):
             self.chunk.emit(OpCode.OP_TRUE, self.previous().line)
-            return
-        if self.match(TokenKind.NIL):
+        elif self.match(TokenKind.NIL):
             self.chunk.emit(OpCode.OP_NIL, self.previous().line)
-            return
-        if self.match(TokenKind.THIS):
+        elif self.match(TokenKind.THIS):
             token = self.previous()
-            slot = self.resolve_local(token)
-            if slot is not None:
-                self.chunk.emit(OpCode.OP_GET_LOCAL, token.line, slot)
-            else:
-                upvalue_index = self.resolve_upvalue(token)
-                if upvalue_index is not None:
-                    self.chunk.emit(OpCode.OP_GET_UPVALUE, token.line, upvalue_index)
-                else:
-                    raise ParseError(
-                        f"'this' solo es válido dentro de un método en la línea {token.line}, "
-                        f"columna {token.column}"
-                    )
-            # Postfix: property access and calls
-            while True:
-                if self.match(TokenKind.DOT):
-                    name = self.consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de propiedad")
-                    self.chunk.emit(OpCode.OP_GET_PROPERTY, name.line, self.chunk.add_constant(name.lexeme))
-                elif self.match(TokenKind.LEFT_PAREN):
-                    arg_count = 0
-                    if not self.check(TokenKind.RIGHT_PAREN):
-                        self.expression()
-                        arg_count += 1
-                        while self.match(TokenKind.COMMA):
-                            self.expression()
-                            arg_count += 1
-                    self.consume(TokenKind.RIGHT_PAREN, "Se esperaba ')' después de los argumentos")
-                    self.chunk.emit(OpCode.OP_CALL, self.previous().line, arg_count)
-                else:
-                    break
-            return
-        if self.match(TokenKind.SUPER):
+            if self.class_has_superclass is None:
+                raise CompileError("No se puede usar 'this' fuera de una clase", token)
+            self.variable(token)
+        elif self.match(TokenKind.SUPER):
             token = self.previous()
+            if not self.class_has_superclass:
+                raise CompileError("No se puede usar 'super' sin superclase", token)
             self.consume(TokenKind.DOT, "Se esperaba '.' después de super")
             name = self.consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de método")
+            self.variable(Token(TokenKind.THIS, "this", line=token.line, column=token.column))
+            self.variable(token)
             self.chunk.emit(OpCode.OP_GET_SUPER, token.line, self.chunk.add_constant(name.lexeme))
-            # Postfix: calls
-            while self.match(TokenKind.LEFT_PAREN):
-                arg_count = 0
-                if not self.check(TokenKind.RIGHT_PAREN):
-                    self.expression()
-                    arg_count += 1
-                    while self.match(TokenKind.COMMA):
-                        self.expression()
-                        arg_count += 1
-                self.consume(TokenKind.RIGHT_PAREN, "Se esperaba ')' después de los argumentos")
-                self.chunk.emit(OpCode.OP_CALL, token.line, arg_count)
-            return
-        if self.match(TokenKind.NUMBER, TokenKind.STRING):
+        elif self.match(TokenKind.NUMBER, TokenKind.STRING):
             token = self.previous()
-            self.chunk.emit(
-                OpCode.OP_CONSTANT, token.line, self.chunk.add_constant(token.literal)
-            )
-            return
-        if self.match(TokenKind.IDENTIFIER):
-            name = self.previous()
-            slot = self.resolve_local(name)
-            if slot is not None:
-                self.chunk.emit(OpCode.OP_GET_LOCAL, name.line, slot)
-            else:
-                upvalue_index = self.resolve_upvalue(name)
-                if upvalue_index is not None:
-                    self.chunk.emit(OpCode.OP_GET_UPVALUE, name.line, upvalue_index)
-                else:
-                    index = self.chunk.add_constant(name.lexeme)
-                    self.chunk.emit(OpCode.OP_GET_GLOBAL, name.line, index)
-
-            # Llamadas y acceso a propiedades: f(x), obj.prop, f(x).prop
-            while True:
-                if self.match(TokenKind.DOT):
-                    prop_name = self.consume(TokenKind.IDENTIFIER, "Se esperaba un nombre de propiedad")
-                    self.chunk.emit(OpCode.OP_GET_PROPERTY, prop_name.line, self.chunk.add_constant(prop_name.lexeme))
-                elif self.match(TokenKind.LEFT_PAREN):
-                    arg_count = 0
-                    if not self.check(TokenKind.RIGHT_PAREN):
-                        self.expression()
-                        arg_count += 1
-                        while self.match(TokenKind.COMMA):
-                            self.expression()
-                            arg_count += 1
-                    self.consume(TokenKind.RIGHT_PAREN, "Se esperaba ')' después de los argumentos")
-                    self.chunk.emit(OpCode.OP_CALL, name.line, arg_count)
-                else:
-                    break
-            return
-        if self.match(TokenKind.LEFT_PAREN):
+            self.chunk.emit(OpCode.OP_CONSTANT, token.line, self.chunk.add_constant(token.literal))
+        elif self.match(TokenKind.IDENTIFIER):
+            self.variable(self.previous(), can_assign)
+        elif self.match(TokenKind.LEFT_PAREN):
             self.expression()
-            if not self.match(TokenKind.RIGHT_PAREN):
-                token = self.peek()
-                raise ParseError(
-                    f"Se esperaba ')' después de la expresión, "
-                    f"se encontró {token.lexeme!r} en la línea {token.line}, "
-                    f"columna {token.column}"
-                )
-            return
-
-        token = self.peek()
-        raise ParseError(
-            f"Se esperaba una expresión, se encontró {token.lexeme!r} "
-            f"en la línea {token.line}, columna {token.column}"
-        )
+            self.consume(TokenKind.RIGHT_PAREN, "Se esperaba ')' después de la expresión")
+        elif self.match(TokenKind.LEFT_BRACKET):
+            bracket = self.previous()
+            count = self.expression_list(TokenKind.RIGHT_BRACKET)
+            if count > 255:
+                raise CompileError("Un literal de lista admite hasta 255 elementos", bracket)
+            self.chunk.emit(OpCode.OP_LIST, bracket.line, count)
+        else:
+            token = self.peek()
+            raise ParseError(f"Se esperaba una expresión en la línea {token.line}, columna {token.column}")
 
     # ---------- Saltos ---------- #
 
@@ -795,12 +596,6 @@ class Compiler:
     def peek(self) -> Token:
         """Devuelve el token actual sin consumirlo."""
         return self.tokens[self.current]
-
-    def _peek_next(self) -> TokenKind:
-        """Devuelve el tipo del token siguiente al actual, sin consumirlo."""
-        if self.current + 1 < len(self.tokens):
-            return self.tokens[self.current + 1].kind
-        return TokenKind.EOF
 
     def previous(self) -> Token:
         """Devuelve el último token consumido."""

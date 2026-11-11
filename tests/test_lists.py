@@ -9,7 +9,7 @@ from mylox.cli import run_actions, run_tree
 from mylox.pipeline.lexer import Lexer
 
 
-@pytest.fixture(params=["tree-walk"])
+@pytest.fixture(params=["tree-walk", "bytecode"])
 def backend(request):
     return request.param
 
@@ -107,7 +107,24 @@ def test_ast_de_lectura_y_escritura(capsys):
     assert "Index(" in tree
 
 
+def test_bytecode_de_listas_y_balance_de_pila(capsys):
+    chunk = Compiler(Lexer("var a = [1, 2]; a[0] = a[1]; print a;").run()).compile()
+    listing = disassemble(chunk)
+    assert "OP_LIST<2>" in listing
+    assert "OP_GET_INDEX" in listing
+    assert "OP_SET_INDEX" in listing
+    vm = VM(chunk)
+    vm.run()
+    assert vm.stack == []
+    assert capsys.readouterr().out == "[2, 2]\n"
+    assert stack_effect(OpCode.OP_LIST, 2) == -1
+    assert stack_effect(OpCode.OP_SET_INDEX) == -2
 
 
 
 
+def test_reutilizar_bytecode_no_comparte_listas_entre_ejecuciones(capsys):
+    chunk = Compiler(Lexer("var a = [1]; a.push(2); print a;").run()).compile()
+    VM(chunk).run()
+    VM(chunk).run()
+    assert capsys.readouterr().out == "[1, 2]\n[1, 2]\n"
