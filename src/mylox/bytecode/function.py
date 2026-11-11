@@ -49,6 +49,9 @@ class Closure:
     def __repr__(self) -> str:
         return f"<cls {self.function.name}()>"
 
+    def __str__(self) -> str:
+        return f"<fn {self.function.name}>"
+
 
 class CallFrame:
     """Marco de una invocación: qué función se está ejecutando, dónde
@@ -87,3 +90,6 @@ class BoundMethod:
 
     def __repr__(self) -> str:
         return f"<bound {self.method.function.name}>"
+
+    def __str__(self) -> str:
+        return str(self.method)

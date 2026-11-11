@@ -52,6 +52,8 @@ def backend(request):
     ('{ var f = 1; fun f() { return 2; } print f(); var f = f() + 1; print f; }', '2\n3\n'),
     ('fun f(a, a) { fun get() { return a; } var a = a + 1; return get; } print f(1, 2)();', '3\n'),
     ('class A { m(a, a) { return a; } } print A().m(1, 2);', '2\n'),
+    ('fun f() {} print f; print [f];', '<fn f>\n[<fn f>]\n'),
+    ('class A { m() {} } var a = A(); print a.m; print [a.m];', '<fn m>\n[<fn m>]\n'),
 ])
 def test_regresiones(backend, capsys, source, expected):
     assert run_actions(source, backend) == 0
