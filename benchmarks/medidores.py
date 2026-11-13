@@ -100,6 +100,27 @@ class MedidorMylox(Medidor):
         return time.perf_counter() - inicio, buffer.getvalue()
 
 
+class MedidorMyloxBytecode(Medidor):
+    """Nuestra implementacion debackend bytecode: compilador + VM"""
+
+    nombre = "mylox-bc"
+
+    def disponible(self) -> None:
+        return
+
+    def correr(self, fuente: str) -> tuple[float, str]:
+        from mylox.bytecode.compiler import Compiler
+        from mylox.bytecode.vm import VMs
+        buffer = io.StringIO()
+        inicio = time.perf_counter()
+        with contextlib.redirect_stdout(buffer):
+            tokens = Lexer(fuente).run()
+            Parser(tokens).parse()
+            chunk = Compiler(tokens).compile()
+            VM(chunk).run()
+        return time.perf_counter() - inicio, buffer.getvalue()
+
+
 class MedidorPlox(Medidor):
     """Implementación de la cátedra (branch main), leída del árbol de git.
 
@@ -276,6 +297,7 @@ def construir_medidores(seleccion: list[str], ref_plox: str) -> dict[str, Medido
 
     disponibles: dict[str, Medidor] = {
         "mylox": MedidorMylox(),
+        "mylox-bc": MedidorMyloxBytecode(),
         "plox": MedidorPlox(REPO_HERMANO / "plox", ref_plox, CACHE / "plox-src"),
         "jlox": MedidorJlox(),
         "clox": MedidorClox(),

@@ -100,6 +100,25 @@ Tiempos en milisegundos (promedio sobre repeticiones medidas, tras descartar 3 d
 7. **El chequeo de equivalencia valida la medición.** Antes de medir, el harness confirmó que las cuatro implementaciones producen la misma salida normalizada en los cinco programas. Sin esa verificación, comparar tiempos sobre programas que no hacen lo mismo no significaría nada.
 8. **El resolver estático no es un costo dominante.** `mylox` incluye `BindingResolver` dentro de `Interpreter.interpret()`, igual que `plox` y `jlox` incluyen su resolver. La resolución es un recorrido lineal del AST, sin impacto apreciable en el tiempo total de la evaluación.
 
+## Tree-walk vs bytecode (mylox)
+
+Comparación interna de las dos fases de mylox sobre los mismos cinco programas:
+
+| programa | tree-walk (ms) | bytecode (ms) | bytecode / tree-walk |
+|---|---:|---:|---:|
+| closures.lox | 606.69 | 2995.90 | 4.94x más lento |
+| fibonacci.lox | 576.46 | 1337.07 | 2.32x más lento |
+| fizzbuzz.lox | 229.33 | 1522.29 | 6.64x más lento |
+| primos.lox | 161.34 | 1090.48 | 6.76x más lento |
+| suma.lox | 429.08 | 3785.76 | 8.82x más lento |
+
+### Conclusiones
+
+1. **En Python, el backend bytecode es más lento que el tree-walk**, no más rápido. Esto es lo opuesto a lo que ocurre en `clox`, donde la VM de bytecode es mucho más rápida que el tree-walk. La causa acá es el lenguaje de implementación: CPython ejecuta un `while` con `match`/`case` por cada instrucción de bytecode, lo que añade más overhead que evaluar directamente en el AST, porque cada operación del programa paga el costo del despacho de la VM además del de la operación.
+2. **La diferencia es mayor en programas con mucha aritmética** (`suma.lox` 8.8x) que en los dominados por recursión (`fibonacci.lox` 2.3x). En recursión, el tree-walk ya paga el costo de crear entornos Python por cada llamada; la VM, aunque también crea frames, los gestiona sobre un array, lo que amortigua la penalización por el despacho.
+3. **El bytecode sigue siendo valioso en Python** por razones que el benchmark de tiempo no captura: desacoplamiento entre compilación y ejecución, posibilidad de inspeccionar/depurar el bytecode (`--debug`), y una base lista para cuando el lenguaje de implementación cambie (por ejemplo, a Cython o a un JIT).
+4. **La conclusión** es la misma que la del benchmark contra `clox`: la arquitectura de bytecode VM puede ser en órdenes de magnitud más rápida, pero solo cuando el lenguaje de implementación lo permite. En Python puro, el tree-walk es el backend más rápido; el bytecode es el más portable y depurable.
+
 ## Limitaciones
 
 - **Cantidad de repeticiones:** la tabla usa `-n 10`. Con `-n 20` o más las cifras se estabilizan. La varianza observada (p95 contra min) es de ~2-3% en `mylox`, `jlox` y `clox`, pero llega a ~50% en `plox` (`closures.lox`): la recolección de basura de Python introduce ruido considerable, así que conviene comparar por mediana y no por promedio.

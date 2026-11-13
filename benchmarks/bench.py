@@ -35,7 +35,7 @@ from benchmarks.medidores import (  # noqa: E402
 )
 
 PROGRAMAS = RAIZ / "benchmarks" / "programas"
-IMPLEMENTACIONES = ["mylox", "plox", "jlox", "clox"]
+IMPLEMENTACIONES = ["mylox", "mylox-bc", "plox", "jlox", "clox"]
 EXIT_OK = 0
 EXIT_ERROR = 65
 

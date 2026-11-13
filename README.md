@@ -147,7 +147,7 @@ uv run mylox programa.lox --backend bytecode
 uv run mylox programa.lox --backend bytecode --debug
 ```
 
-El backend bytecode reutiliza el lexer y las reglas de precedencia del parser, y agrega un compilador single-pass y una VM con pila. Las dos opciones producen la misma salida para todo programa que el backend bytecode soporte (hoy: expresiones, variables, control de flujo, funciones y clases con herencia).
+El backend bytecode reutiliza el lexer y las reglas de precedencia del parser, y agrega un compilador single-pass y una VM con pila. Las dos opciones producen la misma salida para todo programa que el backend bytecode soporte (hoy: expresiones, variables, control de flujo, funciones y clases con herencia). En CPython el tree-walk es mucho más rápido (5x-9x), porque el despacho de la VM suma overhead; la ventaja de la VM se ve en lenguajes compilados (clox es 69x-216x más rápido que mylox tree-walk). Detalle en [docs/benchmarks.md](docs/benchmarks.md).
 
 ## Programación orientada a objetos
 
