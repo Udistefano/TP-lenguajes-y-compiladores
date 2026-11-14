@@ -92,4 +92,7 @@ class BoundMethod:
         return f"<bound {self.method.function.name}>"
 
     def __str__(self) -> str:
+        return f"<bound {self.method.function.name}>"
+
+    def __str__(self) -> str:
         return str(self.method)

@@ -292,22 +292,6 @@ class Interpreter(Visitor):
 
     # helpers
 
-    def is_number(self, value: object) -> bool:
-        """Indica si el valor usa la representación numérica float de Lox.
-
-        El lexer convierte todos los literales numéricos a float. Comprobar
-        ese tipo evita tratar los booleanos de Python como números.
-        """
-        return isinstance(value, float)
-
-    def is_string(self, value: object) -> bool:
-        """Indica si el valor es una cadena de Lox, representada por str.
-
-        Se usa al validar la concatenación con ``+`` y no convierte valores
-        de otros tipos a texto automáticamente.
-        """
-        return isinstance(value, str)
-
     def is_callable(self, value: object) -> bool:
         """Comprueba el contrato de invocación con las operaciones arity y call.
 

@@ -62,8 +62,6 @@ class OpCode(IntEnum):
     OP_METHOD = auto()
     OP_INHERIT = auto()
     OP_GET_SUPER = auto()
-    OP_INVOKE = auto()
-    OP_SUPER_INVOKE = auto()
 
     # Saltos
     OP_JUMP = auto()
@@ -119,8 +117,6 @@ INSTRUCTIONS: dict[OpCode, Instruction] = {
     OpCode.OP_METHOD: Instruction(stack_effect=-1, operand_size=1),
     OpCode.OP_INHERIT: Instruction(stack_effect=-1, operand_size=0),
     OpCode.OP_GET_SUPER: Instruction(stack_effect=-1, operand_size=1),
-    OpCode.OP_INVOKE: Instruction(stack_effect=0, operand_size=2),
-    OpCode.OP_SUPER_INVOKE: Instruction(stack_effect=0, operand_size=2),
     OpCode.OP_JUMP: Instruction(stack_effect=0, operand_size=2),
     OpCode.OP_JUMP_IF_FALSE: Instruction(stack_effect=0, operand_size=2),
     OpCode.OP_LOOP: Instruction(stack_effect=0, operand_size=2),

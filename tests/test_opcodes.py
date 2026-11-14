@@ -28,8 +28,6 @@ def test_solo_opcodes_de_variables_globales_y_locales_llevan_operando_junto_a_co
         OpCode.OP_SET_PROPERTY,
         OpCode.OP_METHOD,
         OpCode.OP_GET_SUPER,
-        OpCode.OP_INVOKE,
-        OpCode.OP_SUPER_INVOKE,
     }
 
 

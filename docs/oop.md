@@ -38,8 +38,6 @@ El compilador emite seis instrucciones OOP; otras dos permanecen reservadas:
 | `OP_METHOD` | 1 byte (nombre) | Registra un método en la clase |
 | `OP_INHERIT` | 0 bytes | Establece la superclase |
 | `OP_GET_SUPER` | 1 byte (nombre) | Resuelve `super.metodo` léxicamente |
-| `OP_INVOKE` | 2 bytes (nombre, argc) | Reservado |
-| `OP_SUPER_INVOKE` | 2 bytes (nombre, argc) | Reservado |
 
 La resolución de `super` es léxica. Al declarar una subclase, el compilador
 guarda la superclase en un local que los métodos capturan como upvalue.

@@ -92,5 +92,4 @@ Los resultados están en [benchmarks](benchmarks.md).
 El tree-walk y ambos frontends siguen sujetos a la recursión de Python. La
 CLI captura ese límite y lo informa sin traceback.
 
-`OP_INVOKE` y `OP_SUPER_INVOKE` están reservados: las llamadas a métodos usan
-acceso a propiedad y `OP_CALL`. `OP_PRINT_DEC` no está implementado.
+Las llamadas a métodos usan acceso a propiedad y `OP_CALL`. `OP_PRINT_DEC` no está implementado.

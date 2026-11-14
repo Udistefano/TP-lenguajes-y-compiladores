@@ -77,10 +77,6 @@ class LoxClass:
             initializer.bind(instance).call(interpreter, arguments)
         return instance
 
-    def is_callable(self) -> bool:
-        """Las clases son invocables (se instancian)."""
-        return True
-
     def __str__(self) -> str:
         return self.name
 
